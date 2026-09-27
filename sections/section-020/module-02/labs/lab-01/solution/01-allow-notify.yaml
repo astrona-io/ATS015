@@ -1,0 +1,21 @@
+# Reference end state for LAB015-020-02, part 1 of 3.
+# The service's normal surface. By existing, this ALLOW also makes the workload
+# deny-by-default for everything it does not name.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-notify
+  namespace: deny-demo
+spec:
+  selector:
+    matchLabels:
+      app: notification-service
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            namespaces: ["deny-demo"]
+      to:
+        - operation:
+            methods: ["POST"]
+            paths: ["/notify"]

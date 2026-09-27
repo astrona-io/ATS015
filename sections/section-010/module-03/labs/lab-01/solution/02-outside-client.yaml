@@ -1,0 +1,30 @@
+# Reference end state for LAB015-010-03, part 2 of 3.
+#
+# Re-applying the Deployment with a changed pod template forces a rollout, which
+# is what actually gets the sidecar injected. A learner doing this by hand would
+# run `kubectl -n outside rollout restart deployment outside-client` instead —
+# both produce the same end state, which is what grading checks.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: outside-client
+  namespace: outside
+  labels:
+    app: outside-client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: outside-client
+  template:
+    metadata:
+      labels:
+        app: outside-client
+      annotations:
+        sidecar.istio.io/inject: "true"
+        ats015.astrona.io/migrated: "true"
+    spec:
+      containers:
+        - name: outside-client
+          image: curlimages/curl
+          command: ["sh", "-c", "while true; do sleep 30; done"]

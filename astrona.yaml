@@ -1,0 +1,363 @@
+# Course manifest for ATS015 — Securing Workloads (Istio Certified Associate).
+#
+# Each module is a reading landing page (course.md), ordered deep-dive parts
+# (course-0N-*.md), an ungraded playground, and a graded lab. Each section ends
+# with a capstone lab combining its modules.
+#
+# Every `path:` is relative to this file.
+
+training:
+  id: ATS015
+  title: Securing Workloads
+  description: >
+    Course material for the Securing Workloads domain of the Istio Certified
+    Associate exam: workload identity, mutual TLS, authorization policy,
+    end-user JWT authentication, edge TLS, and authorization in ambient mode.
+
+  certification:
+    name: Istio Certified Associate
+    code: ICA
+    provider: CNCF
+    domain: Securing Workloads
+    weight: 25
+
+  environment:
+    istio: "1.30.5"
+    runtime: kind
+
+sections:
+  - id: section-010
+    title: Workload Identity And Mutual TLS
+    curriculum_item: Configuring Authentication (mTLS, JWT)
+    description: >
+      Where a workload's mesh identity comes from, how to make it
+      mandatory with PeerAuthentication, and how to migrate a live
+      namespace to STRICT mTLS without breaking its callers.
+    readme: sections/section-010/README.md
+    modules:
+      - id: module-01
+        title: Inspect Workload Identity And Certificates
+        content:
+          - type: reading
+            title: "Module 1: Inspect Workload Identity And Certificates"
+            path: sections/section-010/module-01/course.md
+          - type: reading
+            title: "Module 1.1: How a workload gets its identity"
+            path: sections/section-010/module-01/course-01-how-identity-is-issued.md
+          - type: reading
+            title: "Module 1.2: Reading the certificate a proxy holds"
+            path: sections/section-010/module-01/course-02-reading-the-certificate.md
+          - type: reading
+            title: "Module 1.3: From SAN to policy principal"
+            path: sections/section-010/module-01/course-03-principals-rotation-trust-domain.md
+          - type: playground
+            title: "Module 1 playground"
+            path: sections/section-010/module-01/playground
+          - type: lab
+            title: "Module 1 lab: Prove A Workload Identity And Authorize On It"
+            path: sections/section-010/module-01/labs/lab-01
+      - id: module-02
+        title: Enforce mTLS With PeerAuthentication At Three Scopes
+        content:
+          - type: reading
+            title: "Module 2: Enforce mTLS With PeerAuthentication At Three Scopes"
+            path: sections/section-010/module-02/course.md
+          - type: reading
+            title: "Module 2.1: Modes, and what they do to the inbound listener"
+            path: sections/section-010/module-02/course-01-modes-and-the-inbound-listener.md
+          - type: reading
+            title: "Module 2.2: The three scopes and how precedence resolves"
+            path: sections/section-010/module-02/course-02-scopes-and-precedence.md
+          - type: reading
+            title: "Module 2.3: Proving what is in effect"
+            path: sections/section-010/module-02/course-03-proving-what-is-in-effect.md
+          - type: playground
+            title: "Module 2 playground"
+            path: sections/section-010/module-02/playground
+          - type: lab
+            title: "Module 2 lab: Enforce mTLS At Three Scopes"
+            path: sections/section-010/module-02/labs/lab-01
+      - id: module-03
+        title: Migrate A Namespace From PERMISSIVE To STRICT mTLS
+        content:
+          - type: reading
+            title: "Module 3: Migrate A Namespace From PERMISSIVE To STRICT mTLS"
+            path: sections/section-010/module-03/course.md
+          - type: reading
+            title: "Module 3.1: Measuring before you change anything"
+            path: sections/section-010/module-03/course-01-measuring-with-telemetry.md
+          - type: reading
+            title: "Module 3.2: Exceptions, and moving callers into the mesh"
+            path: sections/section-010/module-03/course-02-exceptions-and-meshing.md
+          - type: reading
+            title: "Module 3.3: Enforcing, verifying and rolling back"
+            path: sections/section-010/module-03/course-03-enforcing-and-rolling-back.md
+          - type: playground
+            title: "Module 3 playground"
+            path: sections/section-010/module-03/playground
+          - type: lab
+            title: "Module 3 lab: Migrate A Namespace To STRICT mTLS"
+            path: sections/section-010/module-03/labs/lab-01
+    capstone:
+      - type: lab
+        title: "Workload Identity And Mutual TLS Capstone"
+        path: sections/section-010/capstone/labs/lab-01
+  - id: section-020
+    title: Authorization Policy Fundamentals
+    curriculum_item: Configuring Authorization
+    description: >
+      How an AuthorizationPolicy decision is made, how default-deny is
+      created, the anatomy of a rule, and the fixed CUSTOM/DENY/ALLOW
+      evaluation order.
+    readme: sections/section-020/README.md
+    modules:
+      - id: module-01
+        title: Authorize HTTP Traffic Between Workloads
+        content:
+          - type: reading
+            title: "Module 1: Authorize HTTP Traffic Between Workloads"
+            path: sections/section-020/module-01/course.md
+          - type: reading
+            title: "Module 1.1: How a request gets authorized"
+            path: sections/section-020/module-01/course-01-how-a-request-is-authorized.md
+          - type: reading
+            title: "Module 1.2: Default-deny and the allow-nothing policy"
+            path: sections/section-020/module-01/course-02-default-deny-and-allow-nothing.md
+          - type: reading
+            title: "Module 1.3: Rule anatomy: from, to, when"
+            path: sections/section-020/module-01/course-03-rule-anatomy.md
+          - type: reading
+            title: "Module 1.4: Identity rules, union semantics and debugging"
+            path: sections/section-020/module-01/course-04-identity-union-and-debugging.md
+          - type: playground
+            title: "Module 1 playground"
+            path: sections/section-020/module-01/playground
+          - type: lab
+            title: "Module 1 lab: Lock A Namespace Down With ALLOW Policies"
+            path: sections/section-020/module-01/labs/lab-01
+      - id: module-02
+        title: DENY Policies And Evaluation Order
+        content:
+          - type: reading
+            title: "Module 2: DENY Policies And Evaluation Order"
+            path: sections/section-020/module-02/course.md
+          - type: reading
+            title: "Module 2.1: The evaluation pipeline"
+            path: sections/section-020/module-02/course-01-the-evaluation-pipeline.md
+          - type: reading
+            title: "Module 2.2: Writing DENY rules"
+            path: sections/section-020/module-02/course-02-writing-deny-rules.md
+          - type: reading
+            title: "Module 2.3: AUDIT, and choosing between ALLOW and DENY"
+            path: sections/section-020/module-02/course-03-audit-and-design.md
+          - type: playground
+            title: "Module 2 playground"
+            path: sections/section-020/module-02/playground
+          - type: lab
+            title: "Module 2 lab: Close A Path With DENY"
+            path: sections/section-020/module-02/labs/lab-01
+    capstone:
+      - type: lab
+        title: "Authorization Policy Capstone"
+        path: sections/section-020/capstone/labs/lab-01
+  - id: section-030
+    title: End-User Authentication With JWT
+    curriculum_item: Configuring Authentication (mTLS, JWT)
+    description: >
+      Validating end-user tokens with RequestAuthentication, requiring
+      them with requestPrincipals, and authorizing on what the token
+      claims.
+    readme: sections/section-030/README.md
+    modules:
+      - id: module-01
+        title: Authenticate End Users With JWT
+        content:
+          - type: reading
+            title: "Module 1: Authenticate End Users With JWT"
+            path: sections/section-030/module-01/course.md
+          - type: reading
+            title: "Module 1.1: Two identities on one request"
+            path: sections/section-030/module-01/course-01-two-identities-and-the-filter.md
+          - type: reading
+            title: "Module 1.2: RequestAuthentication and the key set"
+            path: sections/section-030/module-01/course-02-requestauthentication-and-jwks.md
+          - type: reading
+            title: "Module 1.3: Requiring a token"
+            path: sections/section-030/module-01/course-03-requiring-a-token.md
+          - type: playground
+            title: "Module 1 playground"
+            path: sections/section-030/module-01/playground
+          - type: lab
+            title: "Module 1 lab: Require A Valid End-User Token"
+            path: sections/section-030/module-01/labs/lab-01
+      - id: module-02
+        title: Authorize On JWT Claims
+        content:
+          - type: reading
+            title: "Module 2: Authorize On JWT Claims"
+            path: sections/section-030/module-02/course.md
+          - type: reading
+            title: "Module 2.1: Claims as request attributes"
+            path: sections/section-030/module-02/course-01-claims-as-attributes.md
+          - type: reading
+            title: "Module 2.2: when conditions and how they match"
+            path: sections/section-030/module-02/course-02-when-conditions.md
+          - type: reading
+            title: "Module 2.3: Designing and debugging claim rules"
+            path: sections/section-030/module-02/course-03-designing-and-debugging.md
+          - type: playground
+            title: "Module 2 playground"
+            path: sections/section-030/module-02/playground
+          - type: lab
+            title: "Module 2 lab: Authorize On A JWT Claim"
+            path: sections/section-030/module-02/labs/lab-01
+    capstone:
+      - type: lab
+        title: "End-User Authentication Capstone"
+        path: sections/section-030/capstone/labs/lab-01
+  - id: section-040
+    title: Securing Edge Traffic With TLS
+    curriculum_item: Securing Edge Traffic with TLS
+    description: >
+      The three Gateway TLS modes: terminating with SIMPLE, requiring
+      client certificates with MUTUAL, and forwarding an encrypted
+      stream with PASSTHROUGH.
+    readme: sections/section-040/README.md
+    modules:
+      - id: module-01
+        title: Terminate TLS At The Ingress Gateway
+        content:
+          - type: reading
+            title: "Module 1: Terminate TLS At The Ingress Gateway"
+            path: sections/section-040/module-01/course.md
+          - type: reading
+            title: "Module 1.1: How a gateway gets its certificate"
+            path: sections/section-040/module-01/course-01-how-a-gateway-gets-its-certificate.md
+          - type: reading
+            title: "Module 1.2: The TLS listener"
+            path: sections/section-040/module-01/course-02-the-tls-listener.md
+          - type: reading
+            title: "Module 1.3: Verifying, redirecting and rotating"
+            path: sections/section-040/module-01/course-03-verifying-redirecting-and-rotating.md
+          - type: playground
+            title: "Module 1 playground"
+            path: sections/section-040/module-01/playground
+          - type: lab
+            title: "Module 1 lab: Serve HTTPS At The Ingress Gateway"
+            path: sections/section-040/module-01/labs/lab-01
+      - id: module-02
+        title: Require Client Certificates At The Edge
+        content:
+          - type: reading
+            title: "Module 2: Require Client Certificates At The Edge"
+            path: sections/section-040/module-02/course.md
+          - type: reading
+            title: "Module 2.1: Building the PKI"
+            path: sections/section-040/module-02/course-01-building-the-pki.md
+          - type: reading
+            title: "Module 2.2: The credential secret and the validation context"
+            path: sections/section-040/module-02/course-02-secret-and-validation-context.md
+          - type: reading
+            title: "Module 2.3: Handshake failures, and what a certificate proves"
+            path: sections/section-040/module-02/course-03-handshake-failures-and-identity.md
+          - type: playground
+            title: "Module 2 playground"
+            path: sections/section-040/module-02/playground
+          - type: lab
+            title: "Module 2 lab: Require Client Certificates At The Edge"
+            path: sections/section-040/module-02/labs/lab-01
+      - id: module-03
+        title: TLS Passthrough Instead Of Termination
+        content:
+          - type: reading
+            title: "Module 3: TLS Passthrough Instead Of Termination"
+            path: sections/section-040/module-03/course.md
+          - type: reading
+            title: "Module 3.1: What a proxy can see in a TLS stream"
+            path: sections/section-040/module-03/course-01-what-a-proxy-can-see.md
+          - type: reading
+            title: "Module 3.2: Configuring passthrough"
+            path: sections/section-040/module-03/course-02-configuring-passthrough.md
+          - type: reading
+            title: "Module 3.3: What passthrough costs"
+            path: sections/section-040/module-03/course-03-what-passthrough-costs.md
+          - type: playground
+            title: "Module 3 playground"
+            path: sections/section-040/module-03/playground
+          - type: lab
+            title: "Module 3 lab: Route An Encrypted Stream By SNI"
+            path: sections/section-040/module-03/labs/lab-01
+    capstone:
+      - type: lab
+        title: "Edge TLS Capstone"
+        path: sections/section-040/capstone/labs/lab-01
+  - id: section-050
+    title: Authorization At The Edge
+    curriculum_item: Configuring Authorization
+    description: >
+      Applying an AuthorizationPolicy to the ingress gateway, and
+      choosing correctly between the connection peer and the forwarded
+      client address.
+    readme: sections/section-050/README.md
+    modules:
+      - id: module-01
+        title: Authorize By Source IP At The Ingress Gateway
+        content:
+          - type: reading
+            title: "Module 1: Authorize By Source IP At The Ingress Gateway"
+            path: sections/section-050/module-01/course.md
+          - type: reading
+            title: "Module 1.1: Authorizing at the gateway, and the connection peer"
+            path: sections/section-050/module-01/course-01-authorizing-at-the-gateway.md
+          - type: reading
+            title: "Module 1.2: X-Forwarded-For and trusted proxies"
+            path: sections/section-050/module-01/course-02-trusting-x-forwarded-for.md
+          - type: reading
+            title: "Module 1.3: Verifying, and where address rules fit"
+            path: sections/section-050/module-01/course-03-verifying-and-design.md
+          - type: playground
+            title: "Module 1 playground"
+            path: sections/section-050/module-01/playground
+          - type: lab
+            title: "Module 1 lab: Block A Client Range At The Gateway"
+            path: sections/section-050/module-01/labs/lab-01
+    capstone:
+      - type: lab
+        title: "Edge Authorization Capstone"
+        path: sections/section-050/capstone/labs/lab-01
+  - id: section-060
+    title: Authorization In Ambient Mode
+    curriculum_item: Configuring Authorization
+    description: >
+      How the ztunnel/waypoint split decides which AuthorizationPolicy
+      fields are enforced, and which are accepted and silently ignored.
+    readme: sections/section-060/README.md
+    modules:
+      - id: module-01
+        title: Authorization In Ambient Mode, L4 And L7
+        content:
+          - type: reading
+            title: "Module 1: Authorization In Ambient Mode, L4 And L7"
+            path: sections/section-060/module-01/course.md
+          - type: reading
+            title: "Module 1.1: The ambient dataplane"
+            path: sections/section-060/module-01/course-01-the-ambient-dataplane.md
+          - type: reading
+            title: "Module 1.2: What ztunnel can enforce"
+            path: sections/section-060/module-01/course-02-what-ztunnel-can-enforce.md
+          - type: reading
+            title: "Module 1.3: Waypoints and L7 policy"
+            path: sections/section-060/module-01/course-03-waypoints-and-l7-policy.md
+          - type: reading
+            title: "Module 1.4: Tooling, and carrying sidecar knowledge across"
+            path: sections/section-060/module-01/course-04-tooling-and-carrying-across.md
+          - type: playground
+            title: "Module 1 playground"
+            path: sections/section-060/module-01/playground
+          - type: lab
+            title: "Module 1 lab: Enforce L4 And L7 Policy In Ambient Mode"
+            path: sections/section-060/module-01/labs/lab-01
+    capstone:
+      - type: lab
+        title: "Ambient Authorization Capstone"
+        path: sections/section-060/capstone/labs/lab-01

@@ -1,0 +1,10 @@
+# CAP015-060, part 3 of 4 — enrolment. Creating a waypoint and sending traffic
+# through it are separate steps; this is the second. The dataplane-mode label is
+# repeated because `kubectl apply` would otherwise drop it.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ambient-authz
+  labels:
+    istio.io/dataplane-mode: ambient
+    istio.io/use-waypoint: waypoint

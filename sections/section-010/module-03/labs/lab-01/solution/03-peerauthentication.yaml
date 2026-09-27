@@ -1,0 +1,11 @@
+# Reference end state for LAB015-010-03, part 3 of 3.
+# Namespace scope: the target namespace, no selector. Applied last, after the
+# remaining plaintext caller is inside the mesh.
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: migrate-demo
+spec:
+  mtls:
+    mode: STRICT

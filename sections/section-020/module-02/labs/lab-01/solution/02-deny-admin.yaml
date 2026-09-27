@@ -1,0 +1,17 @@
+# Reference end state for LAB015-020-02, part 2 of 3.
+# The backstop. `/admin*` is a prefix match — `/admin` alone would leave
+# `/admin/users` reachable. No `from` block, so it matches every caller.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: deny-admin
+  namespace: deny-demo
+spec:
+  selector:
+    matchLabels:
+      app: notification-service
+  action: DENY
+  rules:
+    - to:
+        - operation:
+            paths: ["/admin*"]

@@ -1,0 +1,24 @@
+# CAP015-050, part 2 of 2 — "deny /admin* unless the client is in the office
+# range", as one rule.
+#
+# Read it starting with the action: DENY requests whose client is NOT in
+# 203.0.113.0/24 AND whose path is /admin*. The `to` block is what confines the
+# restriction to that subtree — without it this denies the whole internet.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: gateway-admin-office-only
+  namespace: istio-system
+spec:
+  selector:
+    matchLabels:
+      istio: ingressgateway
+  action: DENY
+  rules:
+    - from:
+        - source:
+            notRemoteIpBlocks:
+              - 203.0.113.0/24
+      to:
+        - operation:
+            paths: ["/admin*"]

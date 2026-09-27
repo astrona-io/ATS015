@@ -1,0 +1,19 @@
+# CAP015-050, part 1 of 2 — the global block-list.
+# DENY, because a block-list subtracts; an unqualified ALLOW would close every
+# hostname this shared gateway serves. remoteIpBlocks reads the forwarded client
+# address, which is only trustworthy because numTrustedProxies pins the hop.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: gateway-block-list
+  namespace: istio-system
+spec:
+  selector:
+    matchLabels:
+      istio: ingressgateway
+  action: DENY
+  rules:
+    - from:
+        - source:
+            remoteIpBlocks:
+              - 192.168.0.0/16

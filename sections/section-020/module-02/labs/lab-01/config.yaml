@@ -1,0 +1,53 @@
+# Close A Path With DENY (LAB015-020-02)
+# Astrona hands-on lab. Schema: internal/config.LabConfig.
+# kind runtime (default): a single-node cluster with Istio 1.30.5.
+
+metadata:
+  name: "ats-015-lab-020-02"
+  docs:
+    prerequisites: "docs/prerequisites.md"
+    examQuestion: "docs/exam-question.md"
+    caseStudy: "docs/case-study.md"
+    guide: "docs/step-by-step-guide.md"
+
+bootstrap:
+  init:
+    - name: "setup"
+      description: "Installs Istio (demo profile) and the starting workloads. Creates nothing the task asks for."
+      type: "file"
+      source: "bootstrap/setup.sh"
+  manifests:
+    - name: "lab-start"
+      description: "Starting workloads: namespace, service accounts, Deployments, Services and a client pod."
+      type: "file"
+      source: "manifests/lab-start.yaml"
+    - name: "peerauth"
+      description: "STRICT mTLS for the namespace — a precondition, so workload identities are verifiable."
+      type: "file"
+      source: "manifests/peerauth.yaml"
+
+testing:
+  manifests:
+    - name: "solution"
+      description: "Reference end state applied by `astrona test` in CI."
+      type: "folder"
+      source: "solution"
+
+validation:
+  checks:
+    - name: "an AuthorizationPolicy exists in deny-demo"
+      type: "resourceExists"
+      resource: "authorizationpolicy -n deny-demo"
+  script:
+    name: "verify-behaviour"
+    description: "Sends real traffic and asserts the outcomes the task specifies."
+    type: "file"
+    source: "validate.sh"
+
+teardown:
+  init:
+    - name: "dump-logs"
+      description: "Best-effort state capture before teardown."
+      type: "file"
+      source: "teardown/dump-logs.sh"
+  keepCluster: false

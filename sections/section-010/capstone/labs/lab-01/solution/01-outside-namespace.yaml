@@ -1,0 +1,7 @@
+# CAP015-010, part 1 of 4 — the unmeshed namespace opts in to injection.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: outside
+  labels:
+    istio-injection: enabled

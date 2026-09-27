@@ -1,0 +1,16 @@
+# CAP015-060, part 2 of 4 — the waypoint. This is what
+# `istioctl waypoint apply -n ambient-authz` generates; applying it directly
+# keeps CI deterministic.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: waypoint
+  namespace: ambient-authz
+  labels:
+    istio.io/waypoint-for: service
+spec:
+  gatewayClassName: istio-waypoint
+  listeners:
+    - name: mesh
+      port: 15008
+      protocol: HBONE

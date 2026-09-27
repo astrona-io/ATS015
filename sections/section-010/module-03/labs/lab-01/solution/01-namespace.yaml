@@ -1,0 +1,9 @@
+# Reference end state for LAB015-010-03, part 1 of 3.
+# The `outside` namespace opts in to sidecar injection. On its own this changes
+# nothing about pods already running — see 02-outside-client.yaml.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: outside
+  labels:
+    istio-injection: enabled

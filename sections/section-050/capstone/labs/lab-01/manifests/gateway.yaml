@@ -1,0 +1,32 @@
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: booking-gateway
+  namespace: gwauthz-demo
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - booking.ica.local
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: booking
+  namespace: gwauthz-demo
+spec:
+  hosts:
+    - booking.ica.local
+  gateways:
+    - booking-gateway
+  http:
+    - route:
+        - destination:
+            host: booking-service
+            port:
+              number: 80

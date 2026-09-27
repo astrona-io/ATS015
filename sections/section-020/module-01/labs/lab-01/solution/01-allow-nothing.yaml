@@ -1,0 +1,7 @@
+# An ALLOW policy with no rules allows nothing: this is the deny-by-default base.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-nothing
+  namespace: authz-demo
+spec: {}

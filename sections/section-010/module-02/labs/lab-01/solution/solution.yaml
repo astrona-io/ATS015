@@ -1,0 +1,34 @@
+# Reference end state for LAB015-010-02 — three scopes, narrowest wins.
+#
+# Mesh-wide: the root namespace, no selector.
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: istio-system
+spec:
+  mtls:
+    mode: STRICT
+---
+# Namespace-wide: the target namespace, no selector. Overrides the mesh policy here.
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: mtls-demo
+spec:
+  mtls:
+    mode: PERMISSIVE
+---
+# Workload: the target namespace plus a selector. Narrower still, so it wins.
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: notification-strict
+  namespace: mtls-demo
+spec:
+  selector:
+    matchLabels:
+      app: notification-service
+  mtls:
+    mode: STRICT

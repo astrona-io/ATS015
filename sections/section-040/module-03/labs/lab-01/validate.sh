@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# Grading for LAB015-040-03 — SNI passthrough at the ingress gateway.
+set -uo pipefail
+
+FAIL=0
+PF_PIDS=()
+say() { printf '%s\n' "$*"; }
+cleanup() { for p in "${PF_PIDS[@]:-}"; do kill "$p" >/dev/null 2>&1 || true; done; }
+trap cleanup EXIT
+
+say "--- check 1: the Gateway listener is PASSTHROUGH on a TLS port ---"
+G=$(kubectl -n passthrough-demo get gateway passthrough-gateway -o yaml 2>/dev/null)
+if [ -z "$G" ]; then
+  say "FAIL: no Gateway named passthrough-gateway in passthrough-demo."; FAIL=1
+else
+  printf '%s' "$G" | grep -q 'PASSTHROUGH' \
+    && say "OK: mode PASSTHROUGH is set." \
+    || { say "FAIL: the Gateway does not use mode: PASSTHROUGH."; FAIL=1; }
+  printf '%s' "$G" | grep -qE 'protocol: *TLS' \
+    && say "OK: protocol TLS is set." \
+    || { say "FAIL: the listener's protocol is not TLS. HTTPS would mean terminate-and-parse."; FAIL=1; }
+  if printf '%s' "$G" | grep -q 'credentialName'; then
+    say "FAIL: the Gateway names a credential. A passthrough listener presents nothing."
+    FAIL=1
+  fi
+fi
+
+say "--- check 2: the VirtualService routes on sniHosts, not on HTTP ---"
+V=$(kubectl -n passthrough-demo get virtualservice passthrough -o yaml 2>/dev/null)
+if [ -z "$V" ]; then
+  say "FAIL: no VirtualService named passthrough in passthrough-demo."; FAIL=1
+else
+  printf '%s' "$V" | grep -q 'sniHosts' \
+    && say "OK: a tls route matches on sniHosts." \
+    || { say "FAIL: no sniHosts match. An http block cannot match an encrypted stream."; FAIL=1; }
+fi
+
+kubectl -n istio-system port-forward svc/istio-ingressgateway 18443:443 >/dev/null 2>&1 &
+PF_PIDS+=($!)
+sleep 4
+
+say "--- check 3: the stream reaches the backend ---"
+CODE=$(curl -sk --resolve secure.ica.local:18443:127.0.0.1 --max-time 15 \
+  -o /dev/null -w '%{http_code}' https://secure.ica.local:18443/ 2>/dev/null)
+if [ "$CODE" = "200" ]; then
+  say "OK: https://secure.ica.local/ -> 200"
+else
+  say "FAIL: https://secure.ica.local/ -> '${CODE:-connection failed}', expected 200."
+  say "      A failed connection usually means an http block, or hosts/sniHosts disagreeing."
+  FAIL=1
+fi
+
+say "--- check 4: the certificate served belongs to the backend ---"
+SUBJ=$(curl -sk -v --resolve secure.ica.local:18443:127.0.0.1 --max-time 15 \
+  https://secure.ica.local:18443/ 2>&1 | grep -m1 'subject:')
+case "$SUBJ" in
+  *O=backend*) say "OK: served certificate is the backend's (${SUBJ#*subject: })." ;;
+  *) say "FAIL: served certificate subject was '${SUBJ:-none}', expected the backend's (O=backend)."
+     say "      Something terminated TLS at the gateway."
+     FAIL=1 ;;
+esac
+
+say "--- check 5: the gateway has no HTTP route for this host ---"
+if istioctl proxy-config routes deploy/istio-ingressgateway -n istio-system 2>/dev/null \
+   | grep -q 'secure.ica.local'; then
+  say "FAIL: the gateway has an HTTP route for secure.ica.local — this traffic is being terminated."
+  FAIL=1
+else
+  say "OK: no HTTP route for secure.ica.local, as expected in passthrough."
+fi
+
+if [ "$FAIL" -ne 0 ]; then say "RESULT: FAIL"; exit 1; fi
+say "RESULT: PASS"
+exit 0

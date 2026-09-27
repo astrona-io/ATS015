@@ -1,0 +1,50 @@
+# Reference end state for LAB015-040-01, part 2 of 2.
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: booking-gateway
+  namespace: tls-demo
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    # TLS listener. protocol HTTPS, and a port name starting `https`.
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      hosts:
+        - booking.ica.local
+      tls:
+        mode: SIMPLE
+        # A bare name, resolved in the gateway pod's namespace.
+        credentialName: booking-credential
+    # Plaintext listener that only redirects. No credential needed.
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - booking.ica.local
+      tls:
+        httpsRedirect: true
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: booking
+  namespace: tls-demo
+spec:
+  hosts:
+    - booking.ica.local
+  gateways:
+    - booking-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /book
+      route:
+        - destination:
+            host: booking-service
+            port:
+              number: 80

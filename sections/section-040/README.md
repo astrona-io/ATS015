@@ -1,0 +1,94 @@
+# Section 040: Securing Edge Traffic With TLS
+
+Inside the mesh, Istio issues both certificates and mutual TLS happens without being asked for. At the edge none of that holds: the caller is a browser or an external system, the certificate must be one that caller already trusts, and you supply it.
+
+Three modules, one per `Gateway` TLS mode. Module 1 is `SIMPLE` — ordinary server-side HTTPS, and the namespace rule that makes almost everyone's first attempt fail. Module 2 is `MUTUAL`, requiring a client certificate signed by a CA you nominate. Module 3 is `PASSTHROUGH`, where the gateway forwards an encrypted stream it cannot read and routes on SNI alone.
+
+**Curriculum item covered:** Securing Edge Traffic with TLS
+
+---
+
+## What You Will Master
+
+- `credentialName` naming a secret in the **gateway pod's** namespace, normally `istio-system`, not the application's.
+- The port block that a TLS listener depends on: `protocol: HTTPS` on `443` with a name beginning `https`.
+- `kubectl create secret tls` for `SIMPLE`, and why `MUTUAL` needs `create secret generic` with `tls.crt`, `tls.key` **and** `ca.crt`.
+- `tls.httpsRedirect` on a port-80 listener, and why the `tls` block belongs there at all.
+- What a client rejected during a TLS handshake observes, and why it is never an HTTP status.
+- That a misconfigured `MUTUAL` gateway fails open, so `requireClientCertificate` must be read from the proxy rather than inferred from a successful request.
+- `protocol: TLS` with `mode: PASSTHROUGH`, and routing with a `VirtualService` `tls` block matching `sniHosts`.
+- Everything passthrough gives up at the edge — path and header routing, rewrites, L7 telemetry, and every authorization rule that mentions methods, paths or hosts.
+- Proving which end terminated TLS by reading the certificate the handshake actually returned.
+
+---
+
+## The Learning Path
+
+### 1. Terminate TLS At The Ingress Gateway
+*   **Module Reader:** **[Module 1: Terminate TLS At The Ingress Gateway](./module-01/course.md)**
+    Deep-dive parts, in reading order:
+    1. [How a gateway gets its certificate](./module-01/course-01-how-a-gateway-gets-its-certificate.md)
+    2. [The TLS listener](./module-01/course-02-the-tls-listener.md)
+    3. [Verifying, redirecting and rotating](./module-01/course-03-verifying-redirecting-and-rotating.md)
+*   **Hands-on Playground:** `sections/section-040/module-01/playground` — namespace `tls-demo`, the `demo` profile's ingress gateway, `openssl` on the PATH, and no `Gateway`, `VirtualService` or secret.
+    ```bash
+    astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-040/module-01/playground
+    ```
+*   **Graded lab:** **[Serve HTTPS At The Ingress Gateway](./module-01/labs/lab-01/)** — read the
+    [exam question](./module-01/labs/lab-01/docs/exam-question.md), solve it, then
+    ```bash
+    astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-040/module-01/labs/lab-01
+    astrona submit -c .
+    ```
+
+### 2. Require Client Certificates At The Edge
+*   **Module Reader:** **[Module 2: Require Client Certificates At The Edge](./module-02/course.md)**
+    Deep-dive parts, in reading order:
+    1. [Building the PKI](./module-02/course-01-building-the-pki.md)
+    2. [The credential secret and the validation context](./module-02/course-02-secret-and-validation-context.md)
+    3. [Handshake failures, and what a certificate proves](./module-02/course-03-handshake-failures-and-identity.md)
+*   **Hands-on Playground:** `sections/section-040/module-02/playground` — namespace `mtlsedge-demo`. You build the CA, the server certificate and the client certificate yourself.
+    ```bash
+    astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-040/module-02/playground
+    ```
+*   **Graded lab:** **[Require Client Certificates At The Edge](./module-02/labs/lab-01/)** — read the
+    [exam question](./module-02/labs/lab-01/docs/exam-question.md), solve it, then
+    ```bash
+    astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-040/module-02/labs/lab-01
+    astrona submit -c .
+    ```
+
+### 3. TLS Passthrough Instead Of Termination
+*   **Module Reader:** **[Module 3: TLS Passthrough Instead Of Termination](./module-03/course.md)**
+    Deep-dive parts, in reading order:
+    1. [What a proxy can see in a TLS stream](./module-03/course-01-what-a-proxy-can-see.md)
+    2. [Configuring passthrough](./module-03/course-02-configuring-passthrough.md)
+    3. [What passthrough costs](./module-03/course-03-what-passthrough-costs.md)
+*   **Hands-on Playground:** `sections/section-040/module-03/playground` — namespace `passthrough-demo` with an nginx backend that generates its own certificate at startup and terminates TLS itself. No secret in `istio-system`, because this mode needs none.
+    ```bash
+    astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-040/module-03/playground
+    ```
+*   **Graded lab:** **[Route An Encrypted Stream By SNI](./module-03/labs/lab-01/)** — read the
+    [exam question](./module-03/labs/lab-01/docs/exam-question.md), solve it, then
+    ```bash
+    astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-040/module-03/labs/lab-01
+    astrona submit -c .
+    ```
+
+**No load balancer on `kind`.** In all three playgrounds the `istio-ingressgateway` Service stays at `EXTERNAL-IP: <pending>`; that is expected, not a fault. Reach the gateway with `kubectl -n istio-system port-forward svc/istio-ingressgateway 8443:443`.
+
+Each playground is ungraded: it spins up, prepares the environment, and waits. There is no task and no `astrona submit`. Tear one down with `astrona destroy <name>` when you are finished — the name is printed in each module's playground callout.
+
+---
+
+## Capstone
+
+**[Edge TLS Capstone](./capstone/labs/lab-01/)** — One gateway, two hostnames, two modes: terminate TLS for one and pass the other through untouched, with HTTP redirected.
+
+Work it after every module in this section, without looking at the
+walkthrough. It is graded the same way the module labs are.
+
+```bash
+astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-040/capstone/labs/lab-01
+astrona submit -c .
+```

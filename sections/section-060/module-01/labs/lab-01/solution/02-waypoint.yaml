@@ -1,0 +1,18 @@
+# Reference end state for LAB015-060-01, part 2 of 4.
+#
+# A waypoint IS a Gateway API Gateway. `istioctl waypoint apply -n ambient-authz`
+# generates this object plus its Deployment; applying it directly is equivalent
+# and is what makes CI deterministic.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: waypoint
+  namespace: ambient-authz
+  labels:
+    istio.io/waypoint-for: service
+spec:
+  gatewayClassName: istio-waypoint
+  listeners:
+    - name: mesh
+      port: 15008
+      protocol: HBONE

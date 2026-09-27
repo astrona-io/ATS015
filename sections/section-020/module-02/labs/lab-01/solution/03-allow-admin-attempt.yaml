@@ -1,0 +1,19 @@
+# Reference end state for LAB015-020-02, part 3 of 3.
+#
+# This ALLOW explicitly permits the path the DENY above blocks, and changes
+# nothing: DENY is evaluated first and ends the decision on a match, so this
+# policy is never read. It is here deliberately, as the proof.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-admin-attempt
+  namespace: deny-demo
+spec:
+  selector:
+    matchLabels:
+      app: notification-service
+  action: ALLOW
+  rules:
+    - to:
+        - operation:
+            paths: ["/admin*"]

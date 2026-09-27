@@ -1,0 +1,16 @@
+# CAP015-020, part 4 of 5 — the backstop. Evaluated before any ALLOW, and
+# terminal on a match. `/admin*` is a prefix: `/admin` alone leaves the subtree open.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: deny-admin
+  namespace: authz-demo
+spec:
+  selector:
+    matchLabels:
+      app: notification-service
+  action: DENY
+  rules:
+    - to:
+        - operation:
+            paths: ["/admin*"]

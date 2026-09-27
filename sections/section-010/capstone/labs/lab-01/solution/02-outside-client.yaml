@@ -1,0 +1,27 @@
+# CAP015-010, part 2 of 4 — re-applying with a changed pod template forces the
+# rollout that actually injects the sidecar. By hand this is
+# `kubectl -n outside rollout restart deployment outside-client`.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: outside-client
+  namespace: outside
+  labels:
+    app: outside-client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: outside-client
+  template:
+    metadata:
+      labels:
+        app: outside-client
+      annotations:
+        sidecar.istio.io/inject: "true"
+        ats015.astrona.io/migrated: "true"
+    spec:
+      containers:
+        - name: outside-client
+          image: curlimages/curl
+          command: ["sh", "-c", "while true; do sleep 30; done"]
