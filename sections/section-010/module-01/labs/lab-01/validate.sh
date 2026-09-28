@@ -8,6 +8,25 @@ FAIL=0
 
 say() { printf '%s\n' "$*"; }
 
+# Applying the end state and grading it in the same second is a race: pods that
+# are being replaced are still listed, and `kubectl exec deploy/x` will happily
+# pick the one on its way out - which in these labs is the pod without a sidecar,
+# so the call goes out as plaintext and comes back 000. Wait until every
+# workload outside the system namespaces is settled before reading behaviour.
+settle_dataplane() {
+  local i pending
+  for i in $(seq 1 60); do
+    pending=$(kubectl get pods -A \
+      --field-selector=status.phase!=Succeeded,status.phase!=Failed \
+      -o jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.metadata.deletionTimestamp}{" "}{range .status.containerStatuses[*]}{.ready}{","}{end}{"\n"}{end}' 2>/dev/null \
+      | grep -vE '^(kube-system|kube-public|kube-node-lease|local-path-storage|istio-system) ' \
+      | awk 'NF>2 || $0 ~ /false/' )
+    [ -z "$pending" ] && return 0
+    sleep 2
+  done
+}
+settle_dataplane
+
 say "--- check 1: namespace enforces STRICT mTLS ---"
 MODE=$(kubectl -n "$NS" get peerauthentication -o jsonpath='{.items[*].spec.mtls.mode}' 2>/dev/null)
 case "$MODE" in
