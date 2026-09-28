@@ -17,7 +17,7 @@ esac
 
 say "--- check 2: outside-client now runs with a sidecar ---"
 CONTAINERS=$(kubectl -n outside get pods -l app=outside-client \
-  -o jsonpath='{.items[*].spec.containers[*].name}' 2>/dev/null)
+  -o jsonpath='{.items[*].spec.initContainers[*].name} {.items[*].spec.containers[*].name}' 2>/dev/null)
 case "$CONTAINERS" in
   *istio-proxy*) say "OK: outside-client has an istio-proxy container." ;;
   *) say "FAIL: outside-client has no sidecar (containers: '${CONTAINERS:-none}')."

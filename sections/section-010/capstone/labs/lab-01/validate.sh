@@ -16,7 +16,7 @@ case "$MESH" in
 esac
 
 say "--- check 2: outside-client was migrated into the mesh ---"
-C=$(kubectl -n outside get pods -l app=outside-client -o jsonpath='{.items[*].spec.containers[*].name}' 2>/dev/null)
+C=$(kubectl -n outside get pods -l app=outside-client -o jsonpath='{.items[*].spec.initContainers[*].name} {.items[*].spec.containers[*].name}' 2>/dev/null)
 case "$C" in
   *istio-proxy*) say "OK: outside-client has a sidecar." ;;
   *) say "FAIL: outside-client has no sidecar (containers: '${C:-none}')."
