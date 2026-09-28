@@ -146,6 +146,15 @@ data:
         rewrite ^ /notify break;
         proxy_pass http://notification-service:80;
         proxy_http_version 1.1;
+        # The service this stands in for answers its own caller even when the
+        # call it makes downstream is refused, so a policy scoped to the
+        # downstream service does not turn into a failure here.
+        proxy_intercept_errors on;
+        error_page 400 401 403 404 429 500 502 503 504 = @downstream_failed;
+      }
+      location @downstream_failed {
+        default_type application/json;
+        return 200 '{"service":"booking-service","downstream":"unavailable"}';
       }
     }
 ---
