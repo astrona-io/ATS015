@@ -22,7 +22,7 @@ Because `booking-service` has no `/admin` handler, an `/admin` request that is
 *not* blocked returns `404` — which is how you tell "refused at the edge" from
 "reached the application".
 
-No `AuthorizationPolicy` exists.
+No [`AuthorizationPolicy`](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source) exists.
 
 > **`kind` has no load balancer.** Reach the gateway with
 > `kubectl -n istio-system port-forward svc/istio-ingressgateway 8080:80`.
@@ -72,3 +72,12 @@ astrona destroy ats-015-capstone-050
 
 Want it walked through? See the [step-by-step guide](./step-by-step-guide.md).
 Prefer hints over a full answer? See the [case study](./case-study.md).
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [AuthorizationPolicy API](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source) — `action`, `rules`, `from`, `to`, `when` and `targetRefs`
+- [AuthorizationPolicy actions](https://istio.io/latest/docs/reference/config/security/authorization-policy/#AuthorizationPolicy-Action) — how ALLOW, DENY and AUDIT combine and which wins

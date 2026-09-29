@@ -18,8 +18,10 @@ treats that as the client. Without it, everything below is forgeable.
 
 ## Step 2: The global block-list
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'YAML'
+cat > authorizationpolicy-gateway-block-list.yaml <<'YAML'
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
@@ -36,6 +38,7 @@ spec:
             remoteIpBlocks:
               - 192.168.0.0/16
 YAML
+kubectl apply -f authorizationpolicy-gateway-block-list.yaml
 ```
 
 `DENY`, because a block-list subtracts. An `ALLOW` with no narrowing would close
@@ -50,7 +53,7 @@ behind any proxy is the proxy.
 with an inverted source condition:
 
 ```sh
-kubectl apply -f - <<'YAML'
+cat > authorizationpolicy-gateway-admin-office-only.yaml <<'YAML'
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
@@ -70,6 +73,7 @@ spec:
         - operation:
             paths: ["/admin*"]
 YAML
+kubectl apply -f authorizationpolicy-gateway-admin-office-only.yaml
 ```
 
 Say it out loud, starting with the action: *DENY requests whose client is **not**
@@ -122,3 +126,12 @@ astrona submit -c .
   wrote `remoteIpBlocks` where `notRemoteIpBlocks` was needed.
 - **Nothing is blocked at all.** The policies are in the wrong namespace, or the
   selector does not match the gateway pod.
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [AuthorizationPolicy API](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source) — `action`, `rules`, `from`, `to`, `when` and `targetRefs`
+- [AuthorizationPolicy actions](https://istio.io/latest/docs/reference/config/security/authorization-policy/#AuthorizationPolicy-Action) — how ALLOW, DENY and AUDIT combine and which wins

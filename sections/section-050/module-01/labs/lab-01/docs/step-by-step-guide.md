@@ -38,8 +38,10 @@ attacker-controlled and the rule below would be decoration.
 
 ## Step 3: Write the policy
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'YAML'
+cat > authorizationpolicy-gateway-ip-deny.yaml <<'YAML'
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
@@ -56,6 +58,7 @@ spec:
             remoteIpBlocks:
               - 192.168.0.0/16
 YAML
+kubectl apply -f authorizationpolicy-gateway-ip-deny.yaml
 ```
 
 Three things worth naming:
@@ -110,3 +113,13 @@ astrona submit -c .
   gateway, or the CIDR is wider than intended.
 - **The allowed request is `403` and the denied one `200`.** The condition is
   inverted — check for a `not…` field.
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [AuthorizationPolicy API](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source) — `action`, `rules`, `from`, `to`, `when` and `targetRefs`
+- [AuthorizationPolicy actions](https://istio.io/latest/docs/reference/config/security/authorization-policy/#AuthorizationPolicy-Action) — how ALLOW, DENY and AUDIT combine and which wins
+- [istioctl proxy-config](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-secret) — reading a proxy's live configuration

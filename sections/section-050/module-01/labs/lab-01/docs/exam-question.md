@@ -22,7 +22,7 @@ The mesh is already installed with
 proxy hop is assumed in front of the gateway. That is a precondition: you write
 policy, not an install.
 
-No `AuthorizationPolicy` exists.
+No [`AuthorizationPolicy`](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source) exists.
 
 > **`kind` has no load balancer.** Reach the gateway with
 > `kubectl -n istio-system port-forward svc/istio-ingressgateway 8080:80`.
@@ -76,3 +76,13 @@ astrona destroy ats-015-lab-050-01
 
 Want it walked through? See the [step-by-step guide](./step-by-step-guide.md).
 Prefer hints over a full answer? See the [case study](./case-study.md).
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [AuthorizationPolicy API](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source) — `action`, `rules`, `from`, `to`, `when` and `targetRefs`
+- [AuthorizationPolicy actions](https://istio.io/latest/docs/reference/config/security/authorization-policy/#AuthorizationPolicy-Action) — how ALLOW, DENY and AUDIT combine and which wins
+- [istioctl proxy-config](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-secret) — reading a proxy's live configuration

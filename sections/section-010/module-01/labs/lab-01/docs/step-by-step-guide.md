@@ -51,8 +51,10 @@ An identity-based rule matches a value taken from the client certificate. With
 the namespace still `PERMISSIVE`, a plaintext caller presents no certificate, so
 the field is empty and the rule can never match. Turn on `STRICT` first:
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'YAML'
+cat > peerauthentication-default.yaml <<'YAML'
 apiVersion: security.istio.io/v1
 kind: PeerAuthentication
 metadata:
@@ -62,12 +64,13 @@ spec:
   mtls:
     mode: STRICT
 YAML
+kubectl apply -f peerauthentication-default.yaml
 ```
 
 ## Step 4: Authorize on that identity
 
 ```sh
-kubectl apply -f - <<'YAML'
+cat > authorizationpolicy-notification-by-identity.yaml <<'YAML'
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
@@ -84,6 +87,7 @@ spec:
             principals:
               - cluster.local/ns/identity-demo/sa/booking-sa
 YAML
+kubectl apply -f authorizationpolicy-notification-by-identity.yaml
 ```
 
 This is an `ALLOW` policy selecting `notification-service`, so it creates
@@ -121,4 +125,18 @@ astrona submit -c .
   compiled. Check the label with
   `kubectl -n identity-demo get pods --show-labels`.
 - **Both callers get `000`.** That is a transport rejection, not authorization —
-  something is wrong with the `PeerAuthentication`, not the policy.
+  something is wrong with the [`PeerAuthentication`](https://istio.io/latest/docs/reference/config/security/peer_authentication/), not the policy.
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [PeerAuthentication API](https://istio.io/latest/docs/reference/config/security/peer_authentication/) — `mtls.mode` and the scoping rules
+- [AuthorizationPolicy API](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source) — `action`, `rules`, `from`, `to`, `when` and `targetRefs`
+- [Mutual TLS modes](https://istio.io/latest/docs/concepts/security/#mutual-tls-authentication) — what each mode accepts and rejects
+- [Istio security concepts](https://istio.io/latest/docs/concepts/security/) — the SPIFFE identity format and where it comes from
+- [AuthorizationPolicy actions](https://istio.io/latest/docs/reference/config/security/authorization-policy/#AuthorizationPolicy-Action) — how ALLOW, DENY and AUDIT combine and which wins
+- [istioctl proxy-config secret](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-secret) — reading the certificates a workload actually holds
+- [istioctl proxy-config](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-secret) — reading a proxy's live configuration

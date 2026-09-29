@@ -17,7 +17,7 @@ under **`STRICT`** mutual TLS, and running `booking-service-v1`,
 an `/admin` request that is *not* blocked returns `404` from the application —
 which is how you tell "refused by the mesh" from "reached the app".
 
-No `AuthorizationPolicy` exists.
+No [`AuthorizationPolicy`](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source) exists.
 
 ## Task
 
@@ -65,3 +65,13 @@ astrona destroy ats-015-lab-020-02
 
 Want it walked through? See the [step-by-step guide](./step-by-step-guide.md).
 Prefer hints over a full answer? See the [case study](./case-study.md).
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [AuthorizationPolicy API](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source) — `action`, `rules`, `from`, `to`, `when` and `targetRefs`
+- [Mutual TLS modes](https://istio.io/latest/docs/concepts/security/#mutual-tls-authentication) — what each mode accepts and rejects
+- [AuthorizationPolicy actions](https://istio.io/latest/docs/reference/config/security/authorization-policy/#AuthorizationPolicy-Action) — how ALLOW, DENY and AUDIT combine and which wins

@@ -18,7 +18,7 @@ already under **`STRICT`** mutual TLS, and running:
 | `notification-service-v1` | `default` | `POST /notify` on port 8084 |
 | `tester` | `default` | a `curl` pod |
 
-No `AuthorizationPolicy` exists, so every call currently succeeds.
+No [`AuthorizationPolicy`](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source) exists, so every call currently succeeds.
 
 ## Task
 
@@ -44,7 +44,7 @@ The observable result:
 ## Constraints
 
 - Do not modify `config.yaml` or anything under `docs/`, `manifests/` or `solution/`.
-- Do not change or remove the `PeerAuthentication` — identity-based rules depend
+- Do not change or remove the [`PeerAuthentication`](https://istio.io/latest/docs/reference/config/security/peer_authentication/) — identity-based rules depend
   on it.
 - Rule 3 must match on the caller's identity, not on its namespace.
 
@@ -66,3 +66,15 @@ astrona destroy ats-015-lab-020-01
 
 Want it walked through? See the [step-by-step guide](./step-by-step-guide.md).
 Prefer hints over a full answer? See the [case study](./case-study.md).
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [PeerAuthentication API](https://istio.io/latest/docs/reference/config/security/peer_authentication/) — `mtls.mode` and the scoping rules
+- [AuthorizationPolicy API](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source) — `action`, `rules`, `from`, `to`, `when` and `targetRefs`
+- [Mutual TLS modes](https://istio.io/latest/docs/concepts/security/#mutual-tls-authentication) — what each mode accepts and rejects
+- [Istio security concepts](https://istio.io/latest/docs/concepts/security/) — the SPIFFE identity format and where it comes from
+- [AuthorizationPolicy actions](https://istio.io/latest/docs/reference/config/security/authorization-policy/#AuthorizationPolicy-Action) — how ALLOW, DENY and AUDIT combine and which wins

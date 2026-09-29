@@ -18,7 +18,7 @@ injected, already under **`STRICT`** mutual TLS, and running:
 | `notification-service-v1` | `default` | `POST /notify`, and **no `/admin` handler** |
 | `tester` | `default` | a `curl` pod |
 
-No `AuthorizationPolicy` exists. Because `notification-service` has no `/admin`
+No [`AuthorizationPolicy`](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source) exists. Because `notification-service` has no `/admin`
 handler, an `/admin` request that is *not* blocked returns `404` — which is how
 you tell "the mesh refused it" from "it reached the application".
 
@@ -51,7 +51,7 @@ The observable result:
 
 - Do not modify `config.yaml` or anything under `docs/`, `manifests/` or `solution/`.
 - Do not delete the permissive `/admin` policy to make the test pass.
-- Do not change or remove the `PeerAuthentication`.
+- Do not change or remove the [`PeerAuthentication`](https://istio.io/latest/docs/reference/config/security/peer_authentication/).
 
 ## How you will be graded
 
@@ -69,3 +69,15 @@ astrona destroy ats-015-capstone-020
 
 Want it walked through? See the [step-by-step guide](./step-by-step-guide.md).
 Prefer hints over a full answer? See the [case study](./case-study.md).
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [PeerAuthentication API](https://istio.io/latest/docs/reference/config/security/peer_authentication/) — `mtls.mode` and the scoping rules
+- [AuthorizationPolicy API](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source) — `action`, `rules`, `from`, `to`, `when` and `targetRefs`
+- [Mutual TLS modes](https://istio.io/latest/docs/concepts/security/#mutual-tls-authentication) — what each mode accepts and rejects
+- [Istio security concepts](https://istio.io/latest/docs/concepts/security/) — the SPIFFE identity format and where it comes from
+- [AuthorizationPolicy actions](https://istio.io/latest/docs/reference/config/security/authorization-policy/#AuthorizationPolicy-Action) — how ALLOW, DENY and AUDIT combine and which wins

@@ -15,8 +15,10 @@ gateway to present.
 
 ## Step 2: One gateway, three listeners
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'YAML'
+cat > gateway-edge-gateway.yaml <<'YAML'
 apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata:
@@ -52,6 +54,7 @@ spec:
       tls:
         httpsRedirect: true
 YAML
+kubectl apply -f gateway-edge-gateway.yaml
 ```
 
 Two listeners on the same port, distinguished by `hosts` — and the gateway picks
@@ -65,7 +68,7 @@ TLS` means "a TLS stream", with no claim about what is inside.
 ## Step 3: Two routing sections
 
 ```sh
-kubectl apply -f - <<'YAML'
+cat > booking-manifests.yaml <<'YAML'
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -107,6 +110,7 @@ spec:
             port:
               number: 8443
 YAML
+kubectl apply -f booking-manifests.yaml
 ```
 
 The terminated host uses an `http` block, because the gateway can see a method
@@ -156,3 +160,11 @@ astrona submit -c .
   `VirtualService`, or `protocol: HTTPS` on its listener.
 - **`booking.ica.local` gets `404`.** TLS is fine; its `VirtualService` is not
   routing.
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [istioctl proxy-config secret](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-secret) — reading the certificates a workload actually holds

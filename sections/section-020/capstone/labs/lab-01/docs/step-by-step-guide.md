@@ -4,8 +4,10 @@
 
 ## Step 1: Close the namespace
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'YAML'
+cat > authorizationpolicy-allow-nothing.yaml <<'YAML'
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
@@ -13,6 +15,7 @@ metadata:
   namespace: authz-demo
 spec: {}
 YAML
+kubectl apply -f authorizationpolicy-allow-nothing.yaml
 ```
 
 No `action` means `ALLOW`; no `selector` means every workload in the namespace;
@@ -25,7 +28,7 @@ closed instead of open.
 ## Step 2: Reopen the booking call
 
 ```sh
-kubectl apply -f - <<'YAML'
+cat > authorizationpolicy-booking-allow.yaml <<'YAML'
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
@@ -45,6 +48,7 @@ spec:
             methods: ["POST"]
             paths: ["/book"]
 YAML
+kubectl apply -f authorizationpolicy-booking-allow.yaml
 ```
 
 Method and path in the same rule as the caller — all present parts must match.
@@ -52,7 +56,7 @@ Method and path in the same rule as the caller — all present parts must match.
 ## Step 3: Reopen the notification call, by identity
 
 ```sh
-kubectl apply -f - <<'YAML'
+cat > authorizationpolicy-notification-allow.yaml <<'YAML'
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
@@ -73,6 +77,7 @@ spec:
             methods: ["POST"]
             paths: ["/notify"]
 YAML
+kubectl apply -f authorizationpolicy-notification-allow.yaml
 ```
 
 `namespaces` would not work here — `tester` is in `authz-demo` too.
@@ -80,7 +85,7 @@ YAML
 ## Step 4: The backstop, and the proof
 
 ```sh
-kubectl apply -f - <<'YAML'
+cat > deny-admin-manifests.yaml <<'YAML'
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
@@ -111,6 +116,7 @@ spec:
         - operation:
             paths: ["/admin*"]
 YAML
+kubectl apply -f deny-admin-manifests.yaml
 ```
 
 The second object is your colleague's careless future rule, written today. For
@@ -154,3 +160,15 @@ astrona submit -c .
   application. The `DENY` is missing or its selector matches no pod.
 - **`/admin/users` returns `404` while `/admin` is `403`.** The path has no `*`.
 - **`booking-service` is refused on `/notify`.** The principal string is wrong.
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [PeerAuthentication API](https://istio.io/latest/docs/reference/config/security/peer_authentication/) — `mtls.mode` and the scoping rules
+- [AuthorizationPolicy API](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source) — `action`, `rules`, `from`, `to`, `when` and `targetRefs`
+- [Mutual TLS modes](https://istio.io/latest/docs/concepts/security/#mutual-tls-authentication) — what each mode accepts and rejects
+- [Istio security concepts](https://istio.io/latest/docs/concepts/security/) — the SPIFFE identity format and where it comes from
+- [AuthorizationPolicy actions](https://istio.io/latest/docs/reference/config/security/authorization-policy/#AuthorizationPolicy-Action) — how ALLOW, DENY and AUDIT combine and which wins

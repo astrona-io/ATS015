@@ -13,8 +13,8 @@ A `kind` cluster with Istio 1.30.5 (`demo` profile). Namespace
 `jwtclaims-demo` is injected and running `booking-service-v1`,
 `notification-service-v1` and a `tester` client pod.
 
-**Nothing is configured** — no `RequestAuthentication`, no
-`AuthorizationPolicy`. Unlike the module lab, token validation is part of the
+**Nothing is configured** — no [`RequestAuthentication`](https://istio.io/latest/docs/reference/config/security/request_authentication/), no
+[`AuthorizationPolicy`](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source). Unlike the module lab, token validation is part of the
 task here.
 
 `notification-service` serves `POST /notify` and has **no `/admin`
@@ -73,3 +73,15 @@ astrona destroy ats-015-capstone-030
 
 Want it walked through? See the [step-by-step guide](./step-by-step-guide.md).
 Prefer hints over a full answer? See the [case study](./case-study.md).
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [AuthorizationPolicy API](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source) — `action`, `rules`, `from`, `to`, `when` and `targetRefs`
+- [RequestAuthentication API](https://istio.io/latest/docs/reference/config/security/request_authentication/) — JWT issuers, JWKS and what it does not do
+- [Authorization with JWT](https://istio.io/latest/docs/tasks/security/authentication/jwt-route/) — validating tokens and authorizing on their claims
+- [AuthorizationPolicy actions](https://istio.io/latest/docs/reference/config/security/authorization-policy/#AuthorizationPolicy-Action) — how ALLOW, DENY and AUDIT combine and which wins
+- [istioctl proxy-config](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-secret) — reading a proxy's live configuration

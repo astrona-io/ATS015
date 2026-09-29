@@ -46,8 +46,10 @@ error, and the result is a gateway that verifies nobody.
 
 ## Step 3: Turn on MUTUAL
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'YAML'
+cat > booking-gateway-manifests.yaml <<'YAML'
 apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata:
@@ -87,6 +89,7 @@ spec:
             port:
               number: 80
 YAML
+kubectl apply -f booking-gateway-manifests.yaml
 ```
 
 ## Step 4: Confirm verification is armed
@@ -146,3 +149,12 @@ astrona submit -c .
   the secret is in the wrong namespace.
 - **The certificate call gets `404`.** TLS and verification are both fine; the
   `VirtualService` is not routing.
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [istioctl proxy-config secret](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-secret) — reading the certificates a workload actually holds
+- [istioctl proxy-config](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-secret) — reading a proxy's live configuration

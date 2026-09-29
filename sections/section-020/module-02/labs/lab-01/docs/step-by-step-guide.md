@@ -4,8 +4,10 @@
 
 ## Step 1: The ALLOW baseline
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'YAML'
+cat > authorizationpolicy-allow-notify.yaml <<'YAML'
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
@@ -25,6 +27,7 @@ spec:
             methods: ["POST"]
             paths: ["/notify"]
 YAML
+kubectl apply -f authorizationpolicy-allow-notify.yaml
 
 kubectl -n deny-demo exec deploy/tester -- sh -c \
   'curl -s -o /dev/null -w "POST /notify: %{http_code}\n" -X POST http://notification-service/notify;
@@ -44,7 +47,7 @@ different reason.
 ## Step 2: The DENY
 
 ```sh
-kubectl apply -f - <<'YAML'
+cat > authorizationpolicy-deny-admin.yaml <<'YAML'
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
@@ -60,6 +63,7 @@ spec:
         - operation:
             paths: ["/admin*"]
 YAML
+kubectl apply -f authorizationpolicy-deny-admin.yaml
 ```
 
 The `*` matters. `paths: ["/admin"]` matches that exact path and leaves
@@ -72,7 +76,7 @@ is sweeping rather than generous, which is what you want here.
 ## Step 3: The conflicting ALLOW
 
 ```sh
-kubectl apply -f - <<'YAML'
+cat > authorizationpolicy-allow-admin-attempt.yaml <<'YAML'
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
@@ -88,6 +92,7 @@ spec:
         - operation:
             paths: ["/admin*"]
 YAML
+kubectl apply -f authorizationpolicy-allow-admin-attempt.yaml
 ```
 
 ## Step 4: Watch it change nothing
@@ -132,3 +137,13 @@ astrona submit -c .
 - **`/admin` is `403` but `/admin/users` is `404`.** The path has no `*`.
 - **`/notify` is `403`.** The `DENY` is too wide — check that its path rule is
   not something like `notPaths: ["/notify"]`.
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [AuthorizationPolicy API](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source) — `action`, `rules`, `from`, `to`, `when` and `targetRefs`
+- [Mutual TLS modes](https://istio.io/latest/docs/concepts/security/#mutual-tls-authentication) — what each mode accepts and rejects
+- [AuthorizationPolicy actions](https://istio.io/latest/docs/reference/config/security/authorization-policy/#AuthorizationPolicy-Action) — how ALLOW, DENY and AUDIT combine and which wins

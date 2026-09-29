@@ -16,7 +16,7 @@ A `kind` cluster with Istio (`demo` profile) and two namespaces:
 - **`outside`** — **not** injected. One `outside-client` pod with `curl` and no
   sidecar, so everything it sends is plaintext.
 
-No `PeerAuthentication` exists anywhere, so the mesh default (`PERMISSIVE`)
+No [`PeerAuthentication`](https://istio.io/latest/docs/reference/config/security/peer_authentication/) exists anywhere, so the mesh default (`PERMISSIVE`)
 applies and both callers currently succeed.
 
 ## Task
@@ -43,7 +43,7 @@ must still return `200`.
 - Do not modify `config.yaml` or anything under `docs/`, `manifests/` or `solution/`.
 - Do not add a sidecar to `outside-client`, and do not delete it — it is the only
   plaintext caller and grading needs it.
-- Use `PeerAuthentication` only. No `AuthorizationPolicy`, no `DestinationRule`.
+- Use `PeerAuthentication` only. No [`AuthorizationPolicy`](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source), no `DestinationRule`.
 
 ## How you will be graded
 
@@ -64,3 +64,14 @@ astrona destroy ats-015-lab-010-02
 
 Want it walked through? See the [step-by-step guide](./step-by-step-guide.md).
 Prefer hints over a full answer? See the [case study](./case-study.md).
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [PeerAuthentication API](https://istio.io/latest/docs/reference/config/security/peer_authentication/) — `mtls.mode` and the scoping rules
+- [AuthorizationPolicy API](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source) — `action`, `rules`, `from`, `to`, `when` and `targetRefs`
+- [Mutual TLS modes](https://istio.io/latest/docs/concepts/security/#mutual-tls-authentication) — what each mode accepts and rejects
+- [istioctl proxy-config](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-secret) — reading a proxy's live configuration

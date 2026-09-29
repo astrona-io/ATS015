@@ -21,8 +21,10 @@ claims can.
 
 ## Step 2: Validation
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'YAML'
+cat > requestauthentication-jwt-issuer.yaml <<'YAML'
 apiVersion: security.istio.io/v1
 kind: RequestAuthentication
 metadata:
@@ -36,6 +38,7 @@ spec:
     - issuer: "testing@secure.istio.io"
       jwksUri: "https://raw.githubusercontent.com/istio/istio/release-1.30/security/tools/jwt/samples/jwks.json"
 YAML
+kubectl apply -f requestauthentication-jwt-issuer.yaml
 
 kubectl -n jwtclaims-demo exec deploy/tester -- \
   curl -s -o /dev/null -w 'no token: %{http_code}\n' -X POST http://notification-service/notify
@@ -46,7 +49,7 @@ no token: 200
 ```
 
 Validation is on, and the service is no better protected — a caller who wants in
-simply omits the header. That is `RequestAuthentication` working as designed:
+simply omits the header. That is [`RequestAuthentication`](https://istio.io/latest/docs/reference/config/security/request_authentication/) working as designed:
 it validates a token *if one is present*.
 
 ## Step 3: Require a token, and split by claim
@@ -54,7 +57,7 @@ it validates a token *if one is present*.
 One policy, one rule per role:
 
 ```sh
-kubectl apply -f - <<'YAML'
+cat > authorizationpolicy-notification-access.yaml <<'YAML'
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
@@ -86,6 +89,7 @@ spec:
         - key: request.auth.claims[groups]
           values: ["group1"]
 YAML
+kubectl apply -f authorizationpolicy-notification-access.yaml
 ```
 
 Both rules carry `requestPrincipals: ["*"]`. Without it, the second rule could be
@@ -135,3 +139,15 @@ astrona submit -c .
 - **The groups token is refused on `/admin`.** The claim name is wrong. Check
   what the proxy compiled:
   `istioctl proxy-config listener deploy/notification-service-v1 -n jwtclaims-demo -o json | grep -i 'request.auth.claims' -A3`.
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [AuthorizationPolicy API](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source) — `action`, `rules`, `from`, `to`, `when` and `targetRefs`
+- [RequestAuthentication API](https://istio.io/latest/docs/reference/config/security/request_authentication/) — JWT issuers, JWKS and what it does not do
+- [Authorization with JWT](https://istio.io/latest/docs/tasks/security/authentication/jwt-route/) — validating tokens and authorizing on their claims
+- [AuthorizationPolicy actions](https://istio.io/latest/docs/reference/config/security/authorization-policy/#AuthorizationPolicy-Action) — how ALLOW, DENY and AUDIT combine and which wins
+- [istioctl proxy-config](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-secret) — reading a proxy's live configuration

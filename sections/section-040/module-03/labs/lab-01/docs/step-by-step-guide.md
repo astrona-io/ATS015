@@ -24,8 +24,10 @@ later, nothing in between re-created it.
 
 ## Step 2: A listener that does not decrypt
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'YAML'
+cat > gateway-passthrough-gateway.yaml <<'YAML'
 apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata:
@@ -44,6 +46,7 @@ spec:
       tls:
         mode: PASSTHROUGH
 YAML
+kubectl apply -f gateway-passthrough-gateway.yaml
 ```
 
 Three differences from a terminating listener, and each is a consequence:
@@ -54,7 +57,7 @@ there is nothing for the gateway to present.
 ## Step 3: Route on SNI
 
 ```sh
-kubectl apply -f - <<'YAML'
+cat > virtualservice-passthrough.yaml <<'YAML'
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -76,6 +79,7 @@ spec:
             port:
               number: 8443
 YAML
+kubectl apply -f virtualservice-passthrough.yaml
 ```
 
 A `tls` block, not an `http` block. An `http` match needs a method, a path or a
@@ -135,3 +139,13 @@ astrona submit -c .
   check for `protocol: HTTPS` or a stray `credentialName`.
 - **It only fails without `--resolve`.** That is the test, not the config: with
   no SNI the routing rule has no input at all.
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [istioctl proxy-config secret](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-secret) — reading the certificates a workload actually holds
+- [istioctl analyze](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-analyze) — the cross-object checks and their IST codes
+- [istioctl proxy-config](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-secret) — reading a proxy's live configuration

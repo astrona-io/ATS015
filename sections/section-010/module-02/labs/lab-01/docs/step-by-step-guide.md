@@ -22,8 +22,10 @@ No policy, and a plaintext caller succeeding. That is `PERMISSIVE` by default.
 
 Mesh scope means the **root namespace** (`istio-system`) and **no selector**:
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'YAML'
+cat > peerauthentication-default.yaml <<'YAML'
 apiVersion: security.istio.io/v1
 kind: PeerAuthentication
 metadata:
@@ -33,6 +35,7 @@ spec:
   mtls:
     mode: STRICT
 YAML
+kubectl apply -f peerauthentication-default.yaml
 ```
 
 Check it took effect before moving on — `outside-client` should now be refused
@@ -43,7 +46,7 @@ by both services.
 Namespace scope means the target namespace and **no selector**:
 
 ```sh
-kubectl apply -f - <<'YAML'
+cat > peerauthentication-default.yaml <<'YAML'
 apiVersion: security.istio.io/v1
 kind: PeerAuthentication
 metadata:
@@ -53,6 +56,7 @@ spec:
   mtls:
     mode: PERMISSIVE
 YAML
+kubectl apply -f peerauthentication-default.yaml
 ```
 
 The mesh policy is untouched and still says `STRICT`. It simply no longer decides
@@ -63,7 +67,7 @@ anything in `mtls-demo`, because narrowest wins.
 Workload scope means the target namespace **plus a selector**:
 
 ```sh
-kubectl apply -f - <<'YAML'
+cat > peerauthentication-notification-strict.yaml <<'YAML'
 apiVersion: security.istio.io/v1
 kind: PeerAuthentication
 metadata:
@@ -76,6 +80,7 @@ spec:
   mtls:
     mode: STRICT
 YAML
+kubectl apply -f peerauthentication-notification-strict.yaml
 ```
 
 ## Step 4: Prove all three
@@ -120,3 +125,14 @@ astrona submit -c .
   exception is missing, or it was created in the wrong namespace.
 - **Nothing changed at all.** The mesh-wide policy probably went into `mtls-demo`
   instead of `istio-system`, where it is just another namespace policy.
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [PeerAuthentication API](https://istio.io/latest/docs/reference/config/security/peer_authentication/) — `mtls.mode` and the scoping rules
+- [AuthorizationPolicy API](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source) — `action`, `rules`, `from`, `to`, `when` and `targetRefs`
+- [Mutual TLS modes](https://istio.io/latest/docs/concepts/security/#mutual-tls-authentication) — what each mode accepts and rejects
+- [istioctl proxy-config](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-secret) — reading a proxy's live configuration

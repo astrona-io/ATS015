@@ -26,8 +26,10 @@ depends on.
 
 Identity is available on the HBONE connection, so ztunnel can enforce this alone:
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'YAML'
+cat > authorizationpolicy-notification-l4.yaml <<'YAML'
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
@@ -44,6 +46,7 @@ spec:
             principals:
               - cluster.local/ns/ambient-authz/sa/tester-sa
 YAML
+kubectl apply -f authorizationpolicy-notification-l4.yaml
 
 sleep 3
 kubectl -n ambient-authz exec deploy/tester -- \
@@ -63,7 +66,7 @@ refuses the **connection** rather than returning a status.
 ## Step 3: The L7 rule — and watch it do nothing
 
 ```sh
-kubectl apply -f - <<'YAML'
+cat > authorizationpolicy-notification-l7.yaml <<'YAML'
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
@@ -84,6 +87,7 @@ spec:
         - operation:
             methods: ["POST"]
 YAML
+kubectl apply -f authorizationpolicy-notification-l7.yaml
 
 sleep 3
 kubectl -n ambient-authz exec deploy/tester -- \
@@ -193,3 +197,15 @@ astrona submit -c .
   task asks for.
 - **`tester` gets `000`.** The principal string is wrong; check the service
   account name.
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [AuthorizationPolicy API](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source) — `action`, `rules`, `from`, `to`, `when` and `targetRefs`
+- [Istio security concepts](https://istio.io/latest/docs/concepts/security/) — the SPIFFE identity format and where it comes from
+- [AuthorizationPolicy actions](https://istio.io/latest/docs/reference/config/security/authorization-policy/#AuthorizationPolicy-Action) — how ALLOW, DENY and AUDIT combine and which wins
+- [Ambient mode](https://istio.io/latest/docs/ambient/usage/l4-policy/) — what changes for policy without a sidecar
+- [istioctl proxy-config](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-secret) — reading a proxy's live configuration

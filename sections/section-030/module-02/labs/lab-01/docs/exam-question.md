@@ -13,9 +13,9 @@ A `kind` cluster with Istio (`demo` profile). Namespace `jwtclaims-demo` is
 injected and running `booking-service-v1`, `notification-service-v1` and a
 `tester` client pod.
 
-A **`RequestAuthentication`** for the demo issuer `testing@secure.istio.io` is
+A **[`RequestAuthentication`](https://istio.io/latest/docs/reference/config/security/request_authentication/)** for the demo issuer `testing@secure.istio.io` is
 already applied to `notification-service` — token validation is a precondition
-here, not the task. No `AuthorizationPolicy` exists.
+here, not the task. No [`AuthorizationPolicy`](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source) exists.
 
 `notification-service` serves `POST /notify` and has **no `/admin` handler**, so
 an authorized `/admin` request returns `404` from the application. Anything that
@@ -69,3 +69,15 @@ astrona destroy ats-015-lab-030-02
 
 Want it walked through? See the [step-by-step guide](./step-by-step-guide.md).
 Prefer hints over a full answer? See the [case study](./case-study.md).
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [AuthorizationPolicy API](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source) — `action`, `rules`, `from`, `to`, `when` and `targetRefs`
+- [RequestAuthentication API](https://istio.io/latest/docs/reference/config/security/request_authentication/) — JWT issuers, JWKS and what it does not do
+- [Authorization with JWT](https://istio.io/latest/docs/tasks/security/authentication/jwt-route/) — validating tokens and authorizing on their claims
+- [AuthorizationPolicy actions](https://istio.io/latest/docs/reference/config/security/authorization-policy/#AuthorizationPolicy-Action) — how ALLOW, DENY and AUDIT combine and which wins
+- [istioctl proxy-config](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-secret) — reading a proxy's live configuration

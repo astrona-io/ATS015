@@ -23,8 +23,10 @@ which is exactly what claim rules are for.
 
 ## Step 2: One policy, one rule per role
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'YAML'
+cat > authorizationpolicy-jwt-claims.yaml <<'YAML'
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
@@ -56,6 +58,7 @@ spec:
         - key: request.auth.claims[groups]
           values: ["group1"]
 YAML
+kubectl apply -f authorizationpolicy-jwt-claims.yaml
 ```
 
 Both rules carry `requestPrincipals: ["*"]`. A `when` block alone does not
@@ -106,3 +109,15 @@ astrona submit -c .
 - **A tokenless request reaches `/admin`.** A rule has a `when` but no
   `requestPrincipals`.
 - **Every call is `401`.** The variables did not expand — check the quoting.
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [AuthorizationPolicy API](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source) — `action`, `rules`, `from`, `to`, `when` and `targetRefs`
+- [RequestAuthentication API](https://istio.io/latest/docs/reference/config/security/request_authentication/) — JWT issuers, JWKS and what it does not do
+- [Authorization with JWT](https://istio.io/latest/docs/tasks/security/authentication/jwt-route/) — validating tokens and authorizing on their claims
+- [AuthorizationPolicy actions](https://istio.io/latest/docs/reference/config/security/authorization-policy/#AuthorizationPolicy-Action) — how ALLOW, DENY and AUDIT combine and which wins
+- [istioctl proxy-config](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-secret) — reading a proxy's live configuration

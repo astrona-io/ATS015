@@ -20,8 +20,10 @@ answer this question.
 
 ## Step 2: Close the namespace
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'YAML'
+cat > authorizationpolicy-allow-nothing.yaml <<'YAML'
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
@@ -29,6 +31,7 @@ metadata:
   namespace: authz-demo
 spec: {}
 YAML
+kubectl apply -f authorizationpolicy-allow-nothing.yaml
 ```
 
 Three omissions doing the work: no `action` means `ALLOW`, no `selector` means
@@ -51,7 +54,7 @@ denial, not a transport rejection.
 ## Step 3: Reopen the booking call
 
 ```sh
-kubectl apply -f - <<'YAML'
+cat > authorizationpolicy-booking-allow.yaml <<'YAML'
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
@@ -71,6 +74,7 @@ spec:
             methods: ["POST"]
             paths: ["/book"]
 YAML
+kubectl apply -f authorizationpolicy-booking-allow.yaml
 ```
 
 Read it as one sentence: *on the booking workloads, allow a caller from namespace
@@ -82,7 +86,7 @@ request is allowed because it matched a rule in one of them.
 ## Step 4: Reopen the notification call, by identity
 
 ```sh
-kubectl apply -f - <<'YAML'
+cat > authorizationpolicy-notification-allow.yaml <<'YAML'
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
@@ -103,6 +107,7 @@ spec:
             methods: ["POST"]
             paths: ["/notify"]
 YAML
+kubectl apply -f authorizationpolicy-notification-allow.yaml
 ```
 
 `namespaces` would not do here — `tester` is in the same namespace. The principal
@@ -143,3 +148,15 @@ astrona submit -c .
   `principals`; `tester` is in `authz-demo` too.
 - **`GET` is allowed.** The rule has a `from` but no `to`, so it permits any
   operation. An omitted part is a wildcard, not a restriction.
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [PeerAuthentication API](https://istio.io/latest/docs/reference/config/security/peer_authentication/) — `mtls.mode` and the scoping rules
+- [AuthorizationPolicy API](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source) — `action`, `rules`, `from`, `to`, `when` and `targetRefs`
+- [Mutual TLS modes](https://istio.io/latest/docs/concepts/security/#mutual-tls-authentication) — what each mode accepts and rejects
+- [Istio security concepts](https://istio.io/latest/docs/concepts/security/) — the SPIFFE identity format and where it comes from
+- [AuthorizationPolicy actions](https://istio.io/latest/docs/reference/config/security/authorization-policy/#AuthorizationPolicy-Action) — how ALLOW, DENY and AUDIT combine and which wins

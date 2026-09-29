@@ -23,8 +23,10 @@ never seen. `create secret tls` produces exactly the two key names Istio expects
 
 ## Step 2: Gateway and VirtualService
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
-kubectl apply -f - <<'YAML'
+cat > booking-gateway-manifests.yaml <<'YAML'
 apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata:
@@ -72,6 +74,7 @@ spec:
             port:
               number: 80
 YAML
+kubectl apply -f booking-gateway-manifests.yaml
 ```
 
 `protocol: HTTPS` and a port name starting `https` are both load-bearing — Istio
@@ -130,3 +133,12 @@ astrona submit -c .
   the problem — check its `hosts` and its `gateways` entry.
 - **Port 80 returns `200`.** The redirect listener is missing, or it routes
   instead of redirecting.
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [istioctl proxy-config secret](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-secret) — reading the certificates a workload actually holds
+- [istioctl proxy-config](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-secret) — reading a proxy's live configuration
