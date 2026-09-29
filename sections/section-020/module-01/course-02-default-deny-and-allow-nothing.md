@@ -37,22 +37,16 @@ Before that policy exists, the workload allows everything, because no rules were
 
 State the same thing as a decision procedure, which is the form an exam question usually wants:
 
-```text
-   for the workload receiving this request:
-
-   is any ALLOW policy selecting it?
-        │
-       no ──────────▶  ALLOW the request        ← the "no policy" default
-        │
-       yes
-        │
-        ▼
-   does the request match a rule in at least one of them?
-        │
-       yes ─────────▶  ALLOW
-        │
-       no ──────────▶  DENY  (403 "RBAC: access denied")
+```mermaid
+flowchart TD
+    R["a request, for the workload receiving it"] --> Q1{"is any ALLOW policy selecting this workload"}
+    Q1 -->|"no"| A1["ALLOW<br/>the no-policy default"]
+    Q1 -->|"yes"| Q2{"does the request match a rule in at least one of them"}
+    Q2 -->|"yes"| A2["ALLOW"]
+    Q2 -->|"no"| D["DENY, 403 RBAC: access denied"]
 ```
+
+The default is allow, and it flips the moment *any* ALLOW policy selects the workload. That is the whole mechanism behind an allow-nothing policy: it selects everything and matches nothing.
 
 Two readings of that diagram trip people up in opposite directions. Adding an `ALLOW` policy is what makes a workload restrictive — it is not "permission granting" on an otherwise-closed door. And a *`DENY`* policy does **not** have this effect: a workload selected only by `DENY` policies still allows everything those policies do not name, because the first branch is still "no `ALLOW` selects it". That asymmetry is [Module 2](../module-02/course.md)'s subject and it is the single most examinable thing in this section.
 
@@ -106,6 +100,17 @@ Because it is what keeps the namespace closed for workloads nobody has written a
 That is the whole reason the pattern is *baseline plus narrow exceptions* rather than *one policy per service*. The baseline is a standing default for things that do not exist yet.
 
 > *An `ALLOW` policy with three empty fields selects everything and matches nothing — and the first `ALLOW` to select a workload is what makes that workload deny by default.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Expecting Istio to deny by default.** With no policy selecting a workload, every request is allowed.
+>
+> **Writing `rules: []` and reading it as allow-everything.** An empty rule list matches nothing, so it denies everything not allowed elsewhere.
+>
+> **Applying an allow-nothing policy before the allow rules exist.** The order you apply them in is the order traffic breaks in.
+>
+> **Putting a selector-less policy in the wrong namespace.** In the root namespace it is mesh-wide; anywhere else it covers that namespace only.
 
 ## Reference
 

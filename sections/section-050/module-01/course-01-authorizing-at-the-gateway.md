@@ -40,16 +40,15 @@ A gateway deployed with the Gateway API, or a second ingress gateway installed a
 
 The same rule could be written on the application workload. Enforcing it at the gateway changes where a denied request stops:
 
-```text
-   at the gateway                          at the workload
-   ──────────────                          ───────────────
-   client ──▶ gateway ──✗                  client ──▶ gateway ──▶ sidecar ──✗
-              403                                     routed      403
-                                                      mTLS handshake done
-   never entered the mesh                   entered the mesh, consumed a
-   no backend connection                    connection, appears in mesh telemetry
-   no application log entry                 may appear in the app's proxy logs
+```mermaid
+flowchart TD
+    G["denied AT THE GATEWAY"] --> G1["client to gateway, refused with 403"]
+    G1 --> G2["never entered the mesh"]
+    W["denied AT THE WORKLOAD"] --> W1["client to gateway, routed,<br/>mTLS handshake completed, sidecar refuses with 403"]
+    W1 --> W2["entered the mesh and consumed a hop before being refused"]
 ```
+
+Both return 403 to the caller. The difference is how much of your mesh the rejected request got to use first, which is the whole argument for authorizing at the edge as well as at the workload.
 
 For a block-list this matters: abusive traffic is refused at the first thing it touches, rather than being carried through the mesh to be refused at the end. It is also the only place the rule *can* be written when the caller is external, because everything downstream sees the gateway as the client, not the original caller.
 
@@ -118,6 +117,17 @@ The playground gives a small live demonstration of the general principle, becaus
 That generalises beyond the playground into the habit this module is really teaching: **before writing a source-IP rule, find out what address the server actually sees.** The gateway's access log prints it, and a minute spent there saves an hour of editing CIDR ranges that were never going to match.
 
 > *`ipBlocks` matches whoever opened the TCP connection, which behind any intermediary is the intermediary — so the field is only about the client when nothing sits in front of the gateway.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Authorizing only at the workload.** The request still traverses the gateway and a hop of the mesh before anything refuses it.
+>
+> **Authorizing only at the gateway.** Anything already inside the mesh bypasses the edge entirely.
+>
+> **Selecting the gateway with a workload selector meant for an app.** Gateway policies must select the gateway's own labels, in the gateway's namespace.
+>
+> **Assuming a gateway policy sees a peer identity.** External callers have none — at the edge you have the request, not a mesh identity.
 
 ## Reference
 

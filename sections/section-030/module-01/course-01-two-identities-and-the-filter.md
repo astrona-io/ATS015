@@ -53,23 +53,18 @@ The `kid` in the header is how the proxy picks the right key from a set — rele
 
 The `jwt_authn` filter runs in the receiving workload's proxy, between HTTP parsing and authorization:
 
-```text
-   1. transport / mTLS          ← peer identity extracted here
-        │
-        ▼
-   2. HTTP parsed               method, path, headers now exist
-        │
-        ▼
-   3. jwt_authn filter          reads the Authorization header
-        │                       ┌── no token    → pass through untouched
-        │                       ├── bad token   → 401, stop
-        │                       └── good token  → publish request.auth.* attributes
-        ▼
-   4. rbac filter               AuthorizationPolicy, which can now match on
-        │                       principals (from 1) and requestPrincipals (from 3)
-        ▼
-   5. the application
+```mermaid
+flowchart TD
+    T["1. transport / mTLS<br/>peer identity extracted here"] --> H["2. HTTP parsed<br/>method, path, headers now exist"]
+    H --> J{"3. jwt_authn filter<br/>reads the Authorization header"}
+    J -->|"no token"| P["passes through untouched,<br/>publishes nothing"]
+    J -->|"bad token"| E["401, stop"]
+    J -->|"good token"| A["publishes request.auth.* attributes"]
+    P --> R["4. rbac filter, AuthorizationPolicy"]
+    A --> R
 ```
+
+Two different identities reach stage 4: the *peer* identity from mTLS and the *request* identity from the token. A policy can match on either, and confusing them is the usual reason a rule never fires.
 
 Three things fall straight out of that ordering, and they are the whole of this module:
 
@@ -104,6 +99,17 @@ Everything in this module is worth measuring against the state the playground be
 > The middle section decodes with no key, exactly as described above — `base64 -d` may complain about padding and still print the payload, which is why `2>/dev/null` is there. Note `iss` and `sub`: those two, joined by a slash, become the request principal in [Part 3](./course-03-requiring-a-token.md). `$TOKEN` now lives in your shell on the playground machine, which is why later commands can pass it with `-H`. An empty result means the machine has no outbound internet, and the rest of the module will not work.
 
 > *Peer identity is per hop and proved by a certificate; request identity is end to end and proved by a signature — and the filter that checks the second one has no opinion about a request that carries none.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Confusing the peer identity with the request identity.** One comes from the client certificate, the other from a token. `principals` and `requestPrincipals` are different fields.
+>
+> **Expecting a missing token to be rejected at stage 3.** It is not. A request with no token passes through and is dealt with by authorization, if anything deals with it at all.
+>
+> **Reading the JWT payload as trustworthy because it decodes.** Decoding proves nothing; the signature check is what matters.
+>
+> **Assuming the token is encrypted.** A JWT is signed, not encrypted — anyone holding it can read every claim.
 
 ## Reference
 

@@ -71,15 +71,22 @@ The trap is the other value. A `DestinationRule` with `tls.mode: DISABLE` on the
 Most of what goes wrong with this object is scope rather than mode, and the mistakes look like successes until traffic proves otherwise.
 
 > [!WARNING]
-> **Common pitfalls**
+## Common pitfalls
+
+> [!WARNING]
+> **A mesh-wide policy in the wrong namespace** — only the root namespace (normally `istio-system`) is mesh-wide. In any other namespace the identical YAML is a namespace policy.
 >
-> - **A mesh-wide policy in the wrong namespace** — only the root namespace (normally `istio-system`) is mesh-wide. In any other namespace the identical YAML is a namespace policy.
-> - **An accidental `selector` on a namespace policy** — it silently becomes a workload policy covering far fewer pods, with no error.
-> - **Expecting `403` from a `STRICT` rejection** — you get a connection reset (`000` from `curl`). `403` comes from authorization, which runs later and only on connections that were accepted.
-> - **`portLevelMtls` on a `Service` port, or on a port nothing listens on** — it takes the container port, and an entry with no matching listener does nothing at all, silently.
-> - **Expecting more policies to be more restrictive** — narrowest wins outright, so a `PERMISSIVE` namespace policy really does override a `STRICT` mesh policy.
-> - **Turning on `STRICT` before knowing who still speaks plaintext** — every unmeshed caller breaks at once. [Module 3](../module-03/course.md) is about doing this safely.
-> - **Assuming `STRICT` means "only allowed callers"** — it means "only callers that can prove *an* identity". Deciding *which* identities may do *what* is `AuthorizationPolicy`'s job, in [section 020](../../section-020/README.md).
+> **An accidental `selector` on a namespace policy** — it silently becomes a workload policy covering far fewer pods, with no error.
+>
+> **Expecting `403` from a `STRICT` rejection** — you get a connection reset (`000` from `curl`). `403` comes from authorization, which runs later and only on connections that were accepted.
+>
+> **`portLevelMtls` on a `Service` port, or on a port nothing listens on** — it takes the container port, and an entry with no matching listener does nothing at all, silently.
+>
+> **Expecting more policies to be more restrictive** — narrowest wins outright, so a `PERMISSIVE` namespace policy really does override a `STRICT` mesh policy.
+>
+> **Turning on `STRICT` before knowing who still speaks plaintext** — every unmeshed caller breaks at once. [Module 3](../module-03/course.md) is about doing this safely.
+>
+> **Assuming `STRICT` means "only allowed callers"** — it means "only callers that can prove *an* identity". Deciding *which* identities may do *what* is `AuthorizationPolicy`'s job, in [section 020](../../section-020/README.md).
 
 ## Operational properties
 

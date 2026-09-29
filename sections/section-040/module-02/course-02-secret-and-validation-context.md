@@ -41,12 +41,13 @@ The `key=path` form of `--from-file` is what makes this work: it sets the key *i
 
 This produces the module's most dangerous failure, so it is worth naming precisely:
 
-```text
-   correct keys   → validation context delivered → MUTUAL enforced → clients checked
-   wrong  keys    → no validation context        → the gateway still serves TLS
-                                                 → clients NOT checked
-                                                 → every request succeeds
+```mermaid
+flowchart TD
+    C["correct key names in the Secret"] --> C1["validation context delivered"] --> C2["MUTUAL enforced, clients are checked"]
+    W["wrong key names"] --> W1["no validation context"] --> W2["the gateway still serves TLS,<br/>clients are NOT checked,<br/>every request succeeds"]
 ```
+
+This is the dangerous failure in the whole section: a typo in a key name does not break anything visibly. It silently turns mutual TLS back into ordinary TLS, and everything keeps working.
 
 The gateway does not refuse to start. It falls back to behaving like `SIMPLE`, which means **a successful request proves nothing about whether verification is on**. That asymmetry — wrong configuration producing *more* access rather than less — is why [Part 3](./course-03-handshake-failures-and-identity.md) insists on reading enforcement off the proxy.
 
@@ -64,18 +65,22 @@ Everything else from [Module 1](../module-01/course-02-the-tls-listener.md) is u
 
 What changes in the handshake is one step:
 
-```text
-   SIMPLE                              MUTUAL
-   ──────                              ──────
-   ClientHello                         ClientHello
-   server certificate  ──▶             server certificate  ──▶
-                                       CertificateRequest  ──▶     ← the added step
-                       ◀── client key                     ◀── client certificate
-                                                           ◀── client key
-   client verifies the server          client verifies the server
-                                       server verifies the client   ← and the added check
-   application data                    application data
+```mermaid
+sequenceDiagram
+    participant C as client
+    participant S as server
+    Note over C,S: SIMPLE
+    C->>S: ClientHello
+    S-->>C: server certificate
+    C->>S: client key exchange
+    Note over C,S: MUTUAL adds two things
+    C->>S: ClientHello
+    S-->>C: server certificate, then CertificateRequest
+    C->>S: client certificate, then client key
+    Note over S: the server verifies the client too
 ```
+
+`MUTUAL` adds one message from the server and one check on its side. Everything else about the handshake is identical, which is why the misconfiguration above is so easy to miss.
 
 The gateway sends a `CertificateRequest`, and the client answers it or does not. Both the request and the verification happen *inside* the handshake, before a single byte of HTTP exists — which is why [Part 3](./course-03-handshake-failures-and-identity.md)'s rejection has no status code.
 
@@ -146,6 +151,17 @@ The gateway sends a `CertificateRequest`, and the client answers it or does not.
 > Three keys, exactly those names. Check this **before** testing traffic: a secret with `cert`/`key`/`ca` instead produces the same "successful" apply, the same running gateway, and none of the behaviour — and a passing request would tell you nothing.
 
 > *`ca.crt` is the validation context, and without it a `MUTUAL` gateway quietly degrades to `SIMPLE` — serving TLS, verifying nobody, and answering every request.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Getting the `ca.crt` key name wrong.** The validation context is silently absent, `MUTUAL` degrades to ordinary TLS, and every client is accepted.
+>
+> **Testing only with a valid client certificate.** The test that matters is a client with *no* certificate — it must be refused.
+>
+> **Putting the CA bundle in a separate Secret.** The gateway reads one credential; the bundle belongs in the same Secret unless you use the separate CA credential field deliberately.
+>
+> **Assuming `MUTUAL` is enforced because the object says so.** The object says what you want; the handshake says what you got.
 
 ## Reference
 

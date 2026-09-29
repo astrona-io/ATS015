@@ -169,6 +169,17 @@ Either way the policy's `targetRefs` stays the same — it names the service or 
 
 > *A waypoint that exists is not a waypoint that receives traffic, and an L7 rule with nothing to enforce it is accepted, listed, and silently ignored.*
 
+## Common pitfalls
+
+> [!WARNING]
+> **Deploying a waypoint and expecting traffic to use it.** The destination has to be associated with it; otherwise ztunnel routes straight through.
+>
+> **Forgetting the Gateway API CRDs.** A waypoint is a `Gateway`; without them the apply fails outright.
+>
+> **Assuming one waypoint covers everything.** They are scoped to a namespace or a service, and the scope decides what they can enforce.
+>
+> **Reading the extra hop as overhead to remove.** It is where every L7 decision happens; removing it removes the enforcement with it.
+
 ## Reference
 
 - [Ambient L7 features](https://istio.io/latest/docs/ambient/usage/l7-features/) — which capabilities require a waypoint, and what happens without one.

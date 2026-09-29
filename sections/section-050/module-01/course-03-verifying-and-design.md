@@ -43,17 +43,26 @@ Steps 3 and 4 catch most of it. Step 1 catches the rest.
 Address-based rules go wrong in a small number of specific ways, and two of them are security holes rather than outages.
 
 > [!WARNING]
-> **Common pitfalls**
+## Common pitfalls
+
+> [!WARNING]
+> **`ipBlocks` behind a load balancer** — every request appears to come from the load balancer, so the rule matches everything or nothing.
 >
-> - **`ipBlocks` behind a load balancer** — every request appears to come from the load balancer, so the rule matches everything or nothing.
-> - **`remoteIpBlocks` without `numTrustedProxies`** — the header is client-controlled and the rule is bypassable. This is a vulnerability, not a cosmetic issue.
-> - **A `numTrustedProxies` that does not match the real topology** — too low trusts a spoofed value, too high reads an address that is not there.
-> - **The policy in the application namespace** — it must be where the gateway pod runs, and its `selector` must match the gateway's labels.
-> - **A selector that misses a second gateway** — `istio: ingressgateway` is the `demo` profile's label; a Gateway API or custom gateway carries different ones, and a rule that selects nothing blocks nothing.
-> - **An `ALLOW` on a shared gateway with no `hosts` narrowing** — it closes every hostname that gateway serves, not just yours.
-> - **Drawing conclusions from a `port-forward` test** — the source address is from inside the cluster. Read the access log rather than assuming.
-> - **Expecting a connection failure** — a gateway-scoped denial is an ordinary `403` with a body. The request was accepted, parsed, and refused.
-> - **Forgetting the topology setting after a reinstall** — `numTrustedProxies` is `meshConfig`, so an `istioctl install` without it silently reverts to the default.
+> **`remoteIpBlocks` without `numTrustedProxies`** — the header is client-controlled and the rule is bypassable. This is a vulnerability, not a cosmetic issue.
+>
+> **A `numTrustedProxies` that does not match the real topology** — too low trusts a spoofed value, too high reads an address that is not there.
+>
+> **The policy in the application namespace** — it must be where the gateway pod runs, and its `selector` must match the gateway's labels.
+>
+> **A selector that misses a second gateway** — `istio: ingressgateway` is the `demo` profile's label; a Gateway API or custom gateway carries different ones, and a rule that selects nothing blocks nothing.
+>
+> **An `ALLOW` on a shared gateway with no `hosts` narrowing** — it closes every hostname that gateway serves, not just yours.
+>
+> **Drawing conclusions from a `port-forward` test** — the source address is from inside the cluster. Read the access log rather than assuming.
+>
+> **Expecting a connection failure** — a gateway-scoped denial is an ordinary `403` with a body. The request was accepted, parsed, and refused.
+>
+> **Forgetting the topology setting after a reinstall** — `numTrustedProxies` is `meshConfig`, so an `istioctl install` without it silently reverts to the default.
 
 ## What an address is worth
 

@@ -97,6 +97,17 @@ As an analogy: this is a footfall counter on a door, not a guest list. It tells 
 
 > *`connection_security_policy` on the receiving proxy is the only direct evidence that nothing is still sending plaintext — and a counter proves what happened, never what is about to.*
 
+## Common pitfalls
+
+> [!WARNING]
+> **Reading zero plaintext connections as proof of safety.** Absence of evidence is not evidence of absence: a caller that has not run during your window leaves no counter.
+>
+> **Forgetting the counter is server-side.** It tells you the namespace is being reached in plaintext, not which caller did it — that needs the source labels.
+>
+> **Treating the counters as durable.** They live in Envoy's memory and reset when the pod restarts.
+>
+> **Comparing raw cumulative values.** They never reset while the pod lives, so a difference between two readings is the only meaningful number.
+
 ## Reference
 
 - [Istio standard metrics](https://istio.io/latest/docs/reference/config/metrics/) — the full label set on `istio_requests_total`, including `source_workload` and `connection_security_policy`.

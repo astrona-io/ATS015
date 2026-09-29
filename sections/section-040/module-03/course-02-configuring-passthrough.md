@@ -56,14 +56,15 @@ And the destination port is the **backend's TLS port** — `8443` here, where ng
 
 Writing an `http` block for passthrough traffic is the error this module exists to inoculate against, because of how it fails:
 
-```text
-   VirtualService with an `http` block, Gateway in PASSTHROUGH
-        │
-        ├─ kubectl apply            → accepted
-        ├─ kubectl get              → both objects present
-        ├─ istioctl analyze         → typically clean
-        └─ a client connects        → connection fails
+```mermaid
+flowchart TD
+    V["a VirtualService with an http block,<br/>Gateway in PASSTHROUGH"] --> A["kubectl apply: accepted"]
+    A --> G["kubectl get: both objects present"]
+    G --> Z["istioctl analyze: typically clean"]
+    Z --> C["a client connects: the connection fails"]
 ```
+
+Every check short of real traffic says this is fine. An `http` block on a passthrough listener is a category error that nothing validates for you.
 
 Every check passes and the traffic does not work. The reason is exactly [Part 1](./course-01-what-a-proxy-can-see.md)'s diagram: an `http` match needs a method, a path or a header, and the gateway has none of those — the bytes after the ClientHello are opaque. Nothing matches, so nothing routes.
 
@@ -139,6 +140,17 @@ All three are "the stream had nowhere to go", and none of them will produce a `4
 One detail that often goes unremarked: the backend pod is in an injected namespace, so its sidecar is in the path too — and it forwards the TLS stream to the container without decrypting it, for the same reason the gateway does. Passthrough is end to end in the literal sense; no proxy anywhere on the path holds a key for this session.
 
 > *`protocol: TLS` with `mode: PASSTHROUGH` and a `VirtualService` `tls` block go together — an `http` block applies cleanly and routes nothing, because there is no HTTP to match.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Writing an `http` block for a passthrough listener.** It applies, validates and cannot work. Passthrough needs a `tls` block matching on `sniHosts`.
+>
+> **Omitting `sniHosts`.** It is the only thing a passthrough route can match on, and it is required.
+>
+> **Trusting `istioctl analyze` here.** This mismatch is typically not reported.
+>
+> **Expecting a useful error.** The symptom is a failed connection, not a message about the wrong block type.
 
 ## Reference
 

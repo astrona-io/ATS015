@@ -8,35 +8,19 @@ Everything about `DENY` follows from one thing: where it runs relative to `ALLOW
 
 For every request, the receiving proxy's RBAC filter walks three groups of policies, in a fixed order:
 
-```text
-   request has reached stage 4 (the RBAC filter)
-        │
-        ▼
-   ┌─────────────────────────────────────────────┐
-   │ 1. CUSTOM policies selecting this workload  │
-   │    delegate to an external authorizer       │
-   │    (meshConfig.extensionProviders)          │
-   └───────────────┬─────────────────────────────┘
-                   │ rejected ─────────────▶ DENIED — stop
-                   ▼ allowed / none present
-   ┌─────────────────────────────────────────────┐
-   │ 2. DENY policies selecting this workload    │
-   └───────────────┬─────────────────────────────┘
-                   │ any rule matches ─────▶ DENIED — stop
-                   ▼ none matches
-   ┌─────────────────────────────────────────────┐
-   │ 3. ALLOW policies selecting this workload   │
-   └───────────────┬─────────────────────────────┘
-                   │
-         does any ALLOW policy select this workload?
-                   │
-         no ───────────────────────────────▶ ALLOWED
-                   │ yes
-         does the request match a rule in one of them?
-                   │
-         yes ──────────────────────────────▶ ALLOWED
-         no ───────────────────────────────▶ DENIED (403)
+```mermaid
+flowchart TD
+    S["the request has reached the RBAC filter"] --> C{"CUSTOM policies selecting this workload<br/>delegate to an external authorizer"}
+    C -->|"rejected"| D1["DENIED, stop"]
+    C -->|"allowed, or none present"| DE{"DENY policies selecting this workload"}
+    DE -->|"any rule matches"| D2["DENIED, stop"]
+    DE -->|"no match"| AL{"any ALLOW policy selecting this workload"}
+    AL -->|"none"| A1["ALLOWED"]
+    AL -->|"some, and one matches"| A2["ALLOWED"]
+    AL -->|"some, none match"| D3["DENIED"]
 ```
+
+CUSTOM, then DENY, then ALLOW — and the first two can only ever stop a request. That ordering is why a DENY cannot be overridden by adding another ALLOW.
 
 The critical structural property is that steps 1 and 2 are **terminal on a match**. They do not contribute a vote that step 3 can outweigh; they end the decision. Nothing downstream is consulted, and — importantly for [Part 3](./course-03-audit-and-design.md) — nothing downstream is even evaluated.
 
@@ -113,6 +97,17 @@ Before writing any `DENY`, it is worth producing the other kind of `403` — the
 Which raises the practical problem this module comes back to twice: **the caller cannot tell the two apart.** Both are `403 RBAC: access denied`. The only way to know whether a request was refused by a `DENY` match or by failing to match any `ALLOW` is to look at the policy set on the callee — `kubectl get authorizationpolicy -A` and, when that is ambiguous, the compiled rules in the proxy.
 
 > *Steps 1 and 2 are terminal on a match, so `DENY` does not outvote `ALLOW` — it ends the decision before `ALLOW` is ever read.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Trying to override a DENY with an ALLOW.** DENY is evaluated first and stops the request. Nothing downstream can undo it.
+>
+> **Expecting AUDIT to change an outcome.** It records and never blocks.
+>
+> **Assuming policies are evaluated in the order you wrote them.** They are grouped by action; within a group there is no ordering.
+>
+> **Reaching for CUSTOM without an extension provider.** It delegates to something configured in `meshConfig`, and without that it cannot work.
 
 ## Reference
 

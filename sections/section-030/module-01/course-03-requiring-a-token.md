@@ -93,15 +93,13 @@ and the wildcard form `testing@secure.istio.io/*` accepts any subject from that 
 
 ## 401 and 403 point at different halves
 
-```text
-   401   stage 3   RequestAuthentication rejected the token
-                   → the token, the issuer string, or the key set
-                   → the request never reached authorization
-
-   403   stage 4   AuthorizationPolicy refused the request
-                   → the token was fine, or absent, and the RULE said no
-                   → validation is working; the policy is the thing to read
+```mermaid
+flowchart LR
+    A["401<br/>stage 3"] --> A1["RequestAuthentication rejected the token:<br/>the token, the issuer string, or the key set.<br/>The request never reached authorization."]
+    B["403<br/>stage 4"] --> B1["AuthorizationPolicy refused it:<br/>the token was fine, or absent, and the RULE said no.<br/>Validation is working; read the policy."]
 ```
+
+One digit of difference, two entirely different objects to go and read. This is the fastest triage in the whole section.
 
 Reading `403` as "the token must be wrong" is the classic wrong turn, and it sends you editing `jwtRules` when the problem is a `requestPrincipals` value or a selector. The codes are a routing hint, and taking them literally saves most of the time this module's failures cost.
 
@@ -133,15 +131,22 @@ Both `401`-shaped problems — a wrong `issuer` and a missing key set — are in
 Most of what goes wrong in this module is one of two objects being asked to do the other's job.
 
 > [!WARNING]
-> **Common pitfalls**
+## Common pitfalls
+
+> [!WARNING]
+> **Believing `RequestAuthentication` protects a workload** — without a `requestPrincipals` policy, tokenless requests pass straight through with `200`.
 >
-> - **Believing `RequestAuthentication` protects a workload** — without a `requestPrincipals` policy, tokenless requests pass straight through with `200`.
-> - **An `issuer` that does not match `iss` exactly** — including a trailing slash or a scheme difference. Every token gets `401` and the message does not say why.
-> - **An unreachable `jwksUri`** — the proxy cannot fetch keys, so every token fails. The evidence is in the proxy and istiod logs, not the application's.
-> - **Reading `403` as a token problem** — it is the opposite: authorization refused a request that passed, or skipped, validation.
-> - **Confusing `principals` with `requestPrincipals`** — one is the workload's certificate identity, the other the end user's token identity. Both sit in `from.source`.
-> - **Omitting `audiences` and assuming `aud` is checked** — it is not, unless you list them. A token minted for another service will validate.
-> - **Expecting the application to see the token** — the `Authorization` header is stripped after validation unless `forwardOriginalToken` is set.
+> **An `issuer` that does not match `iss` exactly** — including a trailing slash or a scheme difference. Every token gets `401` and the message does not say why.
+>
+> **An unreachable `jwksUri`** — the proxy cannot fetch keys, so every token fails. The evidence is in the proxy and istiod logs, not the application's.
+>
+> **Reading `403` as a token problem** — it is the opposite: authorization refused a request that passed, or skipped, validation.
+>
+> **Confusing `principals` with `requestPrincipals`** — one is the workload's certificate identity, the other the end user's token identity. Both sit in `from.source`.
+>
+> **Omitting `audiences` and assuming `aud` is checked** — it is not, unless you list them. A token minted for another service will validate.
+>
+> **Expecting the application to see the token** — the `Authorization` header is stripped after validation unless `forwardOriginalToken` is set.
 
 ## Operational notes
 

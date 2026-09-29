@@ -8,29 +8,15 @@ Before writing a single rule it is worth knowing where the decision is made and 
 
 An inbound request passes through the sidecar in a fixed order. Authorization is one stage in it, and the stages before and after explain what it can and cannot see:
 
-```text
-   connection arrives at the receiving pod's sidecar
-        │
-        ▼
-   1. transport                     PeerAuthentication decides here
-      tls_inspector, filter chain   STRICT?  plaintext → connection dropped (000)
-      mTLS terminated               ← peer identity extracted from the client cert
-        │
-        ▼
-   2. HTTP is parsed                method, path, headers, host now exist
-        │
-        ▼
-   3. jwt_authn filter              RequestAuthentication validates a token (section 030)
-      → request.auth.* attributes   invalid token → 401
-        │
-        ▼
-   4. rbac filter                   AuthorizationPolicy decides here
-      inputs: peer identity, HTTP   no match → 403 "RBAC: access denied"
-      attributes, token claims
-        │
-        ▼
-   5. the application container
+```mermaid
+flowchart TD
+    C["a connection arrives at the receiving pod's sidecar"] --> T["1. TRANSPORT<br/>tls_inspector, filter chain, mTLS terminated<br/>peer identity extracted from the client certificate"]
+    T -->|"PeerAuthentication decides here:<br/>STRICT plus plaintext means the connection is dropped"| H["2. HTTP IS PARSED<br/>method, path, headers and host now exist"]
+    H --> J["3. jwt_authn filter<br/>RequestAuthentication validates a token<br/>an invalid token is a 401"]
+    J --> R["4. RBAC filter<br/>AuthorizationPolicy decides here"]
 ```
+
+Four stages, and each one is a different object's job. A failure at stage 1 never reaches stage 4 — which is why a transport rejection and a policy denial look nothing alike to the caller.
 
 Three consequences fall out of that ordering, and all three are examinable:
 
@@ -98,6 +84,17 @@ The evidence lives with the workload that refused:
 So the debugging shape for the rest of this section is: run the test `curl` from the caller, then look for the explanation on the callee. Looking for it on the caller is the most common way to waste twenty minutes here.
 
 > *Authorization is a filter in the receiving proxy, after the transport and after HTTP parsing — which is why `000` and `403` are different objects' failures, and why the explanation is always on the callee.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Debugging an authorization problem that is really a transport problem.** A dropped connection never reached the RBAC filter. Check for a status code before assuming a policy denied it.
+>
+> **Expecting authorization to see a peer identity that mTLS never established.** Stage 4 can only use what stage 1 extracted.
+>
+> **Forgetting the network-level RBAC filter.** Non-HTTP ports are authorized too, but without any of the HTTP attributes.
+>
+> **Assuming a policy applies because it exists.** It applies to the workloads its selector matches, evaluated by that workload's own Envoy.
 
 ## Reference
 

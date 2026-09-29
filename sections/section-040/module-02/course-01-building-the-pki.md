@@ -98,6 +98,17 @@ That is worth stating explicitly because it is the first thing people assume oth
 
 > *The CA's signature is the only thing being verified, so the population of clients that can connect is exactly the population the CA has signed for.*
 
+## Common pitfalls
+
+> [!WARNING]
+> **Handing out `ca.key`.** Only `ca.crt` is meant to be distributed; the key signs everything and stays with you.
+>
+> **Reusing one certificate for server and client.** They have different purposes and different common names; generate both.
+>
+> **Setting a common name that does not match the SNI.** Verification fails in the handshake with nothing about names in the message.
+>
+> **Treating a demo CA as reusable.** It is fine for a lab and has no place in front of anything real.
+
 ## Reference
 
 - [`openssl req`](https://docs.openssl.org/master/man1/openssl-req/) — creating requests and self-signed certificates; `-x509`, `-nodes`, `-subj`.

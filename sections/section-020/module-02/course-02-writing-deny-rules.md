@@ -114,13 +114,13 @@ The practical consequence is a design rule: **you cannot carve an exception out 
 
 Read it slowly, in this order — action, then field, then negation:
 
-```text
-   DENY   …  requests whose path is NOT /health
-   ─────     ─────────────────────────────────
-   action    the (negated) condition
-
-   = deny everything except the health endpoint
+```mermaid
+flowchart LR
+    A["action: DENY"] --> B["the negated condition:<br/>requests whose path is NOT /health"]
+    B --> C["effect: deny everything except the health endpoint"]
 ```
+
+A DENY with a negated condition reads backwards the first few times. Say the sentence out loud before you apply it — the object does exactly what it says, which is rarely what a first reading suggests.
 
 That is an extremely aggressive policy that at a glance looks like it is *about* `/health`. The same fields inside an `ALLOW` mean something quite different — "allow anything except `/health`" — and the object gives you no hint which reading its author intended.
 
@@ -129,6 +129,17 @@ The habit that helps is mechanical: **say the whole sentence out loud, starting 
 A second, subtler property: a negated condition matches when the attribute is **present and different**, and its behaviour on a missing attribute is not something to rely on from memory. `notPrincipals` on a request with no verified identity is exactly the sort of edge that reads one way and behaves another. When a rule's correctness depends on that case, test it in a playground rather than reasoning about it — and prefer expressing the intent positively where you can.
 
 > *Under `DENY` every combination rule inverts: an absent part is now sweeping, a missing `*` is now a hole, and a negation reads backwards unless you start the sentence with the action.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Reading a negated DENY as an ALLOW.** `DENY` plus `notPaths` denies everything the list does not name. It is not a way to permit that list.
+>
+> **Assuming a DENY narrows an existing ALLOW.** It is evaluated earlier and independently; it removes traffic the ALLOW would have permitted.
+>
+> **Forgetting an empty `from` matches every source.** A DENY with no source restriction covers callers you did not have in mind.
+>
+> **Testing a DENY only with traffic it should block.** The traffic it must *not* block is the half that breaks production.
 
 ## Reference
 

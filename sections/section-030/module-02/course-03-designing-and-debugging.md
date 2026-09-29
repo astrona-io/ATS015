@@ -62,16 +62,24 @@ Then the decisive test, which costs nothing: **take a token that is being denied
 Claim rules go wrong in a small number of specific ways, and most of them produce no error.
 
 > [!WARNING]
-> **Common pitfalls**
+## Common pitfalls
+
+> [!WARNING]
+> **Treating a list claim as a string** — `values: ["group1"]` already matches any element of `groups`. There is no list syntax to find.
 >
-> - **Treating a list claim as a string** — `values: ["group1"]` already matches any element of `groups`. There is no list syntax to find.
-> - **Using the identity provider's display name for a claim** — decode a real token and read the payload.
-> - **Expecting a missing claim to be permissive** — under `ALLOW` a missing claim fails the condition and the request is denied; under `DENY` it fails open.
-> - **`when` without `requestPrincipals`** — the rule can then be satisfied by a request with no token at all.
-> - **Writing a claim rule with no `RequestAuthentication` on the workload** — no attributes are published, so nothing can ever match.
-> - **Reading `404` or `200` as "the policy failed"** — anything that is not `403` means the request got through. Test against an endpoint whose behaviour you know.
-> - **Quoting `$TOKEN` inside single quotes in `kubectl exec`** — the variable never expands and every request looks like a bad token.
-> - **Expecting `values: ["a","b"]` to require both** — values inside one entry are ORed. Two requirements need two `when` entries.
+> **Using the identity provider's display name for a claim** — decode a real token and read the payload.
+>
+> **Expecting a missing claim to be permissive** — under `ALLOW` a missing claim fails the condition and the request is denied; under `DENY` it fails open.
+>
+> **`when` without `requestPrincipals`** — the rule can then be satisfied by a request with no token at all.
+>
+> **Writing a claim rule with no `RequestAuthentication` on the workload** — no attributes are published, so nothing can ever match.
+>
+> **Reading `404` or `200` as "the policy failed"** — anything that is not `403` means the request got through. Test against an endpoint whose behaviour you know.
+>
+> **Quoting `$TOKEN` inside single quotes in `kubectl exec`** — the variable never expands and every request looks like a bad token.
+>
+> **Expecting `values: ["a","b"]` to require both** — values inside one entry are ORed. Two requirements need two `when` entries.
 
 ## The boundary worth keeping
 

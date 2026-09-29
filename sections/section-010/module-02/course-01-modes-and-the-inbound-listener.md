@@ -50,33 +50,19 @@ The interesting question about `PERMISSIVE` is mechanical: a TCP port is just a 
 
 Envoy's answer is a **listener filter** that peeks at the first bytes of the connection before deciding how to process it, and then a set of **filter chains** it selects between:
 
-```text
-  connection arrives on the inbound port
-              │
-              ▼
-   ┌────────────────────────┐
-   │ tls_inspector          │  reads the first bytes without consuming them
-   │ (a listener filter)    │  "does this look like a TLS ClientHello?"
-   └───────┬────────────────┘
-           │
-    ┌──────┴────────┐
-    │               │
-   yes             no
-    │               │
-    ▼               ▼
- filter chain    filter chain
- match:          match:
- transport =     transport =
- "tls"           "raw_buffer"
-    │               │
-    ▼               ▼
- terminate mTLS,  treat as
- check cert       plaintext
-    │               │
-    └──────┬────────┘
-           ▼
-     HTTP filters, then the application container
+```mermaid
+flowchart TD
+    C["a connection arrives on the inbound port"] --> T["tls_inspector, a listener filter:<br/>reads the first bytes without consuming them"]
+    T --> Q{"does this look like a TLS ClientHello"}
+    Q -->|"yes"| M["the mTLS filter chain"]
+    Q -->|"no"| P["the plaintext filter chain"]
+    M --> D{"what does the effective mode say"}
+    P --> D
+    D -->|"PERMISSIVE"| A["both chains exist, both are accepted"]
+    D -->|"STRICT"| S["only the mTLS chain exists,<br/>plaintext is rejected at the transport"]
 ```
+
+`PERMISSIVE` is not a policy decision made per request — it is two filter chains existing at once. `STRICT` removes one of them, which is why plaintext fails before any request is parsed.
 
 Read the three modes off that diagram and they stop being arbitrary:
 
@@ -133,6 +119,17 @@ Applying `STRICT` is a one-object change, and the immediate observable is what t
 Confusing the two sends you reading authorization policy when the problem is `PeerAuthentication`, or the reverse — and both searches can take a long time before anything contradicts you.
 
 > *`PERMISSIVE` programs two filter chains and `STRICT` programs one, which is why a strict rejection is a dropped connection rather than a `403`.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Reading `PERMISSIVE` as a warning mode.** It accepts both plaintext and mTLS silently and forever. Nothing escalates on its own.
+>
+> **Expecting a rejected plaintext connection to produce an HTTP error.** Under `STRICT` the transport is refused, so the caller sees a reset and no status code at all.
+>
+> **Testing mTLS from outside the mesh and concluding it is off.** An uninjected caller has no certificate to present; that is the expected result, not a finding.
+>
+> **Confusing a 403 with a transport rejection.** `RBAC: access denied` means the request was parsed and a policy refused it — a different object, and a different fix.
 
 ## Reference
 

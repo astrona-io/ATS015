@@ -114,15 +114,22 @@ The same property makes the expiry story manageable: an edge certificate from a 
 Most of what goes wrong here produces a failure at the wrong layer to look useful.
 
 > [!WARNING]
-> **Common pitfalls**
+## Common pitfalls
+
+> [!WARNING]
+> **The secret in the application's namespace** — it must live where the gateway pod runs, normally `istio-system`. The listener never comes up and `proxy-config secret` shows nothing.
 >
-> - **The secret in the application's namespace** — it must live where the gateway pod runs, normally `istio-system`. The listener never comes up and `proxy-config secret` shows nothing.
-> - **A port name that does not start with `https`** — Istio uses the name prefix in deciding protocol handling, so the listener is not the one you meant to create.
-> - **`create secret generic` with invented key names** — use `create secret tls`, or match the `tls.crt` / `tls.key` layout exactly.
-> - **Testing without SNI** — the gateway selects a listener by SNI. Without `--resolve` (or real DNS) the handshake fails in a way that looks like a certificate problem.
-> - **Confusing the SNI and `Host` selections** — a handshake failure is SNI; a `404` on a working TLS connection is the `VirtualService`.
-> - **Expecting an `EXTERNAL-IP` on `kind`** — there is no load balancer. Use `port-forward`.
-> - **`httpsRedirect` in front of API clients** — a `301` is only helpful to something that follows redirects.
+> **A port name that does not start with `https`** — Istio uses the name prefix in deciding protocol handling, so the listener is not the one you meant to create.
+>
+> **`create secret generic` with invented key names** — use `create secret tls`, or match the `tls.crt` / `tls.key` layout exactly.
+>
+> **Testing without SNI** — the gateway selects a listener by SNI. Without `--resolve` (or real DNS) the handshake fails in a way that looks like a certificate problem.
+>
+> **Confusing the SNI and `Host` selections** — a handshake failure is SNI; a `404` on a working TLS connection is the `VirtualService`.
+>
+> **Expecting an `EXTERNAL-IP` on `kind`** — there is no load balancer. Use `port-forward`.
+>
+> **`httpsRedirect` in front of API clients** — a `301` is only helpful to something that follows redirects.
 
 ## Two more listener settings
 

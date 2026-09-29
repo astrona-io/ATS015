@@ -112,6 +112,17 @@ One practical consequence: **a client cannot tell an L4 denial from the service 
 
 > *ztunnel enforces everything decidable from the connection — including identity — and refuses at the transport, so an L4 denial arrives as `000` rather than `403`.*
 
+## Common pitfalls
+
+> [!WARNING]
+> **Writing an L7 rule and expecting ztunnel to apply it.** It cannot parse HTTP. The rule is accepted and silently unenforced.
+>
+> **Reading a policy as enforced because it exists.** In ambient the question is always *where* it is enforced, and by what.
+>
+> **Assuming identity is unavailable without a sidecar.** ztunnel does mTLS and carries identity; it is the L7 attributes it lacks.
+>
+> **Testing L4 policy with an HTTP-shaped test.** A 403 and a dropped connection mean different layers refused you.
+
 ## Reference
 
 - [Ambient L4 authorization policy](https://istio.io/latest/docs/ambient/usage/l4-policy/) — which fields ztunnel supports and how it behaves without a waypoint.

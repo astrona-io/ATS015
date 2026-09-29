@@ -48,19 +48,18 @@ spec:
 
 Read those three again and notice how little distinguishes them:
 
-```text
-  namespace == root namespace ?  ──yes──▶  selector present ?  ──no──▶  MESH-WIDE
-                │                                 │
-                │                                yes ──▶  workload policy, in istio-system
-                no                                        (applies to the gateways etc.
-                │                                          that live there — rarely intended)
-                ▼
-      selector present ?  ──no──▶  NAMESPACE-WIDE
-                │
-               yes
-                ▼
-            WORKLOAD
+```mermaid
+flowchart TD
+    P["a PeerAuthentication object"] --> R{"is it in the root namespace"}
+    R -->|"yes"| RS{"does it have a selector"}
+    RS -->|"no"| M["MESH-WIDE"]
+    RS -->|"yes"| W1["a workload policy that happens to live in istio-system<br/>applies to the gateways there, rarely what was intended"]
+    R -->|"no"| NS{"does it have a selector"}
+    NS -->|"no"| N["NAMESPACE-WIDE"]
+    NS -->|"yes"| W2["WORKLOAD"]
 ```
+
+Two questions decide the scope, and the surprising branch is the top right: a selector in the root namespace does not narrow a mesh-wide policy, it creates a workload policy over `istio-system`.
 
 Both wrong turns on that diagram apply cleanly and produce no error. A mesh-wide policy dropped into an application namespace becomes an ordinary namespace policy and silently covers far less than intended. A namespace policy that picks up a `selector` becomes a workload policy and silently covers far less again.
 
@@ -76,17 +75,14 @@ An empty result means the default is in force.
 
 When several policies could apply to one workload, exactly one decides. The rule is **narrowest wins**, and the full ordering has four levels rather than three:
 
-```text
-   narrowest ─────────────────────────────────────────────▶ widest
-
-   portLevelMtls        workload policy      namespace policy     mesh policy
-   (one port on         (selector matches    (no selector, in     (no selector,
-    a workload)          these pods)          this namespace)      root namespace)
-        │                     │                     │                   │
-        └── beats ────────────┴── beats ────────────┴── beats ──────────┘
-
-   ...and if nothing matches at any level:  PERMISSIVE
+```mermaid
+flowchart LR
+    A["portLevelMtls<br/>one port on a workload"] --> B["workload policy<br/>selector matches these pods"]
+    B --> C["namespace policy<br/>no selector, this namespace"]
+    C --> D["mesh policy<br/>no selector, root namespace"]
 ```
+
+Narrowest wins. The leftmost thing that applies to a given port is the one in effect, and nothing merges — a narrower policy replaces the wider one for what it covers.
 
 This is a **selection**, not a merge. The winning level supplies the mode; the wider ones are not consulted for that workload at all. There is no combining, no intersection, no "most restrictive wins" — a `PERMISSIVE` namespace policy genuinely overrides a `STRICT` mesh policy, which surprises people who expect security settings to only ratchet tighter.
 
@@ -185,6 +181,17 @@ Two mechanical details decide whether it works at all:
 Its normal use is an exception for something that genuinely cannot do mTLS — a metrics scraper outside the mesh, a legacy health checker — and that is exactly the case [Module 3](../module-03/course.md) works through on a live namespace.
 
 > *Scope is decided by namespace plus the presence of a selector, and the narrowest matching level supplies the mode outright — it is a selection, not a merge.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Adding a selector to a mesh-wide policy to narrow it.** That does not narrow anything — it becomes a workload policy scoped to the root namespace.
+>
+> **Expecting scopes to merge.** The narrowest applicable policy replaces the wider one; fields are not combined.
+>
+> **Forgetting `portLevelMtls` exists.** It is narrower than a workload policy and will quietly override it for the port it names.
+>
+> **Assuming the root namespace is `istio-system` everywhere.** It is configurable, and a policy placed in the wrong one is mesh-wide nowhere.
 
 ## Reference
 

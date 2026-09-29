@@ -24,22 +24,14 @@ It is a bare name, looked up in the namespace of the **gateway pod** — normall
 
 The rule follows from how the credential is delivered, which is the same SDS machinery that carried workload identities in [section 010](../../section-010/module-01/course-01-how-identity-is-issued.md) — pointed at a different source.
 
-```text
-   you create a Secret in istio-system
-        │
-        ▼
-   istiod watches Secrets                  ← it only watches the namespaces
-        │                                    it is permitted to, and a gateway's
-        │                                    credentials come from its own
-        ▼
-   gateway's Gateway object says: credentialName: booking-credential
-        │
-        ▼
-   istiod pushes the cert + key to that gateway proxy over SDS
-        │
-        ▼
-   Envoy holds it in memory, presents it on the matching listener
+```mermaid
+flowchart TD
+    S["you create a Secret in the gateway's namespace"] --> W["istiod watches Secrets<br/>in the namespaces it is permitted to"]
+    W --> G["the Gateway object names it:<br/>credentialName: booking-credential"]
+    G --> P["istiod pushes the certificate and key<br/>to that gateway proxy over SDS"]
 ```
+
+The Secret is read by `istiod`, not mounted into the gateway pod. That is why the namespace it lives in matters and why rotating it needs no restart.
 
 Read that and the design reason is visible: **the gateway namespace is a trust boundary.** If `credentialName` could name a secret in any namespace, then anyone able to create a Secret anywhere could hand the shared ingress gateway a certificate for any hostname. Confining the lookup to the gateway's own namespace means only people who can write there — normally cluster operators — can supply what the edge presents.
 
@@ -103,6 +95,17 @@ Two properties of the material itself:
 Nothing about the gateway has been configured yet. The credential exists and is waiting; [Part 2](./course-02-the-tls-listener.md) writes the listener that asks for it.
 
 > *`credentialName` is a bare name resolved in the gateway pod's namespace, because that namespace is the trust boundary for what the edge is allowed to present.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Creating the Secret in the application's namespace.** The gateway's credentials are read from the gateway's namespace, so it will simply never be found.
+>
+> **Expecting a mounted volume.** The certificate arrives over SDS; there is no file to look for in the pod.
+>
+> **Misnaming the keys inside the Secret.** `tls.crt` and `tls.key` are what is looked for; anything else delivers nothing and the listener never comes up.
+>
+> **Assuming a missing credential produces a clear error.** The listener fails to materialise and the connection fails in the handshake, with nothing naming the Secret.
 
 ## Reference
 

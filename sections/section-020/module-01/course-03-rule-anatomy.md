@@ -31,17 +31,16 @@ Each part draws its values from a different stage of [Part 1](./course-01-how-a-
 
 Four levels, four different answers. Getting these straight is most of the skill:
 
-```text
-   values in one list        OR    methods: ["GET","POST"]     → either one matches
-        │
-   fields in one part       AND    methods + paths             → both must hold
-        │
-   parts in one rule        AND    from + to + when            → all present parts hold
-        │
-   rules in one policy       OR    rules: [ …, … ]             → any rule matching is enough
-        │
-   policies on one workload  OR    (covered in Part 4)
+```mermaid
+flowchart TD
+    A["values in one list<br/>methods: GET, POST"] -->|"OR: either one matches"| B["fields in one part<br/>methods plus paths"]
+    B -->|"AND: both must hold"| C["parts in one rule<br/>from, to, when"]
+    C -->|"AND: all present parts hold"| D["rules in one policy"]
+    D -->|"OR: any rule matching is enough"| E["policies on one workload"]
+    E -->|"OR"| F["the request is allowed"]
 ```
+
+Read it from the inside out: OR within a list, AND across fields and parts, then OR again across rules and policies. Getting one level wrong is the single most common authorization mistake.
 
 Read the middle two together and the most common mistake becomes visible: **a part that is absent is not a constraint**. Omitting `to.operation` means *any* operation, not *no* operation. A rule with only a `from` block permits that caller to do anything, which is rarely what someone writing a careful policy intended.
 
@@ -146,6 +145,19 @@ Each entry takes a `key` and either `values` or `notValues`; entries are ANDed w
 One caution that follows from stage ordering: a `when` condition on a header is only as trustworthy as the header. Anything the caller sets, the caller controls. Conditions on `request.auth.*` are different in kind, because a signature was checked before the attribute existed.
 
 > *Values OR, fields AND, parts AND, rules OR — and a part you left out is not a constraint, it is a wildcard.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Reading values in a list as ANDed.** Values inside one field are ORed; any one of them matching is enough.
+>
+> **Reading separate rules as ANDed.** Rules within a policy are ORed — a request matching any single rule is permitted.
+>
+> **Forgetting that fields within a part are ANDed.** `methods` and `paths` in the same `to` block must both hold.
+>
+> **Writing a path match without knowing the matching rules.** Exact, prefix and suffix forms behave differently, and a trailing slash changes the answer.
+>
+> **Leaving a part out and expecting it to restrict.** An absent `from` matches every source, not none.
 
 ## Reference
 

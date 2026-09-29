@@ -76,16 +76,24 @@ That pairing is the whole verification procedure: the first command says the cre
 Most of what goes wrong in this module produces either no error or the wrong kind of success.
 
 > [!WARNING]
-> **Common pitfalls**
+## Common pitfalls
+
+> [!WARNING]
+> **`kubectl create secret tls` for `MUTUAL`** — it cannot carry a CA bundle, so client verification never turns on and the gateway happily accepts everyone.
 >
-> - **`kubectl create secret tls` for `MUTUAL`** — it cannot carry a CA bundle, so client verification never turns on and the gateway happily accepts everyone.
-> - **Wrong key names in the secret** — it must be exactly `tls.crt`, `tls.key`, `ca.crt`. Anything else fails silently and fails *open*.
-> - **Concluding from a successful request that verification works** — that is also what the broken configuration does. Read `requireClientCertificate`.
-> - **Expecting `403` for a rejected client** — the rejection is in the handshake. Expect a `curl` error and `000`.
-> - **The secret in the application namespace** — same rule as `SIMPLE`: it belongs where the gateway pod runs.
-> - **Assuming edge `MUTUAL` implies mesh mTLS** — they are unrelated. Check `PeerAuthentication` separately.
-> - **Losing control of `ca.key`** — anyone holding it can mint a client the gateway will accept, indistinguishably from a legitimate one.
-> - **Treating a verified client certificate as authorization** — it proves the CA signed this client, and nothing else.
+> **Wrong key names in the secret** — it must be exactly `tls.crt`, `tls.key`, `ca.crt`. Anything else fails silently and fails *open*.
+>
+> **Concluding from a successful request that verification works** — that is also what the broken configuration does. Read `requireClientCertificate`.
+>
+> **Expecting `403` for a rejected client** — the rejection is in the handshake. Expect a `curl` error and `000`.
+>
+> **The secret in the application namespace** — same rule as `SIMPLE`: it belongs where the gateway pod runs.
+>
+> **Assuming edge `MUTUAL` implies mesh mTLS** — they are unrelated. Check `PeerAuthentication` separately.
+>
+> **Losing control of `ca.key`** — anyone holding it can mint a client the gateway will accept, indistinguishably from a legitimate one.
+>
+> **Treating a verified client certificate as authorization** — it proves the CA signed this client, and nothing else.
 
 ## After verification: who is this client?
 

@@ -59,16 +59,24 @@ Step 2 is the one that does not exist in sidecar mode, and it is where most ambi
 The traps here are all the same shape: a policy that applies cleanly and is enforced by nobody.
 
 > [!WARNING]
-> **Common pitfalls**
+## Common pitfalls
+
+> [!WARNING]
+> **An L7 rule in an ambient namespace with no waypoint** — accepted, listed, silently ignored. Check for a waypoint before trusting any method, path, header or JWT rule.
 >
-> - **An L7 rule in an ambient namespace with no waypoint** — accepted, listed, silently ignored. Check for a waypoint before trusting any method, path, header or JWT rule.
-> - **Using `selector` where `targetRefs` is needed** — L7 policy attaches to the waypoint in front of a service, not to pods.
-> - **Deploying a waypoint without enrolling the namespace or service** — the pod runs, the `Gateway` reports `PROGRAMMED: True`, and no traffic goes through it.
-> - **Expecting `403` from an L4 denial** — ztunnel refuses the connection, so the caller sees a connection error (`000` from `curl`), not a status code.
-> - **Assuming identity needs a waypoint** — it does not. ztunnel does mTLS over HBONE, so `principals` and `namespaces` work at L4.
-> - **Reaching for `-c istio-proxy` or `proxy-config` on an application pod** — there is no sidecar. Use `ztunnel-config`.
-> - **Assuming a `DENY` at L7 covers an L4 path** — a request that never reaches the waypoint is never evaluated by it. Put the connection-level half of a requirement in an L4 policy.
-> - **Removing a waypoint and forgetting its policies** — the L7 objects stay, stop being enforced, and still look active in `kubectl get`.
+> **Using `selector` where `targetRefs` is needed** — L7 policy attaches to the waypoint in front of a service, not to pods.
+>
+> **Deploying a waypoint without enrolling the namespace or service** — the pod runs, the `Gateway` reports `PROGRAMMED: True`, and no traffic goes through it.
+>
+> **Expecting `403` from an L4 denial** — ztunnel refuses the connection, so the caller sees a connection error (`000` from `curl`), not a status code.
+>
+> **Assuming identity needs a waypoint** — it does not. ztunnel does mTLS over HBONE, so `principals` and `namespaces` work at L4.
+>
+> **Reaching for `-c istio-proxy` or `proxy-config` on an application pod** — there is no sidecar. Use `ztunnel-config`.
+>
+> **Assuming a `DENY` at L7 covers an L4 path** — a request that never reaches the waypoint is never evaluated by it. Put the connection-level half of a requirement in an L4 policy.
+>
+> **Removing a waypoint and forgetting its policies** — the L7 objects stay, stop being enforced, and still look active in `kubectl get`.
 
 ## What carries across unchanged
 

@@ -6,25 +6,17 @@ Everything about passthrough configuration follows from one question: with no ke
 
 ## The handshake, from the middle
 
-```text
-   client                          gateway (no key)                backend
-   ──────                          ────────────────                ───────
-   ClientHello            ──────▶  READABLE, in the clear
-     TLS version                   ├─ server_name (SNI): secure.ica.local   ◀── the only
-     cipher list                   ├─ ALPN: h2, http/1.1                        routable
-     server_name (SNI)             └─ cipher/version preferences                 field
-     ALPN
-                                   forwards bytes unchanged  ──────▶
-                          ◀────────────────────────────  ServerHello
-                                   OPAQUE from here on:        + certificate
-                                   key exchange, then           (the BACKEND's)
-                                   everything encrypted
-   ◀──────────────────────────────────────────────────  finished
-   application data       ══════ encrypted ══════▶      decrypted here
-     GET /admin                    unreadable            the backend sees it
-     Host: …                       unreadable
-     Authorization: …              unreadable
+```mermaid
+flowchart TD
+    C["client ClientHello:<br/>TLS version, cipher list, SNI, ALPN"] --> G["gateway with no key"]
+    G --> R["READABLE in the clear:<br/>server_name (SNI), ALPN, cipher preferences"]
+    R --> N["SNI is the ONLY routable field"]
+    G --> F["forwards the bytes unchanged"]
+    F --> B["backend presents its OWN certificate"]
+    B --> O["opaque from here on:<br/>key exchange, then application data"]
 ```
+
+A passthrough gateway is a router with one field to route on. Everything a normal gateway does with paths and headers is unavailable, because it never holds a key.
 
 The ClientHello is sent before any key material is agreed, so it is necessarily in the clear. Everything after the key exchange is not.
 
@@ -80,6 +72,17 @@ That is worth confirming before any gateway exists, because it makes the later r
 Keep that subject line. [Part 3](./course-03-what-passthrough-costs.md) compares it against what a client sees through the gateway, and identical output is the proof that passthrough did what it claims.
 
 > *The ClientHello is in the clear and everything after it is not, so a proxy without the key can route on SNI and on nothing else.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Expecting path or header routing in passthrough.** The proxy never decrypts, so SNI is the only thing it can route on.
+>
+> **Assuming the gateway's certificate is presented.** In passthrough the *backend's* certificate reaches the client.
+>
+> **Reading passthrough as more secure by default.** It moves termination, and the responsibility, to the backend.
+>
+> **Forgetting telemetry goes with it.** No HTTP is parsed, so there are no HTTP metrics or access-log fields for that traffic.
 
 ## Reference
 

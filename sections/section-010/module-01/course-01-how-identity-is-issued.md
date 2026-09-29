@@ -61,24 +61,23 @@ That is also the real reason two pods sharing a service account are indistinguis
 
 Here is the whole sequence, from a pod being scheduled to its proxy holding a usable certificate:
 
-```text
-  pod starts
-      │
-      ▼
-  istio-agent (in the istio-proxy container)
-      │  1. generates a private key + CSR, in memory, never written to disk
-      │  2. reads the projected service account token from the pod filesystem
-      ▼
-  istiod  (the control plane's CA)
-      │  3. validates the token with the Kubernetes TokenReview API
-      │  4. maps namespace + service account  →  spiffe://<trust-domain>/ns/…/sa/…
-      │  5. signs a short-lived X.509 cert with that URI in the SAN
-      ▼
-  istio-agent
-      │  6. serves the cert + key to Envoy over a local UNIX socket (SDS)
-      ▼
-  Envoy  — presents it on every mTLS handshake this workload makes or accepts
+```mermaid
+sequenceDiagram
+    participant P as the pod starting
+    participant A as istio-agent, in istio-proxy
+    participant K as Kubernetes API
+    participant C as istiod, the CA
+    P->>A: start
+    Note over A: generates a private key and CSR in memory,<br/>never written to disk
+    A->>C: CSR plus the projected service account token
+    C->>K: validate the token with TokenReview
+    K-->>C: this token belongs to ns/serviceaccount
+    Note over C: maps namespace and service account<br/>to spiffe://trust-domain/ns/.../sa/...
+    C-->>A: a short-lived X.509 certificate with that URI in the SAN
+    A-->>P: delivered to Envoy over SDS
 ```
+
+The private key never leaves the pod and is never written down. What travels is a signing request and a token Kubernetes can vouch for — which is why the identity cannot be forged by copying a file.
 
 Four details in that flow are worth holding onto, because each explains a behaviour you will meet later:
 
@@ -111,6 +110,17 @@ It defaults to `cluster.local` and lives in `meshConfig.trustDomain`. Its job is
 > If the field is absent from the ConfigMap entirely, the default `cluster.local` is in force — Istio only writes out what was explicitly set. Either way, this value is the prefix on every identity in the mesh, including ones issued before you read it.
 
 > *A workload's identity is derived from the only thing about it that carries a proof — its service account token — which is why policy can never tell apart two pods that share one.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Looking for the private key on disk.** It is generated in memory by the agent and stays there. There is no file to back up or copy.
+>
+> **Reading the identity as the pod's name.** It encodes the *namespace and service account*, so every pod under one service account shares one identity.
+>
+> **Assuming the default service account is harmless.** Workloads left on `default` are indistinguishable from each other, which makes identity-based policy useless later.
+>
+> **Expecting the certificate to be long-lived.** It is short-lived and renewed automatically; anything built on a fixed certificate lifetime will break.
 
 ## Reference
 

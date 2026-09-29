@@ -54,13 +54,16 @@ Every rule in this module is a string comparison against a value some other syst
 
 Providers differ, and they differ in ways the UI hides:
 
-```text
-   the console says          the token actually contains
-   ────────────────          ───────────────────────────
-   "Roles"                   "roles"  …  or "groups"
-                             …  or "realm_access": {"roles": [...]}
-                             …  or "http://example.com/claims/roles"
+```mermaid
+flowchart LR
+    C["what the identity provider's console calls it"] --> D["what the token actually contains"]
+    C1["Roles"] --> D1["roles"]
+    C1 --> D2["groups"]
+    C1 --> D3["realm_access.roles, nested"]
+    C1 --> D4["a namespaced URI claim such as<br/>http://example.com/claims/roles"]
 ```
+
+The label in a vendor's UI is not the claim name. Decode a real token and read the payload before writing a rule against it — this one mismatch accounts for most claim rules that silently never match.
 
 Decoding one real token settles all of it, costs one command, and needs no key — a JWT payload is base64url-encoded JSON, as [Module 1](../module-01/course-01-two-identities-and-the-filter.md) established.
 
@@ -97,6 +100,17 @@ That boundary is worth being precise about, because it decides what these rules 
 - A claim is visible to anyone holding the token, so it can carry an assertion and never a secret.
 
 > *Stage 3 publishes `request.auth.*` and stage 4 reads it — so a claim rule on a workload with no `RequestAuthentication` matches nothing, and a claim name guessed from a console usually matches nothing either.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Writing the claim name from the provider's console.** Decode an actual token; the displayed label and the JSON key are frequently different.
+>
+> **Assuming a nested claim can be addressed directly.** A claim inside an object needs the nested syntax, and getting it wrong compiles fine and matches nothing.
+>
+> **Forgetting `request.auth.principal` is `<iss>/<sub>`.** Matching it against a bare subject never works.
+>
+> **Expecting attributes when no token was sent.** Nothing is published, so every claim rule simply fails to match.
 
 ## Reference
 

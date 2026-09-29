@@ -134,16 +134,24 @@ kubectl -n authz-demo logs deploy/notification-service-v1 -c istio-proxy --tail=
 Most of what goes wrong here is a field doing something subtly different from what it looks like.
 
 > [!WARNING]
-> **Common pitfalls**
+## Common pitfalls
+
+> [!WARNING]
+> **Using `principals` without mTLS** — no verified identity means the rule never matches and the traffic is denied with no clue why. Check `PeerAuthentication` first.
 >
-> - **Using `principals` without mTLS** — no verified identity means the rule never matches and the traffic is denied with no clue why. Check `PeerAuthentication` first.
-> - **Writing `spiffe://…` in `principals`** — the field takes the identity without the scheme, and the mismatch produces no error.
-> - **Expecting more `ALLOW` policies to restrict** — they combine as a union. To subtract, you need `DENY`.
-> - **Assuming an omitted `to.operation` means "nothing"** — an absent part is unconstrained. Only an absent `rules` list denies.
-> - **Splitting one intent across two rules** — "this caller, only these methods" is one rule with two parts, not two rules.
-> - **Confusing `403` with a connection reset** — `403 RBAC: access denied` is authorization at stage 4. `000` is the transport at stage 1, which means `PeerAuthentication`.
-> - **Exact paths where a prefix was meant** — `paths: ["/notify"]` does not match `/notify/urgent`.
-> - **Debugging from the caller** — the caller only learns that it got a `403`. The explanation is always on the callee.
+> **Writing `spiffe://…` in `principals`** — the field takes the identity without the scheme, and the mismatch produces no error.
+>
+> **Expecting more `ALLOW` policies to restrict** — they combine as a union. To subtract, you need `DENY`.
+>
+> **Assuming an omitted `to.operation` means "nothing"** — an absent part is unconstrained. Only an absent `rules` list denies.
+>
+> **Splitting one intent across two rules** — "this caller, only these methods" is one rule with two parts, not two rules.
+>
+> **Confusing `403` with a connection reset** — `403 RBAC: access denied` is authorization at stage 4. `000` is the transport at stage 1, which means `PeerAuthentication`.
+>
+> **Exact paths where a prefix was meant** — `paths: ["/notify"]` does not match `/notify/urgent`.
+>
+> **Debugging from the caller** — the caller only learns that it got a `403`. The explanation is always on the callee.
 
 ## What this module leaves open
 

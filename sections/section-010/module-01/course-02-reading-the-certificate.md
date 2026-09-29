@@ -51,12 +51,13 @@ Ask a workload proxy what TLS material it has and you get two entries, not one. 
 
 The two-entry layout is the mutual in mutual TLS, made concrete. Every handshake needs both halves:
 
-```text
-  booking-service                         notification-service
-  ───────────────                         ─────────────────────
-  presents `default`         ──────▶      verifies it against ROOTCA
-  verifies against ROOTCA    ◀──────      presents its own `default`
+```mermaid
+flowchart LR
+    B["booking-service<br/>presents its default leaf"] -->|"verified against ROOTCA"| N["notification-service"]
+    N -->|"presents its own default leaf,<br/>verified against ROOTCA"| B
 ```
+
+Both ends prove who they are and both ends check. That symmetry is what makes it *mutual* TLS rather than the one-way TLS a browser does.
 
 Which is also why the two entries have such different lifetimes. The leaf is short-lived because it is handed out constantly and a leak should expire quickly. The root is long-lived because rotating it means re-establishing trust across the entire mesh at once.
 
@@ -119,6 +120,17 @@ openssl x509 -in /tmp/workload.crt -noout -dates
 The issuer names the CA that signed this leaf — in a default install, istiod's own. This is the value that changes when a mesh is configured with an external or intermediate CA, and comparing it across two workloads is the quickest way to spot a mesh where half the workloads were issued by something else. `-dates` is [Part 3](./course-03-principals-rotation-trust-domain.md)'s subject.
 
 > *`istioctl proxy-config` asks a running proxy what it actually holds; every workload holds exactly two things — the identity it presents, and the root it checks everyone else against.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Confusing `default` with `ROOTCA`.** `default` is the workload's own leaf certificate; `ROOTCA` is the trust anchor it verifies peers against.
+>
+> **Reading a certificate and concluding mTLS is enforced.** Holding a certificate means it can do mTLS, not that anything requires it.
+>
+> **Expecting the certificate chain in plain text.** It is base64 PEM inside `inlineBytes`; decode it before trying to read the SAN.
+>
+> **Checking the wrong pod.** Each workload has its own leaf. The identity you care about is on the workload you are asking about.
 
 ## Reference
 

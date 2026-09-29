@@ -111,6 +111,17 @@ That is the headline operational advantage of ambient mode, and it is why enrolm
 
 > *ztunnel carries mTLS over HBONE and never parses HTTP, so identity is fully available at L4 while anything about a request needs a separate waypoint.*
 
+## Common pitfalls
+
+> [!WARNING]
+> **Looking for a sidecar container.** Ambient pods keep their original container count; enrollment is a label, not an injection.
+>
+> **Expecting L7 authorization to work immediately.** ztunnel enforces at L4 only; anything matching on paths or methods needs a waypoint.
+>
+> **Assuming policies carry over unchanged from sidecar mode.** They apply, but which of them can be *enforced* depends on what is in the path.
+>
+> **Forgetting ztunnel is shared.** It is one per node, serving every enrolled pod on it.
+
 ## Reference
 
 - [Istio ambient mode architecture](https://istio.io/latest/docs/ambient/architecture/) — ztunnel, waypoints, istio-cni and how they fit together.

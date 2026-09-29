@@ -66,20 +66,15 @@ In an environment with restricted egress, the inline `jwks` field removes the de
 
 With the object in place and nothing else, stage 3 does one of three things:
 
-```text
-   Authorization header present?
-        │
-       no ──────────────▶  pass through untouched, no attributes published
-        │
-       yes
-        ▼
-   signature + exp + iss (+ aud, if configured) valid?
-        │
-       no ──────────────▶  401, request stops here
-        │
-       yes ─────────────▶  publish request.auth.principal, .claims[…], .audiences
-                           and continue to stage 4
+```mermaid
+flowchart TD
+    Q1{"is an Authorization header present"} -->|"no"| P["pass through untouched,<br/>no attributes published"]
+    Q1 -->|"yes"| Q2{"signature, exp, iss, and aud if configured: all valid"}
+    Q2 -->|"no"| E["401, the request stops here"]
+    Q2 -->|"yes"| A["publish request.auth.principal, .claims, .audiences<br/>and continue to stage 4"]
 ```
+
+The left branch is the one that surprises people: `RequestAuthentication` validates tokens, it does not require them. Requiring one is authorization's job.
 
 The first branch is the one to internalise, and it is not a bug: a `RequestAuthentication` on its own protects nothing, because the easiest way to avoid failing token validation is to not send a token.
 
@@ -131,6 +126,17 @@ When every token gets `401`, there are only three candidates, and they are worth
 The first two are configuration and produce identical symptoms to the third, which is why "the token must be wrong" is such a common wrong turn. [Part 3](./course-03-requiring-a-token.md) ends with the command that reads the issuer back out of the proxy's own configuration, which settles candidate 1 in one line.
 
 > *The proxy verifies a signature against a key set it fetched and cached, so an unreachable `jwksUri` rejects every token — including the correct ones — long after the object applied cleanly.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Expecting `RequestAuthentication` to require a token.** It only rejects *invalid* ones. A request with no token sails through.
+>
+> **Getting the `issuer` string subtly wrong.** It must match the token's `iss` exactly, trailing slash and all — a mismatch is a 401 with a correct-looking object.
+>
+> **Assuming the JWKS is fetched per request.** It is cached and refreshed; a rotated key can take until the next refresh to be honoured.
+>
+> **Pointing at a JWKS the proxy cannot reach.** Egress restrictions apply to that fetch like any other outbound call.
 
 ## Reference
 

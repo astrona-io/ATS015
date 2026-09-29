@@ -39,22 +39,17 @@ For this module: `protocol: HTTPS` on port `443` with a name starting `https`. G
 
 A single gateway usually serves several hostnames, each with its own certificate. Something has to decide which one answers a given connection, and — before any HTTP is available — the only thing to decide on is SNI.
 
-```text
-   client connects, ClientHello carries SNI: booking.ica.local
-        │
-        ▼
-   gateway proxy: which filter chain matches this SNI?
-        │
-        ├── servers[0] hosts: [booking.ica.local]  ──▶ present booking-credential
-        ├── servers[1] hosts: [shop.ica.local]     ──▶ present shop-credential
-        └── no match                               ──▶ connection fails in the handshake
-        │
-        ▼
-   TLS terminated, HTTP now visible
-        │
-        ▼
-   route selection: which VirtualService, by Host header?
+```mermaid
+flowchart TD
+    C["client connects, ClientHello carries SNI booking.ica.local"] --> M{"which filter chain matches this SNI"}
+    M -->|"servers[0] hosts booking.ica.local"| A["present booking-credential"]
+    M -->|"servers[1] hosts shop.ica.local"| B["present shop-credential"]
+    M -->|"no match"| F["the connection fails in the handshake"]
+    A --> T["TLS terminated, HTTP now visible"]
+    B --> T
 ```
+
+SNI selects the certificate before any HTTP exists. A name that matches no server block cannot be answered at all, which is why the failure looks like a broken connection rather than a 404.
 
 Two selections, on two different values, at two different stages — and they are easy to conflate because in normal use both are the same hostname:
 
@@ -152,6 +147,17 @@ Without it, the listener comes up, the handshake succeeds, and every request ret
 Note the `selector: istio: ingressgateway` in the `Gateway`. It picks which gateway *deployment* this configuration is pushed to, by pod label — the same selector mechanism as every security object in this course, pointed at edge proxies instead of application workloads.
 
 > *`protocol` and the port's name prefix both shape how a listener is handled, and SNI selects the listener while the `Host` header selects the route.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Expecting a 404 for an unknown host.** SNI is matched during the handshake, so an unmatched name fails before HTTP exists.
+>
+> **Using one server block for several unrelated hostnames.** Each needs its own credential, and the SNI decides which is presented.
+>
+> **Forgetting the client must send SNI.** A request to an IP address sends none, so nothing matches.
+>
+> **Confusing the `Gateway` hosts with the `VirtualService` hosts.** Both filter, and the effective set is the intersection.
 
 ## Reference
 

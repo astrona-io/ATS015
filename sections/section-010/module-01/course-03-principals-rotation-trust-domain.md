@@ -72,26 +72,18 @@ Workload certificates are deliberately short-lived. The default is **24 hours**,
 
 What keeps the workload working is `istio-agent` — the small process that runs alongside Envoy in the sidecar container — refreshing it. The lifecycle it manages looks like this:
 
-```text
-   ┌──────────────┐
-   │  no cert     │  pod just started
-   └──────┬───────┘
-          │ CSR + service account token  →  istiod
-          ▼
-   ┌──────────────┐
-   │  ACTIVE      │  in use for every handshake
-   └──────┬───────┘
-          │ ~50% of lifetime elapsed  →  agent renews, unprompted
-          ├──────────────────────────────────┐
-          ▼                                  │ istiod unreachable
-   ┌──────────────┐                          ▼
-   │  ACTIVE      │  new cert, new serial,  ┌──────────────┐
-   │  (renewed)   │  same identity          │ still ACTIVE │  retries, works
-   └──────────────┘  no restart, no drop    │ until expiry │  until NOT AFTER
-                                            └──────┬───────┘
-                                                   ▼
-                                              handshakes fail
+```mermaid
+stateDiagram-v2
+    [*] --> NoCert: the pod has just started
+    NoCert --> Active: CSR plus service account token accepted by istiod
+    Active --> Active: about half the lifetime elapsed, the agent renews unprompted
+    Active --> Stale: istiod unreachable at renewal time
+    Stale --> Active: istiod returns before expiry
+    Stale --> Expired: the certificate lifetime runs out
+    Expired --> [*]: handshakes now fail
 ```
+
+Renewal starts at roughly half the lifetime, which is the margin that lets a control-plane outage pass without anything failing. Only an outage that outlasts that margin reaches `Expired`.
 
 Three things in that diagram are examinable, and all three are consequences of the design rather than facts to memorise separately:
 
@@ -131,14 +123,20 @@ This is not something to try in the playground: changing the trust domain means 
 Most of what goes wrong with identity is a string that is one edit away from correct, and none of it produces an error message.
 
 > [!WARNING]
-> **Common pitfalls**
+## Common pitfalls
+
+> [!WARNING]
+> **Writing `spiffe://cluster.local/ns/…` in `principals`** — drop the scheme. `principals` takes `<trust-domain>/ns/<namespace>/sa/<service-account>`, nothing more.
 >
-> - **Writing `spiffe://cluster.local/ns/…` in `principals`** — drop the scheme. `principals` takes `<trust-domain>/ns/<namespace>/sa/<service-account>`, nothing more.
-> - **Assuming differently named pods have different identities** — identity is per service account. Two Deployments both running as `default` cannot be told apart by any policy, because they present the same proof.
-> - **Hard-coding `cluster.local` after changing the trust domain** — every `principals` value silently stops matching, and for the first day only some of them.
-> - **Blaming certificate expiry for an outage** — rotation is automatic and happens hours before expiry. A proxy holding a stale certificate normally means it lost its connection to istiod, so check istiod first.
-> - **Looking for the identity in the certificate Subject** — mesh certificates leave it empty and carry the identity in the SAN URI.
-> - **Hunting for a Kubernetes Secret holding a workload's key** — there is none. The key is generated in the pod and never leaves it.
+> **Assuming differently named pods have different identities** — identity is per service account. Two Deployments both running as `default` cannot be told apart by any policy, because they present the same proof.
+>
+> **Hard-coding `cluster.local` after changing the trust domain** — every `principals` value silently stops matching, and for the first day only some of them.
+>
+> **Blaming certificate expiry for an outage** — rotation is automatic and happens hours before expiry. A proxy holding a stale certificate normally means it lost its connection to istiod, so check istiod first.
+>
+> **Looking for the identity in the certificate Subject** — mesh certificates leave it empty and carry the identity in the SAN URI.
+>
+> **Hunting for a Kubernetes Secret holding a workload's key** — there is none. The key is generated in the pod and never leaves it.
 
 ## Settling a denial in one pass
 

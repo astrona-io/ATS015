@@ -44,14 +44,16 @@ That result restates the precedence lesson from the other direction: the conflic
 
 The intended workflow follows directly:
 
-```text
-   write the rule as AUDIT  ──▶  run it against live traffic for a real window
-                                        │
-                        does it match things you did not intend?
-                                        │
-                     yes ──▶ narrow it, keep auditing
-                     no  ──▶ patch action to DENY
+```mermaid
+flowchart TD
+    W["write the rule as AUDIT"] --> R["run it against live traffic for a real window"]
+    R --> Q{"does it match things you did not intend"}
+    Q -->|"yes"| N["narrow it, keep auditing"]
+    N --> R
+    Q -->|"no"| P["patch the action to DENY"]
 ```
+
+AUDIT lets you find out what a rule would have caught before it catches anything. The loop back to the top is the part people skip.
 
 A single-field patch in each direction, with no window and no redeploy, because — as everywhere in this course — the change is a configuration push to running proxies.
 
@@ -90,16 +92,24 @@ Keep the `DENY` set small for the same reason. Each one is an unconditional veto
 The traps here are all consequences of the ordering rather than of syntax.
 
 > [!WARNING]
-> **Common pitfalls**
+## Common pitfalls
+
+> [!WARNING]
+> **Trying to re-enable a path with an `ALLOW`** — impossible. Narrow the `DENY` instead, or express the exception inside it.
 >
-> - **Trying to re-enable a path with an `ALLOW`** — impossible. Narrow the `DENY` instead, or express the exception inside it.
-> - **Expecting a `DENY` to create default-deny** — a workload with only `DENY` policies still allows everything not explicitly denied.
-> - **Reading a negated field without the action** — `DENY` + `notPaths: ["/health"]` denies *everything except* `/health`.
-> - **Exact paths where a prefix was meant** — `paths: ["/admin"]` leaves `/admin/users` wide open, and testing only `/admin` reports success.
-> - **Assuming the `403` tells you which policy fired** — an `ALLOW`-miss and a `DENY`-hit are identical to the caller. Only the policy set on the callee distinguishes them.
-> - **Expecting `AUDIT` output without configuring telemetry** — the match is recorded where your mesh's logging sends it, which in a bare install is nowhere.
-> - **Rolling out a new `DENY` straight to enforcement** — `AUDIT` first is a single-field patch and costs nothing.
-> - **Accumulating `DENY` policies** — each is an unconditional veto invisible to anyone reading the `ALLOW` set.
+> **Expecting a `DENY` to create default-deny** — a workload with only `DENY` policies still allows everything not explicitly denied.
+>
+> **Reading a negated field without the action** — `DENY` + `notPaths: ["/health"]` denies *everything except* `/health`.
+>
+> **Exact paths where a prefix was meant** — `paths: ["/admin"]` leaves `/admin/users` wide open, and testing only `/admin` reports success.
+>
+> **Assuming the `403` tells you which policy fired** — an `ALLOW`-miss and a `DENY`-hit are identical to the caller. Only the policy set on the callee distinguishes them.
+>
+> **Expecting `AUDIT` output without configuring telemetry** — the match is recorded where your mesh's logging sends it, which in a bare install is nowhere.
+>
+> **Rolling out a new `DENY` straight to enforcement** — `AUDIT` first is a single-field patch and costs nothing.
+>
+> **Accumulating `DENY` policies** — each is an unconditional veto invisible to anyone reading the `ALLOW` set.
 
 > *`AUDIT` is a non-terminal step, so demoting a `DENY` to it hands the decision back to `ALLOW` — which is what makes it a safe way to test a veto before arming it.*
 

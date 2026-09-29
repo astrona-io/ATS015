@@ -134,6 +134,17 @@ When an allow-list genuinely is the requirement — an admin surface reachable o
 
 > *`remoteIpBlocks` reads a header, so it is only trustworthy once `numTrustedProxies` pins how many hops to count back — and that number is a fact about your topology, not a setting to tune.*
 
+## Common pitfalls
+
+> [!WARNING]
+> **Trusting `X-Forwarded-For` by default.** It is a client-supplied header until the proxy is configured to know how many hops in front of it are trustworthy.
+>
+> **Writing an IP rule without setting the trusted-hop count.** The address you match is then whatever the caller claimed.
+>
+> **Assuming the load balancer preserves the client address.** Many do not, and the setting depends on how yours is deployed.
+>
+> **Using IP allow-lists as the only control.** Addresses are spoofable and change; identity is the durable thing to authorize on.
+
 ## Reference
 
 - [Configuring gateway network topology](https://istio.io/latest/docs/ops/configuration/traffic-management/network-topologies/) — `numTrustedProxies`, `forwardClientCertDetails` and how the chain is interpreted.

@@ -72,16 +72,24 @@ In exchange, three things you cannot otherwise have:
 Because passthrough removes capabilities rather than adding them, its mistakes are mostly attempts to use features that no longer exist for this traffic.
 
 > [!WARNING]
-> **Common pitfalls**
+## Common pitfalls
+
+> [!WARNING]
+> **An `http` block in the `VirtualService`** — it cannot match an encrypted stream. The config applies cleanly and every connection fails, which makes this the module's signature mistake.
 >
-> - **An `http` block in the `VirtualService`** — it cannot match an encrypted stream. The config applies cleanly and every connection fails, which makes this the module's signature mistake.
-> - **`protocol: HTTPS` with `mode: PASSTHROUGH`** — the protocol says "terminate and parse HTTP" while the mode says "do not decrypt". Use `protocol: TLS`.
-> - **`hosts` and `sniHosts` naming different hostnames** — both match the same SNI value, so a mismatch routes nothing.
-> - **Connecting by IP, or otherwise without SNI** — the routing rule has no input. Always test with `--resolve` or real DNS.
-> - **Expecting path-based routing, header rules or L7 metrics** — none of it exists for this traffic. If a requirement needs them, passthrough is the wrong mode.
-> - **Expecting a `404` or `403` when something is misconfigured** — producing either would require reading the request. Misrouted passthrough fails as a connection error.
-> - **Routing to the backend's plaintext port** — the destination must be the port where the backend terminates TLS itself.
-> - **Assuming tracing still works across the hop** — the gateway cannot add or propagate headers it cannot see.
+> **`protocol: HTTPS` with `mode: PASSTHROUGH`** — the protocol says "terminate and parse HTTP" while the mode says "do not decrypt". Use `protocol: TLS`.
+>
+> **`hosts` and `sniHosts` naming different hostnames** — both match the same SNI value, so a mismatch routes nothing.
+>
+> **Connecting by IP, or otherwise without SNI** — the routing rule has no input. Always test with `--resolve` or real DNS.
+>
+> **Expecting path-based routing, header rules or L7 metrics** — none of it exists for this traffic. If a requirement needs them, passthrough is the wrong mode.
+>
+> **Expecting a `404` or `403` when something is misconfigured** — producing either would require reading the request. Misrouted passthrough fails as a connection error.
+>
+> **Routing to the backend's plaintext port** — the destination must be the port where the backend terminates TLS itself.
+>
+> **Assuming tracing still works across the hop** — the gateway cannot add or propagate headers it cannot see.
 
 ## Choosing a mode
 

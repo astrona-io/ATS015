@@ -43,17 +43,15 @@ If the token has no `groups` claim at all, a condition on `request.auth.claims[g
 
 The consequence depends entirely on the action, and it is worth writing out because the two are opposites:
 
-```text
-   ALLOW  +  when: claims[groups] = group1
-             token has no groups
-             → rule does not match → no rule permits → 403
-             → FAILS CLOSED   (safe)
-
-   DENY   +  when: claims[groups] = group1
-             token has no groups
-             → rule does not match → nothing denied → allowed
-             → FAILS OPEN     (a hole)
+```mermaid
+flowchart TD
+    T["a token with no groups claim"] --> A["ALLOW + when claims groups = group1"]
+    T --> D["DENY + when claims groups = group1"]
+    A --> A1["the rule does not match<br/>no rule permits, so 403<br/>FAILS CLOSED, safe"]
+    D --> D1["the rule does not match<br/>nothing is denied, so allowed<br/>FAILS OPEN, a hole"]
 ```
+
+The same missing claim produces opposite outcomes depending on the action. That asymmetry is the argument for expressing requirements as ALLOW rules wherever you can.
 
 Under `ALLOW`, a user with a missing claim is refused, which is almost always what you want. Under `DENY`, the same user sails through — and the tokens most likely to be missing a claim are the odd ones: a service account token from a different issuer, a legacy token minted before the claim existed, a token from a provider misconfiguration. Exactly the population a `DENY` was probably written to catch.
 
@@ -142,6 +140,17 @@ The playground has exactly the pair needed to see a claim condition decide somet
 The `$TOKEN` variables expand in your shell before `kubectl` runs, which is why the inner command is in double quotes here. In single quotes they reach the pod as literal text and every call looks like a bad token — a `401` that sends you hunting for a configuration problem that does not exist.
 
 > *A `when` condition is one ANDed part of a rule, a list claim matches on any element, and a missing claim fails closed under `ALLOW` and open under `DENY`.*
+
+## Common pitfalls
+
+> [!WARNING]
+> **Putting a requirement in a DENY and assuming it is enforced.** A missing claim makes the DENY not match, which allows the request.
+>
+> **Reading multiple `when` entries as OR.** Entries are ANDed; only the values inside one entry are ORed.
+>
+> **Forgetting a list claim matches on any element.** One overlapping value is enough.
+>
+> **Testing only with a well-formed token.** The token that breaks your policy is the one missing the claim.
 
 ## Reference
 
