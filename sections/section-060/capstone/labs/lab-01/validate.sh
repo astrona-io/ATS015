@@ -49,25 +49,30 @@ POL=$(kubectl -n "$NS" get authorizationpolicy -o yaml 2>/dev/null)
 printf '%s' "$POL" | grep -q 'targetRefs' \
   && say "OK: a policy attaches with targetRefs." \
   || { say "FAIL: no policy uses targetRefs — L7 policy attaches to the waypoint, not to pods."; FAIL=1; }
+# A selector-attached policy naming a client identity is the wrong shape here:
+# with a waypoint in front of the service, connections reach the pod from the
+# waypoint, so such a rule refuses the waypoint and the service answers nobody.
 printf '%s' "$POL" | grep -q 'selector' \
-  && say "OK: a policy attaches with a label selector." \
-  || { say "FAIL: no policy uses a selector — the L4 half should attach to the workloads."; FAIL=1; }
+  && { say "FAIL: a policy attaches with a label selector. With a waypoint in the path the"
+       say "      pod sees the waypoint's identity, not the client's, so a selector-attached"
+       say "      identity rule refuses the waypoint itself."; FAIL=1; } \
+  || say "OK: no policy attaches with a label selector."
 
-say "--- check 4: ztunnel is holding a workload-scoped policy ---"
-if istioctl ztunnel-config policy --namespace "$NS" 2>/dev/null | grep -qi 'workload'; then
-  say "OK: ztunnel holds a workload-scoped policy."
+say "--- check 4: the waypoint is the one enforcing ---"
+if istioctl proxy-config listener deploy/waypoint -n "$NS" -o json 2>/dev/null | grep -qi rbac; then
+  say "OK: the waypoint holds the authorization filter."
 else
-  say "FAIL: ztunnel holds no workload-scoped policy for $NS."
+  say "FAIL: the waypoint holds no authorization filter in $NS."
   say "      The identity rule must be enforceable at L4."
   FAIL=1
 fi
 
 say "--- check 5: the four graded calls ---"
 CODE=$(call other-client POST /notify)
-if [ "$CODE" = "000" ] || [ -z "$CODE" ]; then
-  say "OK: other-client POST /notify -> refused at the transport."
-elif [ "$CODE" = "403" ]; then
-  say "FAIL: other-client got 403 — it is being refused at L7, not at the connection."
+if [ "$CODE" = "403" ]; then
+  say "OK: other-client POST /notify -> refused by the waypoint (403)."
+elif [ "$CODE" = "000" ] || [ -z "$CODE" ]; then
+  say "FAIL: other-client's connection was dropped, so the waypoint is not in the path."
   FAIL=1
 else
   say "FAIL: other-client POST /notify -> '$CODE', expected a refused connection."
