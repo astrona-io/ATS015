@@ -50,8 +50,24 @@ else
 fi
 
 say "--- check 2: the listener actually requires a client certificate ---"
-if istioctl proxy-config listener deploy/istio-ingressgateway -n istio-system \
-     --port 443 -o json 2>/dev/null | grep -qi '"requireClientCertificate": true'; then
+# `--port 443` filters on the listener's own port, which is not where a gateway
+# TLS chain is found on 1.30; read the dump and look at the chains themselves.
+REQ=$(istioctl proxy-config listener deploy/istio-ingressgateway -n istio-system \
+  -o json 2>/dev/null | python3 -c '
+import json, sys
+try:
+    listeners = json.load(sys.stdin)
+except Exception:
+    print(0); sys.exit()
+hits = 0
+for l in listeners:
+    for fc in l.get("filterChains", []):
+        ts = fc.get("transportSocket", {}).get("typedConfig", {})
+        if ts.get("requireClientCertificate"):
+            hits += 1
+print(hits)
+')
+if [ "${REQ:-0}" -ge 1 ]; then
   say "OK: requireClientCertificate is true on port 443."
 else
   say "FAIL: requireClientCertificate is not true on the gateway's 443 listener."

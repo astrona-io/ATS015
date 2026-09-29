@@ -29,18 +29,25 @@ policies and the waypoint are the task.
 
 In namespace `ambient-authz`, on `notification-service`:
 
-1. Allow **only** the `tester-sa` identity to connect. `other-sa` must be refused.
-   This rule must be enforced **without** a waypoint.
-2. Additionally restrict the allowed identity to the **`POST`** method — `GET`
-   must be refused.
-3. Deploy a waypoint and enrol traffic through it, so that rule 2 is actually
-   enforced. Attach rule 2 with **`targetRefs`**, not a label `selector`.
+1. Deploy a waypoint and enrol the namespace's traffic through it. Methods are
+   an L7 concern, and ztunnel alone does not parse requests.
+2. Allow **only** the `tester-sa` identity, and only the **`POST`** method.
+   `other-sa` must be refused, and so must a `GET` from `tester-sa`.
+3. Attach that policy with **`targetRefs`** naming the Service, not with a label
+   `selector`.
+
+Write it as **one** policy. A second, pod-selecting policy that names only
+`tester-sa` will not do what it looks like it does: once the service has a
+waypoint, every connection to the pod arrives from the **waypoint's** identity,
+so such a rule refuses the waypoint and the service stops answering anyone.
+Two ALLOW policies on the same target are also additive, so a policy without
+`methods` would re-permit the `GET` the other one denies.
 
 The observable result:
 
 | From | Request | Expected |
 | --- | --- | --- |
-| `other-client` | `POST /notify` | refused at the connection (`000`) |
+| `other-client` | `POST /notify` | refused by the waypoint (`403`) |
 | `tester` | `POST /notify` | `200` |
 | `tester` | `GET /notify` | `403` |
 

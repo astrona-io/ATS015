@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Grading for LAB015-060-01 — L4 with ztunnel, L7 with a waypoint.
+# Grading for LAB015-060-01 — identity and method enforced at the waypoint.
 set -uo pipefail
 
 NS="ambient-authz"
@@ -57,16 +57,18 @@ else
   FAIL=1
 fi
 
-say "--- check 4: the wrong identity is refused at the connection ---"
+say "--- check 4: the wrong identity is refused ---"
+# Once the service has a waypoint, every connection to it arrives from the
+# waypoint's own identity, so ztunnel at the destination cannot tell one client
+# from another. The identity rule is enforced by the waypoint instead, and the
+# refusal therefore arrives as a 403 rather than a dropped connection. A 000
+# here would mean the waypoint is not in the path at all.
 CODE=$(call other-client POST)
-if [ "$CODE" = "000" ] || [ -z "$CODE" ]; then
-  say "OK: other-client was refused at the transport (L4)."
-elif [ "$CODE" = "403" ]; then
-  say "FAIL: other-client got 403, so it is being refused at L7 by the waypoint."
-  say "      The task asks for an identity rule ztunnel can enforce at L4."
-  FAIL=1
+if [ "$CODE" = "403" ]; then
+  say "OK: other-client was refused by the waypoint (403)."
 else
-  say "FAIL: other-client -> '$CODE', expected a refused connection."
+  say "FAIL: other-client -> '${CODE:-no response}', expected 403."
+  say "      The policy must name tester-sa, and attach to the Service with targetRefs."
   FAIL=1
 fi
 

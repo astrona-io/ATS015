@@ -118,22 +118,54 @@ Two things happened, and they are separate: `waypoint apply` created the waypoin
 label that sends traffic through it. A waypoint without enrolment runs happily
 and receives nothing.
 
-## Step 5: The same policy, now enforced
+## Step 5: The waypoint is now the client, and the L4 rule refuses it
 
 ```sh
-kubectl -n ambient-authz exec deploy/tester -- sh -c \
-  'curl -s -o /dev/null -w "POST: %{http_code}\n" -X POST http://notification-service/notify;
-   curl -s -o /dev/null -w "GET:  %{http_code}\n" -X GET  http://notification-service/notify'
+kubectl -n ambient-authz exec deploy/tester -- \
+  curl -s -o /dev/null -w 'POST: %{http_code}\n' --max-time 5 -X POST http://notification-service/notify
 ```
 
 ```text
-POST: 200
-GET:  403
+POST: 503
 ```
 
-Nothing about `notification-l7` changed. Adding a component that can read HTTP is
-what turned it on — and the `GET` now fails with `403`, an HTTP-level refusal, in
-contrast to the `000` an L4 denial produces.
+Nothing is broken about the waypoint; `notification-l4` is doing exactly what it
+says. Enrolment put the waypoint in the path, so the connection that now arrives
+at the pod comes from the **waypoint's** identity —
+`cluster.local/ns/ambient-authz/sa/waypoint` — and a rule that admits only
+`tester-sa` refuses it. The service stops answering everyone, including the
+client the rule was written for.
+
+This is the thing to take away: a workload-scoped L4 identity rule and a
+waypoint cannot both be in play. Once a service has a waypoint, the original
+client identity is visible **at the waypoint**, not at the pod.
+
+## Step 6: One policy, at the waypoint
+
+Remove the L4 rule and let the `targetRefs` policy do both halves:
+
+```sh
+kubectl -n ambient-authz delete authorizationpolicy notification-l4
+sleep 5
+kubectl -n ambient-authz exec deploy/tester -- sh -c \
+  'curl -s -o /dev/null -w "tester POST: %{http_code}\n" -X POST http://notification-service/notify;
+   curl -s -o /dev/null -w "tester GET:  %{http_code}\n" -X GET  http://notification-service/notify'
+kubectl -n ambient-authz exec deploy/other-client -- \
+  curl -s -o /dev/null -w 'other-client POST: %{http_code}\n' -X POST http://notification-service/notify
+```
+
+```text
+tester POST: 200
+tester GET:  403
+other-client POST: 403
+```
+
+All three from one policy: `principals` gives the identity half, `methods` the
+verb half, and the waypoint enforces both because it can read the request.
+
+Note that `other-client` now gets `403` rather than the `000` it got in step 2.
+The refusal moved from the transport to HTTP when the waypoint took over — same
+decision, different layer, and a different thing to look for when debugging.
 
 Ask each component what it holds:
 
@@ -142,9 +174,10 @@ istioctl ztunnel-config policy --namespace ambient-authz
 istioctl proxy-config listener deploy/waypoint -n ambient-authz -o json | grep -i rbac | head
 ```
 
-ztunnel lists only the L4 policy. The L7 one lives on the waypoint.
+With the L4 rule gone, ztunnel lists nothing for this service and the policy
+lives on the waypoint.
 
-## Step 6: Submit
+## Step 7: Submit
 
 ```sh
 astrona submit -c .
