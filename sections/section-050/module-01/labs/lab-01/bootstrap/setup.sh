@@ -31,9 +31,18 @@ istioctl version --remote=false
 # numTrustedProxies is an install-time meshConfig setting, so it is a precondition
 # here rather than part of the task: the learner writes policy, not an install.
 echo "[bootstrap] Installing the Istio control plane (demo profile, one trusted proxy)..."
-istioctl install --set profile=demo \
-  --set meshConfig.gatewayTopology.numTrustedProxies=1 -y
+istioctl install --set profile=demo -y
 kubectl -n istio-system rollout status deployment/istiod --timeout=300s
+kubectl -n istio-system rollout status deployment/istio-ingressgateway --timeout=300s
+
+# numTrustedProxies has to reach the gateway's own proxy config. A
+# `meshConfig.gatewayTopology.numTrustedProxies` is not a MeshConfig field and is
+# accepted then ignored: the gateway keeps useRemoteAddress with no
+# xffNumTrustedHops, never derives the client from X-Forwarded-For, and every
+# remoteIpBlocks rule silently matches nothing. Setting it as the gateway's
+# proxy config does take effect - checked in the listener dump.
+kubectl -n istio-system patch deployment istio-ingressgateway -p \
+  '{"spec":{"template":{"metadata":{"annotations":{"proxy.istio.io/config":"{\"gatewayTopology\":{\"numTrustedProxies\":1}}"}}}}}'
 kubectl -n istio-system rollout status deployment/istio-ingressgateway --timeout=300s
 
 # The manifests below are also listed under bootstrap.manifests in config.yaml,

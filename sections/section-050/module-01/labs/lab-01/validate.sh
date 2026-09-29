@@ -47,11 +47,15 @@ else
 fi
 
 say "--- check 3: the mesh still trusts exactly one proxy hop ---"
-if kubectl -n istio-system get configmap istio -o jsonpath='{.data.mesh}' 2>/dev/null \
-   | grep -q 'numTrustedProxies'; then
-  say "OK: gatewayTopology.numTrustedProxies is configured."
+# What matters is that the gateway ended up with xffNumTrustedHops, not that the
+# string appears somewhere in meshConfig - a misplaced key is accepted and
+# ignored, and remoteIpBlocks then matches nothing while everything looks set.
+if istioctl proxy-config listener deploy/istio-ingressgateway -n istio-system -o json 2>/dev/null \
+   | grep -q 'xffNumTrustedHops'; then
+  say "OK: the gateway is trusting one proxy hop (xffNumTrustedHops is set)."
 else
-  say "FAIL: numTrustedProxies is not set — remoteIpBlocks cannot be trusted."
+  say "FAIL: the gateway has no xffNumTrustedHops, so it never reads the client"
+  say "      address out of X-Forwarded-For and remoteIpBlocks matches nothing."
   say "      Do not reinstall Istio; this was a precondition of the lab."
   FAIL=1
 fi
