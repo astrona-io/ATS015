@@ -56,6 +56,7 @@ sections:
           - type: lab
             title: "Module 1 lab: Prove A Workload Identity And Authorize On It"
             path: sections/section-010/module-01/labs/lab-01
+            difficulty: intermediate
       - id: module-02
         title: Enforce mTLS With PeerAuthentication At Three Scopes
         content:
@@ -77,6 +78,7 @@ sections:
           - type: lab
             title: "Module 2 lab: Enforce mTLS At Three Scopes"
             path: sections/section-010/module-02/labs/lab-01
+            difficulty: intermediate
       - id: module-03
         title: Migrate A Namespace From PERMISSIVE To STRICT mTLS
         content:
@@ -98,10 +100,12 @@ sections:
           - type: lab
             title: "Module 3 lab: Migrate A Namespace To STRICT mTLS"
             path: sections/section-010/module-03/labs/lab-01
+            difficulty: intermediate
     capstone:
       - type: lab
         title: "Workload Identity And Mutual TLS Capstone"
         path: sections/section-010/capstone/labs/lab-01
+        difficulty: advanced
   - id: section-020
     title: Authorization Policy Fundamentals
     curriculum_item: Configuring Authorization
@@ -135,6 +139,7 @@ sections:
           - type: lab
             title: "Module 1 lab: Lock A Namespace Down With ALLOW Policies"
             path: sections/section-020/module-01/labs/lab-01
+            difficulty: intermediate
       - id: module-02
         title: DENY Policies And Evaluation Order
         content:
@@ -156,10 +161,12 @@ sections:
           - type: lab
             title: "Module 2 lab: Close A Path With DENY"
             path: sections/section-020/module-02/labs/lab-01
+            difficulty: intermediate
     capstone:
       - type: lab
         title: "Authorization Policy Capstone"
         path: sections/section-020/capstone/labs/lab-01
+        difficulty: advanced
   - id: section-030
     title: End-User Authentication With JWT
     curriculum_item: Configuring Authentication (mTLS, JWT)
@@ -190,6 +197,7 @@ sections:
           - type: lab
             title: "Module 1 lab: Require A Valid End-User Token"
             path: sections/section-030/module-01/labs/lab-01
+            difficulty: intermediate
       - id: module-02
         title: Authorize On JWT Claims
         content:
@@ -211,10 +219,12 @@ sections:
           - type: lab
             title: "Module 2 lab: Authorize On A JWT Claim"
             path: sections/section-030/module-02/labs/lab-01
+            difficulty: intermediate
     capstone:
       - type: lab
         title: "End-User Authentication Capstone"
         path: sections/section-030/capstone/labs/lab-01
+        difficulty: advanced
   - id: section-040
     title: Securing Edge Traffic With TLS
     curriculum_item: Securing Edge Traffic with TLS
@@ -245,6 +255,7 @@ sections:
           - type: lab
             title: "Module 1 lab: Serve HTTPS At The Ingress Gateway"
             path: sections/section-040/module-01/labs/lab-01
+            difficulty: intermediate
       - id: module-02
         title: Require Client Certificates At The Edge
         content:
@@ -266,6 +277,7 @@ sections:
           - type: lab
             title: "Module 2 lab: Require Client Certificates At The Edge"
             path: sections/section-040/module-02/labs/lab-01
+            difficulty: intermediate
       - id: module-03
         title: TLS Passthrough Instead Of Termination
         content:
@@ -287,10 +299,12 @@ sections:
           - type: lab
             title: "Module 3 lab: Route An Encrypted Stream By SNI"
             path: sections/section-040/module-03/labs/lab-01
+            difficulty: intermediate
     capstone:
       - type: lab
         title: "Edge TLS Capstone"
         path: sections/section-040/capstone/labs/lab-01
+        difficulty: advanced
   - id: section-050
     title: Authorization At The Edge
     curriculum_item: Configuring Authorization
@@ -321,10 +335,12 @@ sections:
           - type: lab
             title: "Module 1 lab: Block A Client Range At The Gateway"
             path: sections/section-050/module-01/labs/lab-01
+            difficulty: intermediate
     capstone:
       - type: lab
         title: "Edge Authorization Capstone"
         path: sections/section-050/capstone/labs/lab-01
+        difficulty: advanced
   - id: section-060
     title: Authorization In Ambient Mode
     curriculum_item: Configuring Authorization
@@ -357,7 +373,9 @@ sections:
           - type: lab
             title: "Module 1 lab: Enforce L4 And L7 Policy In Ambient Mode"
             path: sections/section-060/module-01/labs/lab-01
+            difficulty: intermediate
     capstone:
       - type: lab
         title: "Ambient Authorization Capstone"
         path: sections/section-060/capstone/labs/lab-01
+        difficulty: advanced
