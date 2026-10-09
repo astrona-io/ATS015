@@ -11,11 +11,11 @@ The repository has four layers:
 | Layer | Path | What it is |
 | --- | --- | --- |
 | **Outline** | `astrona.yaml` | The course outline the platform reads: every reading page and lab, in order |
-| **Reading** | `sections/section-0N0/module-0M/` | A short landing page, ordered parts that teach one idea each with hands-on steps, and a wrap-up |
+| **Reading** | `sections/section-0N0/module-0M/` | A short landing page, ordered chapters that teach one idea each with hands-on steps in the text, and a summary |
 | **Practice** | `.../module-0M/labs/lab-0N/` and `.../module-0M/playground/` | Graded labs, each placed right after the part it practises, and one ungraded sandbox per module |
 | **Integration** | `sections/section-0N0/capstone/labs/lab-01/` | One graded capstone per section that combines all of its modules |
 
-The way through each module is simple. Read its parts with its playground open alongside. When a part ends with **Your mission**, pause the playground and take that lab without looking at the solution. The wrap-up page lists the labs and cleans up the playground. Finish each section with its capstone.
+The way through each module is simple. Read its parts with its playground open alongside. When a part ends with **Your mission**, pause the playground and take that lab without looking at the solution. The module ends with a summary of what you learned, and the playground is removed. Finish each section with its capstone.
 
 ---
 
@@ -53,7 +53,7 @@ Here is why the order works:
 
 ## Modules
 
-Each module has a landing page, ordered parts and a wrap-up. The landing page links the parts in order. Each section overview lists every part, with the labs that follow it. The "Parts" count leaves out the wrap-up page.
+Each module has a landing page, ordered chapters and a summary. The landing page describes the chapters in order. Each section overview lists every chapter, with the labs that follow it. The "Parts" count leaves out the summary page.
 
 | Module | Reader | Parts | Graded labs (environment name) |
 | --- | --- | --- | --- |
