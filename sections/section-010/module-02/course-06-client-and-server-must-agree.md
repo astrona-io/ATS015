@@ -1,12 +1,12 @@
 # Client And Server Must Agree
 
-Every policy so far worked on the receiving workload. But mTLS needs both sides. If the sending sidecar is told *not* to use mTLS, a strict receiver closes the connection, even when both workloads are in the mesh and both are healthy. In this part you meet the object that controls the sending side, break a request with it on purpose, and fix it.
+A `PeerAuthentication` only works on the receiving workload. But mTLS needs both sides. If the sending sidecar is told *not* to use mTLS, a strict receiver closes the connection, even when both workloads are in the mesh and both are healthy. This failure is confusing because nothing looks wrong on either pod.
+
+In this chapter you meet the object that controls the sending side. You break a request with it on purpose, read the failure, and fix it on the right side. At the end you look at the opposite case: a receiver that refuses mTLS altogether.
 
 ## Two sides, two objects
 
-Each side of a connection has its own setting, in its own object. Mixing them up is the cause of a whole family of confusing failures.
-
-### Who decides what
+Each side of a connection has its own setting, in its own object. Mixing them up is the cause of a whole family of confusing failures, so it helps to see them next to each other:
 
 ```text
    sending workload (client)                receiving workload (server)
@@ -16,9 +16,7 @@ Each side of a connection has its own setting, in its own object. Mixing them up
    trafficPolicy.tls.mode                   mtls.mode
 ```
 
-A `PeerAuthentication` sets what the receiving workload accepts. It never changes what a workload sends. A `DestinationRule` sets the traffic policy that callers use for one host (one Service), such as load balancing and TLS. Its field `trafficPolicy.tls.mode` says whether callers use mTLS.
-
-### The client-side modes
+A `PeerAuthentication` sets what the receiving workload accepts. It never changes what a workload sends. A `DestinationRule` sets the traffic policy that callers use for one host (one Service), such as load balancing and TLS. Its field `trafficPolicy.tls.mode` says whether callers use mTLS, and it takes these values:
 
 | `tls.mode` | The calling sidecar… |
 | --- | --- |
@@ -27,17 +25,13 @@ A `PeerAuthentication` sets what the receiving workload accepts. It never change
 | `SIMPLE` | starts plain TLS (only the server shows a certificate), for services outside the mesh |
 | `MUTUAL` | does mTLS with certificates you provide yourself, for services outside the mesh |
 
-### Auto mTLS fills the gap
-
-Normally you set none of this. **Auto mTLS** makes the calling sidecar choose by itself: if the receiving workload has a sidecar and accepts mTLS, it uses mTLS; if the receiver's policy says `DISABLE`, it sends plain text. Auto mTLS only steps in when no `DestinationRule` sets `tls.mode` for that host. Once you set it, your setting wins, right or wrong.
+Normally you set none of this, because **auto mTLS** fills the gap. Auto mTLS makes the calling sidecar choose by itself: if the receiving workload has a sidecar and accepts mTLS, it uses mTLS; if the receiver's policy says `DISABLE`, it sends plain text. Auto mTLS only steps in when no `DestinationRule` sets `tls.mode` for that host. Once you set it, your setting wins, right or wrong.
 
 ## Break mTLS on purpose
 
-Now see the mismatch once, deliberately: a strict probe, and a `DestinationRule` that tells callers to send plain text.
+The best way to learn this failure is to cause it once, deliberately: a strict `probe`, and a `DestinationRule` that tells callers to send plain text.
 
 <!-- astrona:playground:renew -->
-
-### Make the namespace strict, then misconfigure the caller
 
 The commands below need the `starfleet` namespace policy with `mode: STRICT` applied. Apply the file you saved for it:
 
@@ -45,7 +39,7 @@ The commands below need the `starfleet` namespace policy with `mode: STRICT` app
 kubectl apply -f peerauthentication-starfleet-strict.yaml
 ```
 
-Save this as `destinationrule-probe-tls-disable.yaml`:
+Now misconfigure the caller. Save this as `destinationrule-probe-tls-disable.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -66,9 +60,7 @@ Apply it:
 kubectl apply -f destinationrule-probe-tls-disable.yaml
 ```
 
-### Read the failure
-
-Send a request from the shuttle, then read the last line of the shuttle's access log:
+Then send a request from the `shuttle`, and read the last line of the `shuttle`'s access log:
 
 ```sh
 from_shuttle $PROBE_URL
@@ -82,17 +74,13 @@ shuttle: 503
 
 The sidecar writes its access log in small batches. If the last line is still an older `200`, wait a few seconds and read the log again.
 
-This time there *is* a status code: `503`. The shuttle's own sidecar proxy wrote it, because it reached the probe and the probe closed the connection. The access log flag **`UC`** means "upstream connection termination": the receiving side closed the connection before it answered.
+This time there *is* a status code: `503`. The `shuttle`'s own sidecar proxy wrote it, because it reached the `probe` and the `probe` closed the connection. The access log flag **`UC`** means "upstream connection termination": the receiving side closed the connection before it answered.
 
-Compare the two failures. The drifter has no sidecar, so nobody on its side can write a status; it gets `000`. The shuttle has a sidecar that saw the connection drop, so it gets `503 UC`.
+Compare this with the `drifter` under `STRICT`. The `drifter` has no sidecar, so nobody on its side can write a status, and it gets `000`. The `shuttle` has a sidecar that saw the connection drop, so it gets `503 UC`.
 
 ## Fix the sending side
 
-The probe is right to be strict. The fault is in the `DestinationRule`, so fix that and leave the server alone.
-
-### Say ISTIO_MUTUAL
-
-Save this as `destinationrule-probe.yaml`:
+The `probe` is right to be strict. The fault is in the `DestinationRule`, so you fix that and leave the server alone. Save this as `destinationrule-probe.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -113,7 +101,7 @@ Apply it:
 kubectl apply -f destinationrule-probe.yaml
 ```
 
-Then check that the shuttle's identity arrives again:
+Then check that the `shuttle`'s identity arrives again:
 
 ```sh
 kubectl exec -n starfleet deploy/shuttle -- curl -s http://probe:8000/headers | grep -A2 -i client-cert
@@ -125,21 +113,17 @@ kubectl exec -n starfleet deploy/shuttle -- curl -s http://probe:8000/headers | 
     ],
 ```
 
-The probe received the shuttle's identity, so the request used mTLS. `ISTIO_MUTUAL` gives the same result as auto mTLS. You need it when a `DestinationRule` already has a `trafficPolicy` for another reason (for example load balancing) and you want mTLS written down, or when auto mTLS is switched off. Deleting the `DestinationRule` would also have fixed the problem.
+The `probe` received the `shuttle`'s identity, so the request used mTLS. `ISTIO_MUTUAL` gives the same result as auto mTLS. You need it when a `DestinationRule` already has a `trafficPolicy` for another reason (for example load balancing) and you want mTLS written down, or when auto mTLS is switched off. Deleting the `DestinationRule` would also have fixed the problem.
 
 ## A receiver that refuses mTLS
 
-The last mode works the other way round: the receiver will not use mTLS at all. Watch what auto mTLS does with it.
-
-### Set the probe to DISABLE
-
-Remove the `DestinationRule`, so auto mTLS decides again. An explicit `ISTIO_MUTUAL` would keep starting a TLS handshake with a server that refuses it. We tried it: the shuttle then gets `503` with the flag `UF` and a TLS error in its access log.
+The last mode works the other way round: the receiver will not use mTLS at all. To see what auto mTLS does with it, first remove the `DestinationRule`, so auto mTLS decides again. An explicit `ISTIO_MUTUAL` would keep starting a TLS handshake with a server that refuses it. We tried it: the `shuttle` then gets `503` with the flag `UF` and a TLS error in its access log.
 
 ```sh
 kubectl delete -f destinationrule-probe.yaml
 ```
 
-Save this as `peerauthentication-probe-disable.yaml`:
+Now set the `probe` itself to `DISABLE`. Save this as `peerauthentication-probe-disable.yaml`:
 
 ```yaml
 apiVersion: security.istio.io/v1
@@ -161,7 +145,7 @@ Apply it:
 kubectl apply -f peerauthentication-probe-disable.yaml
 ```
 
-Then call the probe from both clients, and count the identity headers:
+Then call the `probe` from both clients, and count the identity headers:
 
 ```sh
 from_shuttle $PROBE_URL
@@ -175,15 +159,15 @@ drifter: 200  exit=0
 0
 ```
 
-Nothing broke. Auto mTLS read the probe's policy and made the shuttle send plain text. But look at the last number: `0`. Even the shuttle's request now arrives without an identity and without encryption. Any rule that checks "is this the shuttle?" has nothing left to check. Use `DISABLE` only for a workload that truly cannot use mTLS.
+Nothing broke. Auto mTLS read the `probe`'s policy and made the `shuttle` send plain text. But look at the last number: `0`. Even the `shuttle`'s request now arrives without an identity and without encryption. Any rule that checks "is this the shuttle?" has nothing left to check, so use `DISABLE` only for a workload that truly cannot use mTLS.
 
-### Clean up
-
-Remove both policies, so the namespace is back to the default:
+To finish, remove both policies, so the namespace is back to the default:
 
 ```sh
 kubectl delete -f peerauthentication-probe-disable.yaml -f peerauthentication-starfleet-strict.yaml
 ```
+
+You can now tell a client-side mTLS problem from a server-side one. `PeerAuthentication` says what a workload accepts, and the `DestinationRule` says what callers send. When the two disagree, the caller's sidecar reports `503 UC`, and the fix belongs on the side that is wrong, not on the side that is easier to change.
 
 ## Common pitfalls
 
@@ -192,8 +176,6 @@ kubectl delete -f peerauthentication-probe-disable.yaml -f peerauthentication-st
 > - **Copying a `trafficPolicy` from another service.** A copied `tls` block turns auto mTLS off for that host. Check every `DestinationRule` for a `tls` field you did not mean to write.
 > - **Loosening the server to fix a client problem.** Setting the receiver to `PERMISSIVE` or `DISABLE` hides a `503 UC`, and removes the protection you wanted. Fix the `DestinationRule` instead.
 > - **Tightening the server before the callers are ready.** Make every caller able to do mTLS first, then switch the server to `STRICT`.
-
-> *`PeerAuthentication` says what a workload accepts; the `DestinationRule` says what callers send. When they disagree, the caller's sidecar reports `503 UC`.*
 
 ## Your mission: Fix A DestinationRule That Breaks mTLS
 
