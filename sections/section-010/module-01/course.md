@@ -37,7 +37,7 @@ You do not need to have written any Istio security object yet. This module is th
 
 Your playground is a training solar system: one `kind` cluster with **Istio 1.30.5** already installed with Helm. There is **no** `PeerAuthentication` and **no** `AuthorizationPolicy`. That is on purpose: every ship gets its badge even when no rule uses it.
 
-The ships live on the planet (namespace) **`starfleet`**. They are the Starfleet: the Istio docs' Bookinfo sample with space names. Each ship runs under a service account, its registration papers, and that decides its badge:
+The ships operate on the planet (namespace) **`starfleet`**. Together, they form the Starfleet fleet, where every ship runs under a dedicated service account. Think of it as the ship’s registration papers: they establish its identity and determine which badge it carries.
 
 | Ship | Service account | Its role |
 | --- | --- | --- |
@@ -56,12 +56,3 @@ You also need `jq` and `openssl` on your own machine. Most Linux and macOS syste
 Launch your playground now, and keep it running next to you while you read the parts:
 
 <!-- astrona:playground -->
-
-## The parts of this module
-
-Read the parts in this order. Each one ends with something you have seen work in your playground.
-
-1. **[How A Ship Gets Its Badge](./course-01-how-a-ship-gets-its-badge.md)**: the service account as the source, the SPIFFE name, how istiod issues the certificate, and the trust domain.
-2. **[Read The Badge A Ship Carries](./course-02-read-the-badge-a-ship-carries.md)**: `istioctl proxy-config secret`, the two certificates every proxy holds, decoding the SAN with `openssl`, and rotation.
-3. **[From Badge To Guest List](./course-03-from-badge-to-guest-list.md)**: turning the name into a `principals` value, the `spiffe://` trap, settling a denial, and changing the trust domain. It ends with your graded mission.
-4. **[Wrap-Up](./course-04-wrap-up.md)**: a recap, questions to check yourself, and cleaning up the playground.
