@@ -142,6 +142,17 @@ Strict guidelines:
     and short message text.
   - Anything longer (cluster names, full hostnames) goes in the sentence under
     the diagram.
+- **No links to other course files.** A course page (every reading listed in
+  `astrona.yaml`, the playground guide `docs/overview.md`, and a lab's
+  `question.md` and `solution.md`) never links to or points the reader at
+  another page or file of the repository: no links to parts, summaries,
+  labs, `question.md`, other modules, sections or the Mission Briefing, and no
+  "see `practice.md`" or "open `config.yaml`". The platform shows the pages in
+  the order of `astrona.yaml`, so a link only adds a second, often wrong,
+  path. Name a thing in plain words when the reader needs it ("the task is on
+  the next page"), and state a fact on the page itself instead of sending the
+  reader somewhere else. Repository files for authors (the root `README.md`,
+  a lab's or playground's `README.md`) may link.
 - **No links to outside sources.** Course pages, labs and playground docs do
   not link to or point at outside websites (the one exception is the
   `resources` field of a lab entry in `astrona.yaml`) (official docs, GitHub, blogs,
