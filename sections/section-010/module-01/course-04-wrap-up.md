@@ -1,34 +1,22 @@
 # Wrap-Up: Workload Identity And Certificates
 
-You have finished every part and the graded lab in this module. Before you move on, look back at what you learned, check yourself, and clean up the playground.
+Every security rule in the mesh matches on one thing: the identity of the workload that sends the request. This module followed that identity from where it comes from, to where it lives, to how a rule checks it.
 
 ## What you learned
 
-This module followed one identity from start to end: where it comes from, how to read it, and how a security rule matches on it.
+A workload's identity comes from its **service account**, not from its pod name or its labels. Istio uses the service account because its token is the only proof about a pod that someone else can check. Istiod checks that token with the Kubernetes API, then signs a certificate with a name in a fixed shape: `spiffe://<trust-domain>/ns/<namespace>/sa/<service-account>`. So workloads that share a service account share one identity, and no rule can tell them apart.
 
-[How A Workload Gets Its Certificate](./course-01-how-a-ship-gets-its-badge.md) asked where the identity comes from. The answer is the **service account**, not the pod name or labels, in the shape `spiffe://<trust-domain>/ns/<namespace>/sa/<service-account>`. Its token is the proof: the `audience` is `istio-ca`, and istiod checks it with the Kubernetes API before it signs. So workloads that share a service account share one identity, like `scout` v1, v2 and v3.
+The certificate lives only in the sidecar proxy. The istio-agent makes the private key in memory and hands the certificate to Envoy over SDS (Secret Discovery Service), so no Kubernetes Secret holds workload keys. `istioctl proxy-config secret` shows what a proxy holds: `default`, the workload's own certificate, and `ROOTCA`, the root certificate it checks other workloads against. The name sits in the certificate's SAN (Subject Alternative Name) as a URI, and the subject is empty. A pod without a sidecar has no certificate and no identity.
 
-The same part showed that the istio-agent makes the private key in memory and hands the certificate to Envoy over SDS, so no Kubernetes Secret holds workload keys. The trust domain, `cluster.local` by default, is one setting for the whole mesh, in `meshConfig.trustDomain`.
+Certificates are short-lived, but the name stays fixed. A workload certificate lives 24 hours, and the istio-agent renews it after about half that time, with no restart. If istiod is down, proxies keep working until their certificates expire. So a stale certificate points to a lost connection to istiod, not to a broken certificate.
 
-[Read A Workload's Certificate](./course-02-read-the-badge-a-ship-carries.md) asked what the proxy really holds. `istioctl proxy-config secret` showed `default`, the workload's own certificate, and `ROOTCA`, the root certificate it checks others against. With `-o json`, `jq`, `base64 --decode` and `openssl x509 -ext subjectAltName`, you found the name in the SAN, as a URI; the subject is empty.
+An `AuthorizationPolicy` uses the identity in its `principals` field. Between two pods with sidecars, auto mTLS lets the receiving proxy read the caller's identity, and an `ALLOW` policy denies every request that matches no rule. The key facts to remember are these:
 
-That part also showed that a pod without a sidecar, like `drifter`, has no certificate and no identity. Workload certificates live 24 hours and are renewed after about half that time, with no restart. A stale certificate means the proxy lost its connection to istiod.
+- `principals` takes the name **without** `spiffe://`, for example `cluster.local/ns/starfleet/sa/shuttle`. With `spiffe://`, the object is accepted, `istioctl analyze` is clean, and the rule never matches.
+- To settle a denial, read the caller's certificate, drop `spiffe://`, and compare it letter by letter with the policy.
+- The trust domain, `cluster.local` by default, is set in `meshConfig.trustDomain`. Changing it breaks every `principals` value that names the old one, and `meshConfig.trustDomainAliases` keeps both working during the move.
 
-[Turn An Identity Into An AuthorizationPolicy Principal](./course-03-from-badge-to-guest-list.md) asked how a rule uses that name. Auto mTLS lets the receiving proxy know the caller's identity, and an `ALLOW` policy denies every request that matches no rule, including plain-text callers. `principals` takes the name **without** `spiffe://`; with it, the object is accepted, `istioctl analyze` is clean, and the rule never matches.
-
-To settle a denial, you read the caller's certificate, drop `spiffe://`, and compare letter by letter. Changing the trust domain breaks every `principals` value that names the old one, and `meshConfig.trustDomainAliases` keeps both working during the move.
-
-Put together, every security rule in the mesh matches on an identity that istiod built from a service account. Read the identity in the certificate, and you know what the rule must say.
-
-## Your missions
-
-You proved the skill in a graded lab, right after the part that taught it:
-
-| Lab | After the part | What you proved |
-| --- | --- | --- |
-| [Prove A Workload Identity And Authorize On It](./labs/lab-01/README.md) | Turn An Identity Into An AuthorizationPolicy Principal | read an identity from a live certificate and allow only that identity |
-
-If you skipped it, go back to it now. It is short, and the exam asks for exactly this skill.
+In short: read the identity in the certificate, and you know what the rule must say.
 
 ## Check yourself
 
