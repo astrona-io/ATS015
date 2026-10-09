@@ -2,11 +2,13 @@
 
 An `AuthorizationPolicy` is an Istio resource that allows or denies requests to a workload. The sidecar proxy (Envoy) is a proxy container that Istio adds to each pod; all traffic of the pod passes through it. The sidecar proxy of the receiving pod checks the policies for every request.
 
-You may already know one kind of policy: `action: ALLOW`. Each `ALLOW` policy you add lets more requests in.
+You may already know one kind of policy: `action: ALLOW`. Each `ALLOW` policy you add lets more requests in. Sooner or later, though, you need the opposite: "this path stays closed, whatever any other policy says." You write that with `action: DENY`, and everything about it follows from one fact. The sidecar proxy always checks `DENY` policies **before** `ALLOW` policies.
 
-Sooner or later you need the opposite: "this path stays closed, whatever any other policy says." You write that with `action: DENY`. Everything about it follows from one fact: the sidecar proxy always checks `DENY` policies **before** `ALLOW` policies.
+That makes a `DENY` the strongest tool in authorization. No `ALLOW` policy can undo it, so it is a good backstop and a dangerous mistake. A `DENY` that is a little too wide blocks real work at once, and no `ALLOW` can fix it. A `DENY` that is a little too narrow leaves open the path you wanted closed, and nothing warns you. Exam questions often come down to this order: "an `ALLOW` and a `DENY` both fit the same request; what happens?"
 
-Exam questions about authorization often come down to this order. A typical one reads: "an `ALLOW` and a `DENY` both fit the same request; what happens?" The answer never changes, and this module makes sure you know why.
+This module answers that question in six parts. **DENY Is Checked Before ALLOW** walks through the `CUSTOM`, `DENY`, `ALLOW` order and puts a lone `DENY` on a workload. **An ALLOW Cannot Override A DENY** adds an `ALLOW` that fits and still loses, and shows how the access log tells two `403` responses apart. **Deny All Traffic With One Empty Rule** compares `spec: {}`, `rules: [{}]` and the empty `DENY` rule.
+
+The next three parts turn the order into working policies. **Deny A Path With Prefix Matching** shows the gap an exact path leaves, and ends with the lab *Close A Path With DENY*. **Negative Fields In A DENY Policy** reads `notMethods`, `notPaths` and `notPrincipals` inside a `DENY`, and ends with the lab *Make The Probe Read-Only*. **AUDIT, And Choosing ALLOW Or DENY** tries a rule without enforcing it and settles which design a requirement needs. A short summary closes the module.
 
 ## Learning objectives
 
@@ -23,15 +25,9 @@ After this module you can:
 
 ## Before you start
 
-This module builds on a few basics. Make sure you know them, know what is in your playground, and have the helpers ready in your terminal.
+You need to know the parts of an `AuthorizationPolicy`. A `selector` picks the pods the policy protects; with no selector, it covers every pod in the namespace. The `action` says what to do on a match. The `rules` hold the conditions: `from` (who sends the request), `to` (which method and path it asks for) and `when` (extra conditions). A request fits the policy if **any** rule fits, and inside one rule every part must fit.
 
-### What you should already know
-
-- **The parts of an `AuthorizationPolicy`.** A `selector` picks the pods (no selector means every pod in the namespace). `action` says what to do on a match. `rules` hold the conditions: `from` (who sends the request), `to` (which method and path it asks for) and `when` (extra conditions). The request fits if **any** rule fits. Inside one rule, every part must fit.
-- **Default-deny.** As soon as one `ALLOW` policy selects a pod, the sidecar proxy refuses everything that no `ALLOW` rule matches, with `403`.
-- **Identity.** With mutual TLS (mTLS, where both sides present a certificate and check the other one), the sidecar proxy knows the caller's identity. It looks like `cluster.local/ns/<namespace>/sa/<service account>` and goes in the `principals` field.
-
-### What is in your playground
+You also need two facts about `ALLOW` policies and identity. As soon as one `ALLOW` policy selects a pod, the sidecar proxy refuses everything that no `ALLOW` rule matches, with `403`; this is called default-deny. With mutual TLS (mTLS), both sides present a certificate and check the other one, so the sidecar proxy knows the caller's identity. That identity looks like `cluster.local/ns/<namespace>/sa/<service account>`, and it goes in the `principals` field.
 
 Your playground is one `kind` cluster with **Istio 1.30.5** installed with Helm. You work in the namespace **`starfleet`**, where the Starfleet sample app runs:
 
@@ -43,15 +39,15 @@ Your playground is one `kind` cluster with **Istio 1.30.5** installed with Helm.
 | `bridge`, `cargo`, `scout` v1/v2/v3, `navcom` | The rest of the sample app, each with its own service account |
 | `drifter` (namespace `outpost`) | A client pod with **no** sidecar proxy and no certificate, so no identity |
 
-A `PeerAuthentication` in `STRICT` mode is already in place in `starfleet`. Every caller must use mTLS, so the sidecar proxy can trust the caller identities. Mesh-wide access logs are on, so every proxy writes one log line per request. There is **no `AuthorizationPolicy` yet**: everything inside `starfleet` is allowed.
+A `PeerAuthentication` in `STRICT` mode is already in place in `starfleet`, so every caller must use mTLS and the sidecar proxy can trust the caller identities. Mesh-wide access logs are on, so every proxy writes one log line per request. There is **no `AuthorizationPolicy` yet**: everything inside `starfleet` is allowed.
 
 Launch your playground now, and keep it running next to you while you read the parts:
 
 <!-- astrona:playground -->
 
-### Helpers to paste first
+## Helpers for your terminal
 
-Paste these into each new terminal before you start:
+Every part sends the same kinds of test requests, so three short shell helpers save a lot of typing. Paste them into each new terminal before you start:
 
 ```sh
 from_shuttle() { for i in 1 2 3; do kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code} " "$@"; done; echo "<- shuttle $*"; }
@@ -60,26 +56,6 @@ probe_guard_log() { sleep 5; kubectl logs -n starfleet -l app=probe -c istio-pro
 PROBE=http://probe:8000
 ```
 
-- `from_shuttle $PROBE/get` sends three requests from the shuttle and prints each status code. Extra `curl` options are passed on, for example `-X POST`.
-- `from_fortio $PROBE/get` sends one request from fortio and prints its status code, for example `Code 200`. Extra fortio options are passed on, for example `-X POST`.
-- `probe_guard_log status/200` prints the newest access log line for that path from the probe's sidecar proxy. The proxy writes its log in small batches, so the helper waits five seconds before it reads.
+`from_shuttle $PROBE/get` sends three requests from the shuttle and prints each status code. `from_fortio $PROBE/get` sends one request from fortio and prints its status code, for example `Code 200`. Both pass extra options on, for example `-X POST`. `probe_guard_log status/200` prints the newest access log line for that path from the probe's sidecar proxy. The proxy writes its log in small batches, so the helper waits five seconds before it reads.
 
-After every `kubectl apply`, **wait up to about a minute** before you trust a test. New connections get the new policy at once. But a connection that was already open keeps the old rules for a while. If you test too early, you see a mix like `200 200 403`. On our test system the mix lasted about 50 seconds.
-
-## How this module is organised
-
-Read the parts in this order. Each one ends with something you have seen work in your playground.
-
-1. **[DENY Is Checked Before ALLOW](./course-01-the-guard-checks-the-banned-list-first.md)**: the `CUSTOM`, `DENY`, `ALLOW` order, and a workload that has only `DENY` policies.
-2. **[An ALLOW Cannot Override A DENY](./course-02-a-guest-list-cannot-overrule-the-ban.md)**: an `ALLOW` that fits and still loses, and how the access log tells two `403`s apart.
-3. **[Deny All Traffic With One Empty Rule](./course-03-lock-everything-with-one-empty-rule.md)**: `spec: {}`, `rules: [{}]` and the empty `DENY` rule.
-4. **[Deny A Path With Prefix Matching](./course-04-close-the-whole-path.md)**: exact and prefix paths, and the gap an exact path leaves. Lab: *Close A Path With DENY*.
-5. **[Negative Fields In A DENY Policy](./course-05-say-it-out-loud-negative-fields.md)**: `notMethods`, `notPaths` and `notPrincipals` inside a `DENY`. Lab: *Make The Probe Read-Only*.
-6. **[AUDIT, And Choosing ALLOW Or DENY](./course-06-audit-and-choosing-allow-or-deny.md)**: trying a rule without enforcing it, and which design a requirement needs.
-7. **[Wrap-Up](./course-07-wrap-up.md)**: what you learned, the labs, questions to check yourself, and cleaning up.
-
-## Why this matters
-
-A `DENY` policy is the strongest tool in authorization. No `ALLOW` policy can undo it, which makes it a good backstop and a dangerous mistake. A `DENY` that is a little too wide blocks real work at once, and no `ALLOW` can fix it. A `DENY` that is a little too narrow leaves open the path you wanted closed, and nothing warns you.
-
-This module trains the habit that prevents both: predict the sidecar proxy's answer from the order, then prove it with one request that must pass and one that must be refused.
+After every `kubectl apply`, **wait up to about a minute** before you trust a test. New connections get the new policy at once, but a connection that was already open keeps the old rules for a while. If you test too early, you see a mix like `200 200 403`. On our test system the mix lasted about 50 seconds.

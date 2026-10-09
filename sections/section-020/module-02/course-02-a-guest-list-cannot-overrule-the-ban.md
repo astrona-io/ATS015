@@ -1,16 +1,14 @@
 # An ALLOW Cannot Override A DENY
 
-A `DENY` policy on its own is easy to predict. The real test comes when an `ALLOW` policy and a `DENY` policy both fit the same request. In this part you write an `ALLOW` policy that explicitly lets the shuttle in, and watch the denied path stay closed anyway.
+A `DENY` policy on its own is easy to predict. The real test comes when an `ALLOW` policy and a `DENY` policy both fit the same request, because many people expect the more specific rule to win. It does not, and exam questions are built on exactly that mistake.
 
-You also meet the one practical problem this creates: two different `403` responses that look exactly the same to the caller.
+This chapter writes an `ALLOW` policy that explicitly lets the shuttle in, and you watch the denied path stay closed anyway. Along the way you meet the one practical problem this creates: two different `403` responses that look exactly the same to the caller.
 
 ## Add an ALLOW policy next to the DENY
 
-The commands below need the `probe-deny-status` policy on the probe: a `DENY` for every path under `/status/`, for every caller. Check that it is there with `kubectl get authorizationpolicy -n starfleet`. Now you add an `ALLOW` policy to the same workload.
+The commands below need the `probe-deny-status` policy on the probe: a `DENY` for every path under `/status/`, for every caller. Check that it is there with `kubectl get authorizationpolicy -n starfleet`. Next to it, you now add an `ALLOW` policy to the same workload.
 
 <!-- astrona:playground:renew -->
-
-### Let the shuttle read anything
 
 This `ALLOW` policy lets exactly one caller, the shuttle, send `GET` requests to the probe. It names no path, so it covers every path, including `/status/200`.
 
@@ -48,7 +46,7 @@ kubectl apply -f authorizationpolicy-probe-allow-shuttle-get.yaml
 authorizationpolicy.security.istio.io/probe-allow-shuttle-get created
 ```
 
-No warning this time. An `ALLOW` with only HTTP fields simply never fits a TCP connection, so nothing extra is blocked.
+There is no warning this time. An `ALLOW` with only HTTP fields simply never fits a TCP connection, so nothing extra is blocked.
 
 Wait up to about a minute, then check the result. Predict each line first:
 
@@ -66,25 +64,19 @@ from_fortio $PROBE/get
 Code 403
 ```
 
-Look at the second line. The `ALLOW` policy says "the shuttle may `GET` anything", and `/status/200` is a `GET` from the shuttle. The request is still refused. The sidecar proxy found a fitting `DENY` rule first, and the decision ended there. It never checked `probe-allow-shuttle-get`.
+Look at the second line. The `ALLOW` policy says "the shuttle may `GET` anything", and `/status/200` is a `GET` from the shuttle. The request is still refused. The sidecar proxy found a fitting `DENY` rule first, and the decision ended there, so it never checked `probe-allow-shuttle-get`.
 
 The last two lines are refused for a different reason. Now that an `ALLOW` policy selects the probe, the probe is in default-deny. No `ALLOW` rule matches a `POST`, and no `ALLOW` rule matches fortio.
 
-### The rule this shows
+The rule behind the second line is short: **a `DENY` match beats every `ALLOW`.** Not usually, and not "unless the `ALLOW` is more specific". The sidecar proxy walks its steps in order, and `DENY` comes first.
 
-**A `DENY` match beats every `ALLOW`.** Not usually, not "unless the `ALLOW` is more specific". The sidecar proxy walks its steps in order, and `DENY` comes first.
+This is different from how `PeerAuthentication` works. There, the narrowest rule wins: a rule for one workload overrides a rule for the whole namespace. `AuthorizationPolicy` has no such idea, so know which of the two you are dealing with before you answer an exam question about "which one wins".
 
-This is different from how `PeerAuthentication` works. There, the narrowest rule wins: a rule for one workload overrides a rule for the whole namespace. `AuthorizationPolicy` has no such idea. Know which of the two you are dealing with before you answer an exam question about "which one wins".
-
-So you **cannot** cut an exception out of a `DENY` by adding an `ALLOW`. If one denied path must stay reachable, you have to write the exception into the `DENY` itself, by narrowing its paths or with a negative field such as `notPaths`.
+It also means you **cannot** cut an exception out of a `DENY` by adding an `ALLOW`. If one denied path must stay reachable, you have to write the exception into the `DENY` itself, by narrowing its paths or with a negative field such as `notPaths`.
 
 ## Two 403s, two different reasons
 
-You now have two `403` responses from the same probe: one from a `DENY` match, one from a missing `ALLOW` match. To the caller, they look the same. This section shows where the difference is written down.
-
-### Same response for the caller
-
-Print the bodies of both refusals from the caller's side:
+The test above left you with two `403` responses from the same probe: one from a `DENY` match, one from a missing `ALLOW` match. When you debug, you need to know which is which, because the fix lives in a different policy. To the caller, though, they look the same. Print the bodies of both refusals from the caller's side:
 
 ```sh
 kubectl exec -n starfleet deploy/shuttle -- curl -s $PROBE/status/200; echo
@@ -96,13 +88,9 @@ RBAC: access denied
 RBAC: access denied
 ```
 
-`fortio curl` prints the response headers first, so `tail -1` keeps only the body. The `2>/dev/null` hides kubectl's `command terminated with exit code 1`: fortio exits with an error code when the response is not `200`.
+`fortio curl` prints the response headers first, so `tail -1` keeps only the body. The `2>/dev/null` hides kubectl's `command terminated with exit code 1`, because fortio exits with an error code when the response is not `200`. Both bodies say `RBAC: access denied`, so the caller cannot tell a `DENY` hit from an `ALLOW` miss.
 
-Both say `RBAC: access denied`. The caller cannot tell a `DENY` hit from an `ALLOW` miss.
-
-### Different lines in the access log
-
-Now read the access log of the probe's sidecar proxy for each request:
+The difference is written down on the other side. Read the access log of the probe's sidecar proxy for each request:
 
 ```sh
 probe_guard_log status/200
@@ -116,9 +104,9 @@ probe_guard_log 'GET /get'
 
 The helper prints the newest matching line. Fortio sent the last `GET /get`, so the second line is fortio's request (its user agent is `fortio.org/fortio-1.69.5`). If you see a `200` from the shuttle there, run the fortio command above again.
 
-The first line names the policy and the rule that fit: a `DENY` did it. The second says `matched_policy[none]`: no policy fit, so no `ALLOW` rule matched the request. When you debug a `403`, read the receiving pod's access log first. It tells you whether to look at your `DENY` policies or at your `ALLOW` policies.
+The first line names the policy and the rule that fit, so a `DENY` did it. The second says `matched_policy[none]`: no policy fit, so no `ALLOW` rule matched the request. When you debug a `403`, read the receiving pod's access log first. It tells you whether to look at your `DENY` policies or at your `ALLOW` policies.
 
-You can also list every policy in the namespace to see what the sidecar proxy has to work with:
+To see what the sidecar proxy has to work with, you can also list every policy in the namespace:
 
 ```sh
 kubectl get authorizationpolicy -n starfleet
@@ -135,6 +123,8 @@ The `ACTION` column shows at a glance which policies allow and which deny.
 > [!TIP]
 > When a `403` surprises you, run `kubectl get authorizationpolicy -A` first. A `DENY` without a `selector` in another policy, or one in the `istio-system` root namespace (which covers the whole mesh), is easy to forget, and it beats every `ALLOW` policy you are reading.
 
+A `DENY` does not outvote an `ALLOW`; it ends the decision before the `ALLOW` is checked. So an exception to a `DENY` must live inside the `DENY`, and the receiving pod's access log tells a `DENY` hit from an `ALLOW` miss. What is still open is how far a single rule can reach: what happens when a rule has no conditions at all.
+
 ## Common pitfalls
 
 > [!WARNING]
@@ -142,5 +132,3 @@ The `ACTION` column shows at a glance which policies allow and which deny.
 > - **Thinking a more specific `ALLOW` wins.** There is no "most specific wins" for `AuthorizationPolicy`. That rule belongs to `PeerAuthentication`.
 > - **Assuming the `403` tells you which policy fired.** It does not. Read `rbac_access_denied_matched_policy[...]` in the receiving pod's access log.
 > - **Forgetting that the new `ALLOW` changed more than one thing.** It also turned on default-deny for the probe, so fortio and every `POST` are now refused.
-
-> *A `DENY` does not outvote an `ALLOW`. It ends the decision before the `ALLOW` is checked.*

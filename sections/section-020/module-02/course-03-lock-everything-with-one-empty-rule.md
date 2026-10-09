@@ -1,12 +1,12 @@
 # Deny All Traffic With One Empty Rule
 
-Three policies in this domain look almost the same on paper and do opposite things. One curly-brace pair in the wrong place turns "deny all requests" into "allow all requests". In this part you learn to read all three at a glance, and you use the strongest one to deny all traffic in a namespace.
+Three policies in authorization look almost the same on paper and do opposite things. One pair of curly braces in the wrong place turns "deny all requests" into "allow all requests", and `kubectl apply` accepts both without a word. Exam tasks love this, because a quick reader gets it wrong.
+
+This chapter teaches you to read all three at a glance. Then you use the strongest one to deny all traffic in a namespace, even while a policy that allows everything is still in place.
 
 ## Three look-alike specs
 
-The difference between them is how many rules the policy has, and what is inside a rule. Learn this table by heart; exam tasks love it.
-
-### The table
+The difference between the three is how many rules the policy has, and what is inside a rule. Learn this table by heart:
 
 | Spec | What the sidecar proxy does |
 | --- | --- |
@@ -14,23 +14,19 @@ The difference between them is how many rules the policy has, and what is inside
 | `rules: [{}]` | allow everything |
 | `action: DENY` + `rules: [{}]` | deny everything, even with `ALLOW` policies in place |
 
-### Why they behave like this
+The first row, `spec: {}`, is an `ALLOW` policy (`ALLOW` is the default action) with **no rules**. It turns on default-deny for every pod it selects. Since it has no rules, no rule can fit, so nothing gets in.
 
-- **`spec: {}`** is an `ALLOW` policy (the default action) with **no rules**. It turns on default-deny for every pod it selects, but it has no rules. No rule can fit, so nothing gets in.
-- **`rules: [{}]`** is an `ALLOW` policy with **one empty rule**. An empty rule has no conditions, and a rule with no conditions fits every request. So everything gets in.
-- **`action: DENY` with `rules: [{}]`** is a `DENY` policy with one empty rule. The rule fits every request, and the sidecar proxy checks `DENY` first. So nothing gets in, and no `ALLOW` policy can change that.
+The second row, `rules: [{}]`, is an `ALLOW` policy with **one empty rule**. An empty rule has no conditions, and a rule with no conditions fits every request. So everything gets in.
 
-"No rules" and "one empty rule" are not the same thing. The first fits nothing; the second fits everything.
+The third row puts that same empty rule into a `DENY` policy. The rule fits every request, and the sidecar proxy checks `DENY` first. So nothing gets in, and no `ALLOW` policy can change that. The short version is that "no rules" and "one empty rule" are not the same thing: the first fits nothing, and the second fits everything.
 
 ## Allow everything, then deny everything
 
-Here you start from a clean namespace, open it with one empty `ALLOW` rule, and then deny everything with one empty `DENY` rule. Watching the widest possible `ALLOW` policy lose is the clearest proof of the order.
+The clearest proof of the evaluation order is to watch the widest possible `ALLOW` policy lose. So you start from a clean namespace, open it with one empty `ALLOW` rule, and then deny everything with one empty `DENY` rule.
 
 <!-- astrona:playground:renew -->
 
-### Start clean
-
-Remove every policy in the namespace, so only the policies in this part decide:
+First, remove every policy in the namespace, so only the policies in this chapter decide:
 
 ```sh
 kubectl delete authorizationpolicy --all -n starfleet
@@ -43,9 +39,7 @@ authorizationpolicy.security.istio.io "probe-deny-status" deleted from starfleet
 
 You see one line per policy that was still in the namespace. If there was none, the command prints `No resources found`.
 
-### Open everything
-
-This `ALLOW` policy has no `selector`, so it covers every pod in `starfleet`, and its one empty rule fits every request.
+Now open everything. This `ALLOW` policy has no `selector`, so it covers every pod in `starfleet`, and its one empty rule fits every request.
 
 Save this as `authorizationpolicy-allow-all.yaml`:
 
@@ -83,9 +77,7 @@ Code 200
 
 Every caller reaches every workload. An `ALLOW` policy exists, so default-deny is on, but the one empty rule fits every request.
 
-### Deny everything
-
-Now the `DENY` policy with one empty rule. It also has no `selector`, so it covers every pod in the namespace.
+With the namespace wide open, add the `DENY` policy with one empty rule. It also has no `selector`, so it covers every pod in the namespace.
 
 Save this as `authorizationpolicy-deny-all.yaml`:
 
@@ -125,15 +117,15 @@ Everything is refused, while `allow-all` is still in place. The empty `DENY` rul
 
 This is the emergency lockdown for a namespace, for example during a security incident. Put the same policy in the `istio-system` root namespace and it denies all traffic in every namespace of the mesh.
 
-### Remove the lockdown
-
-Delete the `DENY` policy again:
+A lockdown is only useful if you can lift it again. Delete the `DENY` policy:
 
 ```sh
 kubectl delete -f authorizationpolicy-deny-all.yaml
 ```
 
 Wait up to about a minute, and `from_shuttle $PROBE/get` answers `200` again. `allow-all` can do its job once no `DENY` rule fits.
+
+You can now read the three look-alike specs: no rules fit nothing, one empty rule fits everything, and as a `DENY`, one empty rule denies every request. That is the widest `DENY` there is. Most real `DENY` policies are much narrower, and the open question is how to make a narrow one close exactly what you meant.
 
 ## Common pitfalls
 
@@ -142,5 +134,3 @@ Wait up to about a minute, and `from_shuttle $PROBE/get` answers `200` again. `a
 > - **Trying to open a `DENY` with `rules: [{}]` by adding `ALLOW` policies.** Nothing opens it. Delete it or narrow it.
 > - **Forgetting the selector.** A policy without a `selector` covers every pod in its namespace, and in `istio-system` every pod in the mesh.
 > - **Leaving an emergency lockdown in place.** Write down that you applied it, and remove it when the incident is over.
-
-> *No rules fit nothing; one empty rule fits everything. As a `DENY`, one empty rule denies every request.*
