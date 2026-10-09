@@ -132,7 +132,7 @@ Work on exactly one module at a time. Read `CLAUDE.md` first, all of it.
 | Mission Briefing (`sections/intro/`) | done | adapted from ATS014 |
 | 010-01 Inspect Workload Identity And Certificates | done | Starfleet playground (fleet manifests copied from ATS014, outpost/drifter added, fortio annotation dropped), 3 parts + wrap-up rewritten, lab-01 converted (own app, astrona test PASS); trust domain change described only |
 | 010-02 Enforce mTLS With PeerAuthentication At Three Scopes | done | new-data 01-mtls merged; Starfleet playground, 6 parts + wrap-up checked on 1.30.5; lab-01 converted (own app, now Helm), new lab-02 (portLevelMtls) and lab-03 (503 UC); all three astrona test PASS |
-| 010-03 Migrate A Namespace From PERMISSIVE To STRICT mTLS | todo | new-data README order-to-apply |
+| 010-03 Migrate A Namespace From PERMISSIVE To STRICT mTLS | done | new-data README order-to-apply merged; Starfleet playground, 4 parts + wrap-up checked on 1.30.5 (native sidecar shown in INIT column); port exception cut to one sentence (010-02 owns it), draft lab-02 dropped; lab-01 kept (own app, demo profile), astrona test PASS; leftover files to delete listed in the 010-03 commit message |
 | 010 capstone | todo | |
 | 020-01 Authorize HTTP Traffic Between Workloads | todo | new-data 02-authorization |
 | 020-02 DENY Policies And Evaluation Order | todo | new-data 02-authorization |

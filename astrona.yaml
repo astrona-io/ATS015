@@ -191,20 +191,44 @@ modules:
         title: "Migrate A Namespace From PERMISSIVE To STRICT mTLS"
         path: sections/section-010/module-03/course.md
       - type: reading
-        title: "Measuring before you change anything"
-        path: sections/section-010/module-03/course-01-measuring-with-telemetry.md
+        title: "Count The Plain Signals"
+        path: sections/section-010/module-03/course-01-count-the-plain-signals.md
       - type: reading
-        title: "Exceptions, and moving callers into the mesh"
-        path: sections/section-010/module-03/course-02-exceptions-and-meshing.md
+        title: "Write Down Where You Stand"
+        path: sections/section-010/module-03/course-02-write-down-where-you-stand.md
       - type: reading
-        title: "Enforcing, verifying and rolling back"
-        path: sections/section-010/module-03/course-03-enforcing-and-rolling-back.md
+        title: "Bring The Drifter Into The Fleet"
+        path: sections/section-010/module-03/course-03-bring-the-drifter-into-the-fleet.md
+      - type: reading
+        title: "Switch To STRICT For Good"
+        path: sections/section-010/module-03/course-04-switch-to-strict-for-good.md
       - type: reading
         title: Question
         path: sections/section-010/module-03/labs/lab-01/question.md
       - type: lab
         title: "Migrate A Namespace To STRICT mTLS Lab"
         path: sections/section-010/module-03/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: mtls
+        task_kind: migration
+        tags: [peerauthentication, sidecar-injection, mtls-permissive, mtls-strict, connection-reset, proxy-config]
+        learning_goals:
+          - Prove from the receiving proxy's counters that plain signals still arrive
+          - Bring an unmeshed caller into the mesh by labelling its namespace and restarting it
+          - Switch a namespace to STRICT mTLS in an order that breaks no caller
+        resources:
+          - name: "Mutual TLS migration"
+            url: https://istio.io/latest/docs/tasks/security/authentication/mtls-migration/
+          - name: "PeerAuthentication reference"
+            url: https://istio.io/latest/docs/reference/config/security/peer_authentication/
+          - name: "Istio standard metrics"
+            url: https://istio.io/latest/docs/reference/config/metrics/
+          - name: "Sidecar injection"
+            url: https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-010/module-03/course-05-wrap-up.md
 
       - type: reading
         title: Question

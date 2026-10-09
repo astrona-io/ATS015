@@ -2,7 +2,7 @@
 
 Every security rule in this course eventually matches on one string — a workload's mesh identity. This section is where that string comes from, how you make a workload prove it, and how to turn the proof on in a cluster that is already running without breaking the callers who were not ready.
 
-Three modules, in dependency order. Module 1 opens a certificate and reads the identity out of it, because a policy written against an identity you assumed rather than checked is the most common failure in the whole domain. Module 2 makes that identity mandatory with `PeerAuthentication`, at each of its three scopes. Module 3 is the procedure for doing so on a live namespace: measure, exempt, mesh, enforce.
+Three modules, in dependency order. Module 1 opens a certificate and reads the identity out of it, because a policy written against an identity you assumed rather than checked is the most common failure in the whole domain. Module 2 makes that identity mandatory with `PeerAuthentication`, at each of its three scopes. Module 3 is the procedure for doing so on a live namespace: measure, write down, mesh, enforce.
 
 **Curriculum item covered:** Configuring Authentication (mTLS, JWT)
 
@@ -74,19 +74,21 @@ Three modules, in dependency order. Module 1 opens a certificate and reads the i
 
 ### 3. Migrate A Namespace From PERMISSIVE To STRICT mTLS
 *   **Module Reader:** **[Module 3: Migrate A Namespace From PERMISSIVE To STRICT mTLS](./module-03/course.md)**
-    Deep-dive parts, in reading order:
-    1. [Measuring before you change anything](./module-03/course-01-measuring-with-telemetry.md)
-    2. [Exceptions, and moving callers into the mesh](./module-03/course-02-exceptions-and-meshing.md)
-    3. [Enforcing, verifying and rolling back](./module-03/course-03-enforcing-and-rolling-back.md)
-*   **Hands-on Playground:** `sections/section-010/module-03/playground` — namespace `migrate-demo` with no `PeerAuthentication` at all, and an unmeshed `outside-client` you migrate into the mesh during the module.
+    Parts, in reading order:
+    1. [Count The Plain Signals](./module-03/course-01-count-the-plain-signals.md)
+    2. [Write Down Where You Stand](./module-03/course-02-write-down-where-you-stand.md)
+    3. [Bring The Drifter Into The Fleet](./module-03/course-03-bring-the-drifter-into-the-fleet.md)
+    4. [Switch To STRICT For Good](./module-03/course-04-switch-to-strict-for-good.md)
+    5. [Wrap-Up: Mission Debrief](./module-03/course-05-wrap-up.md)
+*   **Hands-on Playground:** `sections/section-010/module-03/playground`: the Starfleet on the planet `starfleet` with no `PeerAuthentication`, so it runs in the default `PERMISSIVE` mode. The planet `outpost` has sidecar injection switched off, and its `drifter` still sends plain signals. You move the drifter into the mesh during the module.
     ```bash
     astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-010/module-03/playground
     ```
-*   **Graded lab:** **[Migrate A Namespace To STRICT mTLS](./module-03/labs/lab-01/)** — read the
-    [exam question](./module-03/labs/lab-01/docs/exam-question.md), solve it, then
+*   **Graded lab:** **[Migrate A Namespace To STRICT mTLS](./module-03/labs/lab-01/README.md)**: read the
+    [task](./module-03/labs/lab-01/question.md), solve it, then
     ```bash
-    astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-010/module-03/labs/lab-01
-    astrona submit -c .
+    astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-010/module-03/labs/lab-01
+    astrona submit -c sections/section-010/module-03/labs/lab-01
     ```
 
 Each playground is ungraded: it spins up, prepares the environment, and waits. There is no task and no `astrona submit`. Tear one down with `astrona destroy <name>` when you are finished — the name is printed in each module's playground callout.
