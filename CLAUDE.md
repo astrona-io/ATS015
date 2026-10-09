@@ -333,8 +333,14 @@ use the Starfleet.
 - **Ambient has no sidecars.** In section 060, never use `-c istio-proxy`
   or `istioctl proxy-config` on an application pod; use
   `istioctl ztunnel-config` and the waypoint's own proxy.
-- **`numTrustedProxies` is install-time `meshConfig`.** It is not set on the
-  gateway Service or Deployment, and changing it restarts the gateway.
+- **`numTrustedProxies` is proxy configuration, not a MeshConfig field.**
+  It must reach the gateway's own proxy: the
+  `proxy.istio.io/config: '{"gatewayTopology":{"numTrustedProxies":1}}'`
+  annotation on the gateway pod template, or the mesh-wide default
+  `meshConfig.defaultConfig.gatewayTopology.numTrustedProxies`.
+  `meshConfig.gatewayTopology.numTrustedProxies` is accepted and silently
+  ignored. Proof: `xffNumTrustedHops` appears in the gateway's listener dump.
+  Changing it restarts the gateway.
 
 ### Where things are in this repo
 
