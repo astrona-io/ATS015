@@ -1,10 +1,10 @@
-# A Rule With Nowhere To Run
+# An L7 Rule With No Waypoint
 
-Astronaut, add a field that ztunnel cannot read, and Kubernetes still accepts the policy. There is no error, because `methods` is a valid field. Whether anything enforces it depends on how the policy is attached, and the two ways fail in opposite directions. This part shows both on purpose, because this is the most tested fact about ambient mode.
+Add a field that ztunnel (the per-node proxy in ambient mode) cannot read, and Kubernetes still accepts the policy. There is no error, because `methods` is a valid field. Whether anything enforces it depends on how the policy is attached, and the two ways fail in opposite directions. This part shows both on purpose, because this is the most tested fact about ambient mode.
 
 ## An HTTP rule with no waypoint
 
-Start with the probe. It echoes any method at `/anything`, so a method rule is easy to test. The rule says: only the `shuttle` may call the probe, and only with `GET`.
+Start with `probe`, an HTTP echo server. It echoes any method at `/anything`, so a method rule is easy to test. The rule says: only the `shuttle` workload may call `probe`, and only with `GET`.
 
 <!-- astrona:playground:renew -->
 
@@ -48,7 +48,7 @@ This policy has no `selector`. It uses `targetRefs` instead, which names the `pr
 
 ### Send a GET and a POST
 
-Send one signal of each method from the shuttle:
+Send one request of each method from the `shuttle` pod:
 
 ```sh
 kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "GET:  %{http_code}\n" -X GET http://probe:8000/anything
@@ -64,7 +64,7 @@ Both get `200`, even a minute later. The `POST` should have been refused, and it
 
 ### Ask the policy itself
 
-List the policies, then read the status that `istiod` (mission control) writes on `probe-l7`:
+List the policies, then read the status that `istiod` (Istio's control plane) writes on `probe-l7`:
 
 ```sh
 kubectl get authorizationpolicy -n starfleet
@@ -78,7 +78,7 @@ probe-l7   ALLOW    65s
 [{"lastTransitionTime":"2026-10-09T11:39:50.365771477Z","message":"Service starfleet/probe is not bound to a waypoint","observedGeneration":"1","reason":"AncestorNotBound","status":"False","type":"WaypointAccepted"}]
 ```
 
-The policy is listed next to `cargo-l4`, and it looks just as real. Its status gives the game away: the condition `WaypointAccepted` is `False`, with the reason `AncestorNotBound` and the message "Service starfleet/probe is not bound to a waypoint". `istioctl analyze -n starfleet` reports the same condition as warning `IST0171`. A `targetRefs` policy on a Service is meant for the waypoint in front of that Service. With no waypoint, no component takes it, so it is **accepted and ignored**.
+The policy is listed next to `cargo-l4`, and it looks just as real. Its status shows the problem: the condition `WaypointAccepted` is `False`, with the reason `AncestorNotBound` and the message "Service starfleet/probe is not bound to a waypoint". `istioctl analyze -n starfleet` reports the same condition as warning `IST0171`. A `targetRefs` policy on a Service is meant for the waypoint in front of that Service. With no waypoint, no component takes it, so it is **accepted and ignored**.
 
 ## `targetRefs` or `selector`
 
@@ -95,7 +95,7 @@ flowchart TB
 
 A `selector` picks pods, and the ztunnel in front of those pods enforces it. That is the right form for L4 rules. A `targetRefs` entry of kind `Service` names the Service whose waypoint should hold the rule. A `targetRefs` entry of kind `Gateway` (with `group: gateway.networking.k8s.io`) names a waypoint directly, so the rule covers everything that waypoint serves.
 
-L7 checks do not happen at the pod. They happen at the waypoint the signal passes through. So L7 rules belong on `targetRefs`.
+L7 checks do not happen at the pod. They happen at the waypoint the request passes through. So L7 rules belong on `targetRefs`.
 
 ## The same rule with a selector
 
@@ -136,11 +136,11 @@ kubectl apply -f authorizationpolicy-cargo-l4-get-only.yaml
 authorizationpolicy.security.istio.io/cargo-l4 configured
 ```
 
-The bridge only ever sends `GET` to `cargo`, so on paper nothing should change.
+The `bridge` workload only ever sends `GET` to `cargo`, so on paper nothing should change.
 
-### Ask the bridge again
+### Call `bridge` again
 
-Then check the result through the bridge's product API, which signals `cargo` for you:
+Then check the result through the product API of `bridge`, which calls `cargo` for you:
 
 ```sh
 kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" http://bridge:9080/api/v1/products/0
@@ -150,7 +150,7 @@ kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code
 500
 ```
 
-The flagship is now locked out too. Wait about a minute before you read the result: until the new rule reaches the bridge's open connections, you may still see `200`. Then the bridge's API answers `500`, because `cargo` no longer answers the bridge. ztunnel's log shows the bridge's connection refused, with `src.identity="spiffe://cluster.local/ns/starfleet/sa/starfleet-bridge"` and the same reason as the shuttle's earlier: "allow policies exist, but none allowed".
+Now `bridge` is refused too. Wait about a minute before you read the result: until the new rule reaches the open connections of `bridge`, you may still see `200`. Then the API of `bridge` answers `500`, because `cargo` no longer accepts connections from `bridge`. The ztunnel log shows the connection from `bridge` refused, with `src.identity="spiffe://cluster.local/ns/starfleet/sa/starfleet-bridge"` and the same reason as the earlier refusal of `shuttle`: "allow policies exist, but none allowed".
 
 ### See what ztunnel received
 
@@ -193,7 +193,7 @@ kubectl apply -f authorizationpolicy-cargo-l4.yaml
 authorizationpolicy.security.istio.io/cargo-l4 configured
 ```
 
-After about a minute, the bridge reaches `cargo` again. Keep `probe-l7` in place: it is the rule a waypoint will bring to life.
+After about a minute, `bridge` reaches `cargo` again. Keep `probe-l7` in place: it is the rule a waypoint will bring to life.
 
 ## Common pitfalls
 

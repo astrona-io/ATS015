@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. A method rule needs something that reads HTTP. In ambient mode that is a waypoint, and only when traffic goes through it. Once it does, one policy with `targetRefs` handles both the identity and the method.
+A method rule needs something that reads HTTP. In ambient mode that is a waypoint, and only when traffic goes through it. Once it does, one policy with `targetRefs` handles both the identity and the method.
 
 ---
 
@@ -123,7 +123,7 @@ Two `ALLOW` policies on the same target also add up. A second policy without `me
 
 ## Step 5: Ask each component what it holds
 
-List the policies ztunnel enforces, then read the waypoint's flight log:
+List the policies ztunnel enforces, then read the waypoint access log:
 
 ```sh
 istioctl ztunnel-config policy

@@ -1,4 +1,4 @@
-# L4 rule on a namespace: every ship on the planet starfleet may connect to
+# L4 rule on a namespace: every workload in namespace starfleet may connect to
 # navcom. "namespaces" comes from the caller's identity, so ztunnel enforces it.
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy

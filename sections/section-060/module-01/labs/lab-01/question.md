@@ -6,7 +6,7 @@ estimated_duration: 20m
 
 Solve this question on: `terminal`
 
-Astronaut, your platform team moved namespace `ambient-authz` to ambient mode. The sidecars are gone and nothing had to restart. Then someone ported the old authorization policy across, saw it in `kubectl get`, and closed the ticket. An audit later found that its method rule was never enforced. Do it properly this time.
+Your platform team moved namespace `ambient-authz` to ambient mode. The sidecars are gone and nothing had to restart. Then someone ported the old authorization policy across, saw it in `kubectl get`, and closed the ticket. An audit later found that its method rule was never enforced. Do it properly this time.
 
 The cluster runs Istio 1.30.5 in **ambient mode**: `istiod`, `istio-cni` and the `ztunnel` DaemonSet, and **no sidecars anywhere**. The Gateway API CRDs are installed. Namespace `ambient-authz` carries the label `istio.io/dataplane-mode=ambient`, so its pods are already in the mesh. It runs:
 

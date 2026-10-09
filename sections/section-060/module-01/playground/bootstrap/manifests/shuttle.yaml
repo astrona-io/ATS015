@@ -1,8 +1,8 @@
-# The shuttle: your test client inside the mesh.
-# Send every test signal from it with:
+# shuttle: the test client pod inside the mesh.
+# Send every test request from it with:
 #   kubectl exec -n starfleet deploy/shuttle -- curl -s http://<service>:<port>/...
-# In this ambient playground it has NO sidecar. Its planet is enrolled in
-# ambient mode, so the node's ztunnel carries its signals and proves its
+# In this ambient playground it has NO sidecar. Its namespace is enrolled in
+# ambient mode, so the node's ztunnel carries its traffic and proves its
 # identity (service account "shuttle") with the mesh certificate.
 apiVersion: v1
 kind: ServiceAccount

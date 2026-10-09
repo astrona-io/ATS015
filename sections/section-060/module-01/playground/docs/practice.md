@@ -1,24 +1,24 @@
 # Practice: Authorization In Ambient Mode, L4 And L7
 
-Two exam-style missions for this playground, astronaut. Start the playground
+Two exam-style tasks for this playground. Start the playground
 first. Try each task on your own, then open the solution.
 
-Start each task from a clean planet: no `AuthorizationPolicy`, no waypoint.
+Start each task from a clean namespace: no `AuthorizationPolicy`, no waypoint.
 The commands in [overview.md](./overview.md#start-over-without-a-new-cluster)
 get you there.
 
-## Task 1: only the flagship may reach the scouts
+## Task 1: allow only `bridge` to reach `scout`
 
 > In namespace `starfleet`, which runs in ambient mode with no waypoint, allow
 > only workloads running as the service account `starfleet-bridge` to connect
-> to the `scout` ships (all three versions). Use one `AuthorizationPolicy`
-> named `scout-l4`. Prove that the `shuttle` is refused and that the bridge
-> still gets the scout reports.
+> to the `scout` pods (all three versions). Use one `AuthorizationPolicy`
+> named `scout-l4`. Prove that `shuttle` is refused and that `bridge`
+> still gets the `scout` answers.
 
 <details><summary>Solution</summary>
 
 Every field the task needs is about the caller's identity, so ztunnel can
-enforce it alone. Use a `selector` on `app: scout`, which every scout version
+enforce it alone. Use a `selector` on `app: scout`, which every `scout` version
 carries, not `targetRefs`.
 
 Save this as `authorizationpolicy-scout-l4.yaml`:
@@ -47,7 +47,7 @@ Apply it:
 kubectl apply -f authorizationpolicy-scout-l4.yaml
 ```
 
-Then check the result. First the shuttle, straight to `scout`:
+Then check the result. First from `shuttle`, straight to `scout`:
 
 ```sh
 kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" --max-time 5 http://scout:9080/reviews/0
@@ -58,8 +58,8 @@ kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code
 command terminated with exit code 56
 ```
 
-Then ask the bridge's reviews API, which signals `scout` with the bridge's
-identity:
+Then ask the reviews API of `bridge`, which calls `scout` with the identity
+of `bridge`:
 
 ```sh
 kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" http://bridge:9080/api/v1/products/0/reviews
@@ -69,8 +69,8 @@ kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code
 200
 ```
 
-Give the rule about a minute to reach live traffic before you test. The shuttle gets `000`: ztunnel closed the connection. The bridge still gets
-its reports.
+Give the rule about a minute to reach live traffic before you test. The `shuttle` pod gets `000`: ztunnel closed the connection. `bridge` still
+gets its answers.
 
 </details>
 
@@ -79,12 +79,12 @@ its reports.
 > In namespace `starfleet`, allow only the `shuttle` service account to call
 > the `probe` Service, and only with `GET`. Deploy a waypoint named `waypoint`
 > and send **only** the `probe` Service through it. Attach the policy with
-> `targetRefs`. A `POST` from the shuttle must get `403`.
+> `targetRefs`. A `POST` from `shuttle` must get `403`.
 
 <details><summary>Solution</summary>
 
 `GET` is a method, so the rule needs a waypoint. Create it first, then send
-the probe's signals through it.
+the traffic for `probe` through it.
 
 ```sh
 istioctl waypoint apply -n starfleet
@@ -141,7 +141,7 @@ POST: 403
 ```
 
 If the `POST` still gets `200`, wait about a minute and try again. The `403` comes from the waypoint. Only the `probe` Service carries the
-`istio.io/use-waypoint` label, so every other ship keeps the direct ztunnel
+`istio.io/use-waypoint` label, so every other Service keeps the direct ztunnel
 path.
 
 </details>

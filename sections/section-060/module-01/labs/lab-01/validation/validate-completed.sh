@@ -11,7 +11,7 @@ say() { printf '%s\n' "$*"; }
 
 # Applying the end state and grading it in the same second is a race: pods
 # that are being replaced are still listed, and the waypoint may not have its
-# orders yet. Wait until every workload outside the system namespaces is
+# configuration yet. Wait until every workload outside the system namespaces is
 # settled before reading behaviour.
 settle_workloads() {
   local i pending

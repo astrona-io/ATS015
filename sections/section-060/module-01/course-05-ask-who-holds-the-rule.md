@@ -1,10 +1,10 @@
-# Ask Who Holds The Rule
+# Find Which Component Enforces A Rule
 
-Astronaut, ambient mode has two places that enforce policy: ztunnel and the waypoint. A policy that neither of them holds does nothing, however real it looks in `kubectl get`. This part shows you how to ask each component what it holds, gives you a short check for "my policy does nothing", and lists what stays exactly as it was in sidecar mode.
+Ambient mode has two places that enforce policy: ztunnel (the per-node proxy) and the waypoint (an Envoy proxy you deploy for L7, that is HTTP, rules). A policy that neither of them holds does nothing, however real it looks in `kubectl get`. This part shows you how to ask each component what it holds, gives you a short check for "my policy does nothing", and lists what stays exactly as it was in sidecar mode.
 
-## The ambient toolbox
+## Commands that inspect ambient mode
 
-In sidecar mode you asked a ship's communications officer for its orders with `istioctl proxy-config`. There is no sidecar now, so ztunnel has its own command family, `istioctl ztunnel-config`.
+In sidecar mode you read the configuration of a pod's sidecar proxy with `istioctl proxy-config`. There is no sidecar now, so ztunnel has its own command family, `istioctl ztunnel-config`.
 
 ### Which command answers which question
 
@@ -51,7 +51,7 @@ istioctl proxy-config listener deploy/waypoint -n starfleet -o json | grep -o 'n
 ns[starfleet]-policy[probe-l7]
 ```
 
-The waypoint holds `probe-l7` and nothing else. Between the two commands, every policy on the planet is accounted for: one at ztunnel, one at the waypoint.
+The waypoint holds `probe-l7` and nothing else. Between the two commands, every policy in the namespace is accounted for: one at ztunnel, one at the waypoint.
 
 ## When a policy does nothing
 
@@ -64,7 +64,7 @@ flowchart TB
     Q1{"in kubectl get?"} -->|"no"| A1["never created"]
     Q1 -->|"yes"| Q2{"held by ztunnel or the waypoint?"}
     Q2 -->|"no"| A2["nothing enforces it"]
-    Q2 -->|"yes"| Q3{"does the rule match the signal?"}
+    Q2 -->|"yes"| Q3{"does the rule match the request?"}
     Q3 -->|"no"| A3["an ordinary policy mistake"]
 ```
 
@@ -79,11 +79,11 @@ Most of what you know about Istio security still holds in ambient mode. Only the
 | Topic | In ambient mode |
 | --- | --- |
 | Workload identity | the same: one certificate per service account, named `cluster.local/ns/<namespace>/sa/<service-account>` |
-| `PeerAuthentication` | still applies, and ztunnel does the mutual TLS; traffic between enrolled ships is already mutual TLS over HBONE |
+| `PeerAuthentication` | still applies, and ztunnel does the mutual TLS; traffic between enrolled pods is already mutual TLS over HBONE |
 | Policy structure | the same: `selector` or `targetRefs`, `action`, `rules`; an `ALLOW` refuses everything it does not allow |
 | Evaluation order | the same: `CUSTOM`, then `DENY`, then `ALLOW`, at whichever component enforces the rule |
 | JWT (`RequestAuthentication`, `requestPrincipals`) | the same objects, and all of it needs a waypoint, because a token travels inside the request |
-| Ingress gateways and edge TLS | unchanged: a gateway is an Envoy proxy whatever mode the ships behind it use |
+| Ingress gateways and edge TLS | unchanged: a gateway is an Envoy proxy whatever mode the pods behind it use |
 | `ipBlocks` | works at L4, so ztunnel can enforce it too |
 
 The one new thing to learn is the L4 and L7 split, and how each kind of rule attaches.
@@ -99,14 +99,14 @@ flowchart TB
     L7 -->|"then"| D["create waypoint and add the label"]
 ```
 
-If every field is about the outside of the capsule, ztunnel enforces it and a `selector` is enough. If any field needs the inside of the request, the rule needs a waypoint, `targetRefs`, and the `istio.io/use-waypoint` label, or it is decoration.
+If every field is about the connection, ztunnel enforces it and a `selector` is enough. If any field needs the inside of the request, the rule needs a waypoint, `targetRefs`, and the `istio.io/use-waypoint` label, or it is decoration.
 
 ## Common pitfalls
 
 > [!WARNING]
 > - **Running `istioctl proxy-config` on an app pod.** There is no sidecar to answer. Use `istioctl ztunnel-config` for ztunnel, and point `proxy-config` at the waypoint.
 > - **Expecting a `targetRefs` policy in ztunnel's list.** Waypoint policies live on the waypoint. Check its listeners or its access log instead, and read the policy's `WaypointAccepted` status condition.
-> - **Assuming an L7 `DENY` covers every path.** A signal that never reaches the waypoint is never checked by it. Put the connection part of a requirement in an L4 rule.
+> - **Assuming an L7 `DENY` covers every path.** A request that never reaches the waypoint is never checked by it. Put the connection part of a requirement in an L4 rule.
 > - **Forgetting that JWT rules need a waypoint.** A token is part of the request, so ztunnel cannot check it.
 
-> *Ask which layer a rule needs before you write it: identity, namespace, IP and port work at ztunnel, and everything else needs a waypoint that exists and receives the signals.*
+> *Ask which layer a rule needs before you write it: identity, namespace, IP and port work at ztunnel, and everything else needs a waypoint that exists and receives the traffic.*
