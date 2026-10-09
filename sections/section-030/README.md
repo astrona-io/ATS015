@@ -1,6 +1,6 @@
 # Section 030: End-User Authentication With JWT
 
-A request usually carries two identities: the workload making the call, and the end user on whose behalf it is made. Sections 010 and 020 covered the first. This section covers the second, which arrives as a JSON Web Token in a header rather than as a certificate.
+A request usually carries two identities: the workload making the call, and the end user on whose behalf it is made. The first is the ship's ID badge, a certificate that mutual TLS (mTLS) proves on every connection. This section covers the second, which arrives as a JSON Web Token in a header rather than as a certificate.
 
 Two modules, and the first exists mainly to correct an expectation. Module 1 shows that `RequestAuthentication` validates a token *if one is present* and requires nothing — so protecting a service always takes two objects. Module 2 goes past "a valid token exists" to what the token actually says, matching on claims such as `groups` and `scope`.
 
@@ -53,7 +53,7 @@ Two modules, and the first exists mainly to correct an expectation. Module 1 sho
     astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-030/module-02/playground
     ```
 *   **Graded labs:**
-    - **[Authorize On A JWT Claim](./module-02/labs/lab-01/)**: open one path to any valid token and an admin path only to `group1` (its own small app on the planet `jwtclaims-demo`). Read [the question](./module-02/labs/lab-01/question.md), then submit with `astrona submit -c sections/section-030/module-02/labs/lab-01`.
+    - **[Authorize On A JWT Claim](./module-02/labs/lab-01/)**: open one path to any valid token and the `/admin` path only to `group1` (its own small app on the planet `jwtclaims-demo`). Read [the question](./module-02/labs/lab-01/question.md), then submit with `astrona submit -c sections/section-030/module-02/labs/lab-01`.
     - **[Fix The Claim Rule](./module-02/labs/lab-02/)**: find a wrong claim name and a public path that asks for a token, and fix both (Starfleet). Read [the question](./module-02/labs/lab-02/question.md), then submit with `astrona submit -c sections/section-030/module-02/labs/lab-02`.
 
 **Both playgrounds need outbound internet.** They use Istio's published demo tokens and the matching JWKS endpoint on `raw.githubusercontent.com`: you fetch the tokens, the proxy fetches the keys. Without outbound access you will see key-fetch failures rather than the behaviour the modules describe.
@@ -71,5 +71,5 @@ walkthrough. It is graded the same way the module labs are.
 
 ```bash
 astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-030/capstone/labs/lab-01
-astrona submit -c .
+astrona submit -c sections/section-030/capstone/labs/lab-01
 ```

@@ -63,5 +63,5 @@ walkthrough. It is graded the same way the module labs are.
 
 ```bash
 astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-050/capstone/labs/lab-01
-astrona submit -c .
+astrona submit -c sections/section-050/capstone/labs/lab-01
 ```
