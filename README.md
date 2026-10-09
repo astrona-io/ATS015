@@ -99,7 +99,7 @@ astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section
 astrona destroy ats-015-playground-010-01
 ```
 
-Playgrounds are **ungraded**. There is no task, no `astrona submit` and no pass or fail, so break things as often as you like. Each playground's `docs/overview.md` says what is in the box, and its `docs/practice.md` has exam-style tasks to try.
+Playgrounds are **ungraded**. There is no task, no `astrona submit` and no pass or fail, so break things as often as you like. Each playground's `docs/overview.md` says what is in the box and ends with exam-style practice tasks.
 
 `astrona destroy` takes the environment **name**, not the folder path. The name is `metadata.name` in the playground's `config.yaml`, and it always follows the form `ats-015-playground-<section>-<module>`.
 

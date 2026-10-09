@@ -327,7 +327,7 @@ use the Starfleet.
 | Section overview and its modules | `sections/section-0N0/README.md` |
 | Module reading: landing page, deep-dive parts, summary | `sections/section-0N0/module-0M/course.md`, `course-0N-*.md` |
 | Graded lab: task, walkthrough, setup, grader | `.../labs/lab-0N/` (`question.md`, `solution.md`, `bootstrap/`, `solution/apply.sh`, `validation/`) |
-| Ungraded sandbox for a module | `.../playground/` (`docs/overview.md` says what is in the box, `docs/practice.md` has exam-style tasks, `examples/` the authors' reference YAML) |
+| Ungraded sandbox for a module | `.../playground/` (`docs/overview.md` is the only learner page: what is in the box, helpers, and a final `## Practice tasks` section; `examples/` holds the authors' reference YAML) |
 | One graded integration lab per section | `sections/section-0N0/capstone/labs/lab-01/` |
 | Merge notes for the new-data import (temporary) | `.astrona/merge-plan.md` |
 
