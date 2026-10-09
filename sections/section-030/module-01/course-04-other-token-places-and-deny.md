@@ -1,14 +1,14 @@
 # Other Token Places And The DENY Form
 
-Not every request carries its JWT (JSON Web Token, a signed token with claims about the end user) in the `Authorization` header, and not every `AuthorizationPolicy` is written as `ALLOW`. This part changes both. First you move the token into a query parameter and see that the proxy then stops reading the header. Then you write "token required" as a `DENY` policy, which gives the same result with one important difference.
+Not every request carries its JWT (JSON Web Token, a signed token with claims about the end user) in the `Authorization` header, and not every `AuthorizationPolicy` is written as `ALLOW`. Real clients and real meshes need both variations, and each one hides a trap that changes the status code you get.
+
+This chapter changes both. First you move the token into a query parameter and see that the proxy then stops reading the header. Then you write "token required" as a `DENY` policy, which gives the same result with one important difference.
 
 ## Read the token from a query parameter
 
 By default, the `RequestAuthentication` check looks for the token in one place: the header `Authorization: Bearer <token>`. Some clients cannot set that header, for example a link in a browser. For them, `fromParams` reads the token from a query parameter such as `?token=...`. The catch is that once you name a place, the proxy reads **only** that place.
 
-### See it in your playground
-
-These steps need the `probe-jwt` `RequestAuthentication` and the `probe-require-jwt` `AuthorizationPolicy` (`ALLOW`, `requestPrincipals: ["*"]`) applied on the probe. They use the helpers you pasted at the start of the module.
+The steps below need the `probe-jwt` `RequestAuthentication` and the `probe-require-jwt` `AuthorizationPolicy` (`ALLOW`, `requestPrincipals: ["*"]`) applied on the probe. They use the helpers you pasted when you launched the playground.
 
 <!-- astrona:playground:renew -->
 
@@ -53,7 +53,7 @@ check_status "$PROBE/headers?token=broken"
 
 The token in the query gets `200`. The same valid token in the header now gets `403`, not `200`. The proxy no longer reads the header at all, so it sees no token, attaches no identity, and the `AuthorizationPolicy` refuses the request. It is `403` and not `401`, because nothing was checked and found invalid. The broken token in the query is read and checked, so it gets `401`.
 
-### Where a token can come from
+The same rule holds for the other place you can name. The table shows where the proxy looks for each setting:
 
 | Setting | The proxy reads the token from |
 | --- | --- |
@@ -61,9 +61,7 @@ The token in the query gets `200`. The same valid token in the header now gets `
 | `fromParams: [token]` | the query parameter `?token=...`, and nothing else |
 | `fromHeaders: [{name: x-jwt}]` | the header `x-jwt`, and nothing else |
 
-### Put the header check back
-
-Apply your first token check again, so the probe reads the `Authorization` header:
+Before you try the `DENY` form, put the header check back. Apply your first token check again, so the probe reads the `Authorization` header:
 
 ```sh
 kubectl apply -f requestauthentication-probe.yaml
@@ -79,11 +77,11 @@ kubectl get requestauthentication probe-jwt -n starfleet -o jsonpath='{.spec.jwt
 [{"forwardOriginalToken":true,"issuer":"testing@secure.istio.io","jwksUri":"https://raw.githubusercontent.com/istio/istio/release-1.30/security/tools/jwt/samples/jwks.json"}]
 ```
 
+The rule list no longer has `fromParams`, so the probe's proxy reads the `Authorization` header again.
+
 ## Write "token required" as DENY
 
 The `ALLOW` policy says "allow requests that have a request principal". You can say the same thing the other way round: "refuse requests that have **no** request principal". That is a `DENY` policy with `notRequestPrincipals`.
-
-### See it in your playground
 
 Save this as `authorizationpolicy-probe-deny-without-token.yaml`. It has the same name, `probe-require-jwt`, so applying it replaces the `ALLOW` policy:
 
@@ -133,14 +131,11 @@ check_status -H "$AUTH $TOKEN" $PROBE/headers
 
 The result is the same as with the `ALLOW` policy: `403`, `401`, `200`. `notRequestPrincipals: ["*"]` matches every request that has no request principal at all, and `DENY` refuses it.
 
-### The one difference
+The codes are the same, but the two forms change the workload in different ways. An `ALLOW` policy switches the probe to "only what a rule allows": any request that no `ALLOW` rule matches is refused. A `DENY` policy only refuses the requests it matches. It does not switch the probe to "only what a rule allows", so every request with a valid token still gets in, unless some other policy refuses it.
 
-The two forms give the same codes here, but they change the workload in different ways:
+That makes the `DENY` form a safe "token required" layer you can put on top of other policies. It never quietly refuses a request that another `ALLOW` policy was meant to let in. That is why it is a common way to require tokens at the edge of the mesh, for example on the ingress gateway (the Envoy proxy at the edge of the mesh that accepts traffic from outside the cluster).
 
-- An **`ALLOW`** policy switches the probe to "only what a rule allows". Any request that no `ALLOW` rule matches is refused.
-- A **`DENY`** policy only refuses the requests it matches. It does not switch the probe to "only what a rule allows". Every request with a valid token still gets in, unless some other policy refuses it.
-
-So the `DENY` form is a safe "token required" layer you can put on top of other policies. It never quietly refuses a request that another `ALLOW` policy was meant to let in. That is why it is a common way to require tokens at the edge of the mesh, for example on the ingress gateway (the Envoy proxy at the edge of the mesh that accepts traffic from outside the cluster).
+You can now choose where the proxy reads a token and how a policy requires one. Name a place for the token and the proxy reads only there, so a token in the wrong place gets `403`, not `401`. Write "token required" as `DENY` with `notRequestPrincipals`, and the workload keeps every other rule it had. Together with the token check and the `ALLOW` form, these are the forms you meet most often when a task asks you to require an end user's token.
 
 ## Common pitfalls
 
@@ -149,8 +144,6 @@ So the `DENY` form is a safe "token required" layer you can put on top of other 
 > - **Reading that `403` as a bad token.** A token the proxy never read cannot be bad. `401` means "read and found invalid"; `403` here means "no token seen".
 > - **Writing `requestPrincipals` under `DENY`.** `DENY` with `requestPrincipals: ["*"]` refuses every request that **has** a valid token: the opposite of what you want. Use `notRequestPrincipals`.
 > - **Forgetting that `DENY` beats `ALLOW`.** A `DENY` rule that matches always wins, whatever the `ALLOW` policies say.
-
-> *Name a place for the token and the proxy reads only there; write "token required" as `DENY` and the workload keeps every other rule it had.*
 
 ## Your mission: Read A JWT From A Query Parameter
 

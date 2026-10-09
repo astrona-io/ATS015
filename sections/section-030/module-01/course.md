@@ -2,7 +2,11 @@
 
 Until now every check in the mesh was about **workloads**: which pod sends a request, proved by mTLS (mutual TLS, where both sides present a certificate, so the connection is encrypted and both identities are verified). But most requests carry a second identity too: the **end user** the request is sent for. That identity does not come from a certificate. It arrives as a **JWT** (JSON Web Token), a signed token that carries claims about the end user, inside the request's `Authorization` header.
 
-Istio validates the token with one object and decides which requests are allowed with another. The surprise of this module is not the YAML. It is a behaviour: a `RequestAuthentication` validates a token **if the request carries one**, and does nothing at all about a request without a token. So protecting a workload always takes two objects, and knowing which one does what is most of this module.
+Istio validates the token with one object and decides which requests are allowed with another. The surprise here is not the YAML. It is a behaviour: a `RequestAuthentication` validates a token **if the request carries one**, and does nothing at all about a request without a token. So protecting a workload always takes two objects, and knowing which one does what is most of this module.
+
+This matters on the exam. "Only requests with a valid token may reach this service" is one of the most common tasks, and the most common wrong answer is a `RequestAuthentication` on its own. It is accepted, it looks right, and it lets every request without a token straight through.
+
+The module follows one workload, the `probe`, from open to protected, in four parts. **Peer Identity And Request Identity** separates the workload's identity from the end user's, decodes a real token, and shows where the proxy checks it. **Check The Token With RequestAuthentication** adds the token check and explains `issuer`, `jwksUri` and how the keys reach the proxy. **Require A Token** closes the gap with an `AuthorizationPolicy` and shows how `401` and `403` point at different objects. **Other Token Places And The DENY Form** reads the token from a query parameter and writes "token required" as a `DENY` policy.
 
 ## Learning objectives
 
@@ -18,17 +22,9 @@ After this module you can:
 
 ## Before you start
 
-This section lists what this module expects you to know, what is in your playground, and the helpers to have ready in your terminal.
+You need Kubernetes basics: namespaces, Deployments, Services, pod labels and `kubectl exec`. You also need a rough picture of the mesh. Istio adds a sidecar proxy (Envoy) to every pod: a proxy container that all inbound and outbound traffic of the pod passes through. `istiod` is Istio's control plane: it sends configuration and certificates to every proxy.
 
-### What you should already know
-
-- **How the mesh works.** Istio adds a sidecar proxy (Envoy) to every pod: a proxy container that all inbound and outbound traffic of the pod passes through. `istiod` is Istio's control plane: it sends configuration and certificates to every proxy.
-- **`AuthorizationPolicy` basics.** An `AuthorizationPolicy` allows or denies requests to a workload. It has a `selector` (which workloads), an `action` (`ALLOW` or `DENY`) and `rules` (which requests match). Once an `ALLOW` policy selects a workload, that workload accepts only the requests the rules allow and refuses everything else.
-- **Kubernetes basics.** Namespaces, Deployments, Services, pod labels and `kubectl exec`.
-
-You do not need to know how tokens are signed. You need to know that a token is a string with three parts, joined by dots, and that a signature can be checked with a public key.
-
-### What is in your playground
+You should also know the basics of an `AuthorizationPolicy`, the object that allows or denies requests to a workload. It has a `selector` (which workloads), an `action` (`ALLOW` or `DENY`) and `rules` (which requests match). Once an `ALLOW` policy selects a workload, that workload accepts only the requests the rules allow and refuses everything else. You do not need to know how tokens are signed. It is enough to know that a token is a string with three parts, joined by dots, and that a signature can be checked with a public key.
 
 Your playground is one `kind` cluster with **Istio 1.30.5** already installed. Everything runs in one namespace, **`starfleet`**:
 
@@ -46,9 +42,7 @@ Launch your playground now, and keep it running next to you while you read the p
 
 <!-- astrona:playground -->
 
-### The helpers to paste first
-
-Paste this into each new terminal before you start. It downloads the sample token into `$TOKEN` and defines `check_status`, which sends 3 requests from the `shuttle` pod and prints the status code of each:
+Once it runs, paste the helpers below into each new terminal. They download the sample token into `$TOKEN` and define `check_status`, which sends 3 requests from the `shuttle` pod and prints the status code of each:
 
 ```sh
 SAMPLES_URL=https://raw.githubusercontent.com/istio/istio/release-1.30/security/tools/jwt/samples
@@ -61,17 +55,3 @@ done; echo; }
 ```
 
 Use it like this: `check_status $PROBE/headers` for a request with no token, or `check_status -H "$AUTH $TOKEN" $PROBE/headers` for a request with the token. Any `curl` options you add are passed on.
-
-## The parts of this module
-
-Read the parts in this order. Each one ends with something you have seen work in your playground.
-
-1. [Peer Identity And Request Identity](./course-01-two-identities-on-one-signal.md): the workload's identity and the end user's identity, what is inside a token, and where the proxy checks it.
-2. [Check The Token With RequestAuthentication](./course-02-check-the-token.md): `issuer`, `jwksUri`, how the keys reach the proxy, and why a request without a token still gets in.
-3. [Require A Token](./course-03-require-a-token.md): `requestPrincipals`, `401` versus `403`, and the safe order to apply things. Then the first lab.
-4. [Other Token Places And The DENY Form](./course-04-other-token-places-and-deny.md): a token in a query parameter, and "token required" written as `DENY`. Then the second lab.
-5. [Wrap-Up](./course-05-wrap-up.md): what you learned, the labs, questions to check yourself, and cleaning up.
-
-## Why this matters
-
-On the exam you write security objects by hand on a live cluster and prove they work. "Only requests with a valid token may reach this service" is one of the most common tasks, and the most common wrong answer is a `RequestAuthentication` on its own. It is accepted, it looks right, and it lets every request without a token straight through. After this module you will see that gap at once, and the status code will tell you which object to fix.
