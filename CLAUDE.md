@@ -24,16 +24,16 @@ Strict guidelines:
 3. Simple sentences. Target a Flesch-Kincaid Grade Level of 8 or 9 for the
    prose around the terms. Keep sentences direct; split long sentences into
    two. No corporate buzzwords.
-4. Use short paragraphs (max 3-4 sentences per paragraph) and clear
-   subheadings to make the text scannable.
+4. Use short paragraphs (max 3-4 sentences per paragraph).
 5. Use the active voice ("istiod sends the configuration", not "the
    configuration is sent").
 
 ## How this applies to course material
 
-- **Know which file you are in.** A module has a short landing page and a few
-  deep-dive parts. The landing page is a map: goals, what to know first, the
-  order of the parts, where it fits. The real teaching goes in the parts. A lab
+- **Know which file you are in.** A module has a short landing page, a few
+  deep-dive parts and a summary page. The landing page is a map: goals, what
+  to know first, the order of the parts. The real teaching goes in the parts.
+  The summary closes the module. A lab
   has a task, a step-by-step solution and a short intro. Keep each file to its
   job. Do not add "Prerequisite: ... Next: ..." navigation lines to pages;
   the landing page and the course outline already give the order.
@@ -42,7 +42,24 @@ Strict guidelines:
   the playground in one sitting of about 15 minutes. Split at a natural seam
   where each half ends with something the learner has seen work. Never split
   only to hit a number. When you split, renumber the files, fix every "Part N"
-  reference in the module, the wrap-up links and `astrona.yaml`.
+  reference in the module and `astrona.yaml`.
+- **Read like a book, not like a web page.** Each part reads as a chapter of
+  a technical book. Open with a short paragraph on the problem it solves and
+  why it matters. Link each paragraph to the next with a transition sentence.
+  Close with a paragraph that sums up what the reader now knows and the
+  question still open, before `## Common pitfalls` and the mission. Write
+  explanations as prose; keep bullets for real lists (fields, ordered steps,
+  options). Use `##` only when the topic changes and `###` only inside a long
+  section, never for a single command. Weave hands-on steps into the text:
+  one or two sentences on what to run and why, the command, the real output,
+  then a sentence or two on what it shows.
+- **The module ends with a summary.** The last page of every module is
+  `course-0N-summary.md` with the title `# Summary`: a few short prose
+  paragraphs on what the reader learned, organised by idea, optionally with
+  one short list of key facts. It names no parts, modules, sections or
+  chapters, and has no links, lab table, quiz or commands. Its last line is
+  `<!-- astrona:playground:destroy -->` on its own line; the platform turns it
+  into the step that removes the playground.
 - **Every heading gets an intro.** A `##` section that has `###`
   subsections starts with one to three sentences that say what the section
   is about and why it matters, before the first `###`. Never put a `###`
@@ -53,8 +70,7 @@ Strict guidelines:
   a fact from elsewhere, state the fact directly in one or two sentences.
   This also goes for parts of the same module: never write "Part 2 shows",
   "from Part 1" or "as in Part 3". Say the fact itself ("the commands below
-  need the `scout` `DestinationRule` applied"). The wrap-up page is the one
-  exception: it recaps each part and links to it.
+  need the `scout` `DestinationRule` applied"). This includes the summary.
   The landing page does not have a "Where this fits" section.
 - **Write words out in full.** Do not use informal short forms in prose:
   write "communications", "configuration", "repository", "administrator",
@@ -88,10 +104,8 @@ Strict guidelines:
 - **Prose only.** The grade-level and sentence rules apply to explanations.
   They do not apply to code blocks, tables of field names or reference lists
   (those may stay short and dense).
-- **Keep the page furniture the same.** Hands-on steps are normal page
-  content, not boxes: a short `###` subsection (for example "See it in your
-  playground") with one sentence saying what to do, the command, the real
-  output, and one or two sentences saying what it shows. A `> [!TIP]` box is
+- **Keep the page furniture the same.** Hands-on steps are part of the prose
+  (see "Read like a book"), not boxes or headings of their own. A `> [!TIP]` box is
   only for a real tip: advice the reader can reuse beyond this one step (a
   habit, a shortcut, how to spot a problem, an exam habit). Everything else
   is a normal sentence: notes about the current step ("if the log line is
@@ -109,15 +123,14 @@ Strict guidelines:
   one sentence on what the reader can now do, one on what the mission asks,
   then pause the playground (`astrona stop <playground name>`), the
   `astrona run` and `astrona submit` commands, and finally
-  `astrona destroy <lab name>` plus `astrona start <playground name>`. The
-  wrap-up lists the missions and ends with cleaning up the playground
-  (`astrona list`, `astrona destroy <playground name>`).
+  `astrona destroy <lab name>` plus `astrona start <playground name>`.
 - **Renew the playground before hands-on work.** Every reading part that
   runs commands has `<!-- astrona:playground:renew -->` exactly once, on its
   own line, right before the first hands-on step (the first "Save this as"
   or the first command block), so the playground timer is reset before the
   learner needs the playground. Not on landing pages (they carry
-  `<!-- astrona:playground -->`), wrap-up pages or pages without commands.
+  `<!-- astrona:playground -->`), summary pages (they carry
+  `<!-- astrona:playground:destroy -->`) or pages without commands.
 - **Mermaid without HTML.** The platform renders Mermaid with HTML labels
   switched off, so `<br/>` and any other HTML tag break the drawing. Rules:
   - One line per box, no `<br/>`, no HTML. Keep the box to the thing's name
@@ -301,7 +314,7 @@ use the Starfleet.
 | Overview, sections table, how to run things | `README.md` |
 | Mission Briefing: course intro, setup, how the course is made, maintainers, how to report mistakes (first in `astrona.yaml`) | `sections/intro/` |
 | Section overview and its modules | `sections/section-0N0/README.md` |
-| Module reading: landing page, deep-dive parts, wrap-up | `sections/section-0N0/module-0M/course.md`, `course-0N-*.md` |
+| Module reading: landing page, deep-dive parts, summary | `sections/section-0N0/module-0M/course.md`, `course-0N-*.md` |
 | Graded lab: task, walkthrough, setup, grader | `.../labs/lab-0N/` (`question.md`, `solution.md`, `bootstrap/`, `solution/apply.sh`, `validation/`) |
 | Ungraded sandbox for a module | `.../playground/` (`docs/overview.md` says what is in the box, `docs/practice.md` has exam-style tasks, `examples/` the authors' reference YAML) |
 | One graded integration lab per section | `sections/section-0N0/capstone/labs/lab-01/` |
@@ -326,7 +339,7 @@ A lab folder holds:
 order: the section `README.md`, then for each module its landing page, its
 parts, and right after the part a lab tests, a `Question` reading
 (`labs/lab-0N/question.md`) followed by the `type: lab` entry; the module's
-wrap-up page comes last. The section capstone closes the section. Playgrounds
+summary page comes last. The section capstone closes the section. Playgrounds
 are not listed: the landing page's `<!-- astrona:playground -->` marker shows
 them.
 
