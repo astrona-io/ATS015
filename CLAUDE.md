@@ -5,23 +5,29 @@ scripts) is for people learning a technical subject, often for a
 certification exam. Many of them are not native English speakers and have no
 university degree.
 
-## Plain English
+## Technical documentation in plain English
 
-Write the text in Plain English for a general adult audience (18+) without a
-university degree. The content must be highly accessible and easy to
-understand for non-technical readers, without feeling childish.
+This is technical documentation. Say exactly what the system does, with the
+real technical terms, in clear and simple English. Never hide a concept
+behind a metaphor, a made-up name or a vague word: the reader must learn the
+words they will meet in the product, the logs and the exam.
 
 Strict guidelines:
 
-1. Target a Flesch-Kincaid Grade Level of 8 or 9 (equivalent to a standard
-   newspaper article).
-2. Avoid all technical jargon, acronyms, and corporate buzzwords. If a
-   technical term is necessary, explain it immediately using an everyday
-   analogy.
-3. Keep sentences conversational and direct. Split long sentences into two.
+1. Use the correct technical term every time (request, response, pod,
+   namespace, Service, sidecar proxy, certificate, mTLS, JWT, listener). The
+   first time a term appears in a file, define it in one plain sentence that
+   says what it is and what it does. Spell out every acronym on first use.
+2. No metaphors or analogies in explanations. Not "the communications
+   officer", but "the sidecar proxy (Envoy)"; not "a signal", but "a
+   request"; not "the planet", but "the namespace".
+3. Simple sentences. Target a Flesch-Kincaid Grade Level of 8 or 9 for the
+   prose around the terms. Keep sentences direct; split long sentences into
+   two. No corporate buzzwords.
 4. Use short paragraphs (max 3-4 sentences per paragraph) and clear
    subheadings to make the text scannable.
-5. Use the active voice (e.g., "We did this" instead of "This was done by us").
+5. Use the active voice ("istiod sends the configuration", not "the
+   configuration is sent").
 
 ## How this applies to course material
 
@@ -55,18 +61,21 @@ Strict guidelines:
   "for example" and "that is", never "comms", "config", "repo", "admin",
   "e.g." or "i.e.". Names in code, commands and file paths stay as they are.
 - **Exam terms stay.** The product's own names are what the reader must learn
-  (for example a resource kind, a field, a command). Keep them, but explain
-  each one in plain words, with an everyday analogy, the first time it appears
-  in a file. Spell out acronyms on first use, with a short plain meaning.
-- **Analogies come from space, and the reader is an astronaut.** When a term
-  needs an everyday picture, use space: spaceships, planets, solar systems,
-  space stations, mission control, signals, docking, star charts, airlocks,
-  even the Death Star. Talk to the reader as an astronaut (for example "your
-  first mission", "astronaut, check your flight log"), but not in every
-  sentence. Requests are **signals** that ships send to each other. Use one
-  analogy per hard idea, keep it short, and keep it the same everywhere (if
-  the repository has an analogy glossary, use it). The analogy helps the reader; it
-  never replaces the real term, and it never changes code or output.
+  (for example a resource kind, a field, a command). Use them as they are and
+  define each one in plain technical words the first time it appears in a
+  file. Spell out acronyms on first use, with a short plain meaning.
+- **The space theme is only for examples.** Space appears in two places and
+  nowhere else: the names of the example workloads (the Starfleet: `bridge`,
+  `scout`, `shuttle`, `probe`, the `starfleet` and `outpost` namespaces) and
+  the short scenario that opens a lab task or a practice exercise (for
+  example "the `drifter` in `outpost` must keep reaching the probe"). The
+  explanation around an example is plain technical text: write "the
+  `shuttle` pod sends a request to the `probe` Service", never "the shuttle
+  sends a signal to the probe ship". Do not address the reader as an
+  astronaut, and do not use space metaphors (communications officer, mission
+  control, badge, airlock, guest list, star chart) for Istio or Kubernetes
+  concepts. Titles of pages and labs name the technical task ("Require mTLS
+  With PeerAuthentication"), not a space story.
 - **Show one real example before the rule.** Start with a concrete case the
   reader can run, then give the general rule.
 - **Say which part does the work.** Readers often mix up the parts of a system
@@ -187,125 +196,65 @@ section is only true for this one.
   <https://istio.io/latest/docs/concepts/security/>, and the API reference
   for each security object. Check every page against them.
 
-### Space analogy glossary
+### Terms, not metaphors
 
-Use these pictures for these terms, in every course page, lab and playground.
-Keep them consistent so the astronaut builds one picture of the universe.
-Most pages written before these rules have no space analogies yet; add them
-when you rework a page, using this table.
+Explanations use Istio's and Kubernetes' own words. Define each one in plain
+technical language on first use in a file, for example:
 
-**The universe**
-
-| Term | Space picture |
+| Term | First-use definition (example wording) |
 | --- | --- |
-| The learner | An astronaut (a cadet on their first missions) |
-| Kubernetes cluster | A solar system |
-| Namespace | A planet in that solar system |
-| Pod | A spaceship |
-| Container | A module inside the ship (the app is the crew) |
-| Kubernetes Service | A beacon: one call sign that a whole group of ships answers to |
-| Service account | The ship's registration papers |
-| Request / response | A signal sent out, and the reply signal |
-| Port | A radio channel |
-| Service mesh | The fleet's shared signal network |
-| `kind` cluster on your laptop | A training solar system in the simulator |
+| Sidecar proxy (Envoy) | A proxy container Istio adds to each pod; all inbound and outbound traffic of the pod passes through it |
+| `istiod` | Istio's control plane; it sends configuration and certificates to every proxy |
+| xDS | The protocol `istiod` uses to push configuration to proxies while they run |
+| Workload identity (SPIFFE ID) | The name in a workload's certificate, built from its namespace and service account: `spiffe://cluster.local/ns/<namespace>/sa/<service account>` |
+| mTLS | Mutual TLS: both sides present a certificate, so the connection is encrypted and both identities are verified |
+| `PeerAuthentication` | Sets whether a workload accepts plain text, mTLS or both on inbound connections (`PERMISSIVE`, `STRICT`, `DISABLE`) |
+| `RequestAuthentication` | Validates a JWT if the request carries one; it does not require a token |
+| JWT | JSON Web Token: a signed token that carries claims about the end user |
+| `AuthorizationPolicy` | Allows or denies requests to a workload, by source, operation and conditions |
+| Ingress gateway | An Envoy proxy at the edge of the mesh that accepts traffic from outside the cluster |
+| TLS termination / passthrough | The gateway decrypts the connection / forwards it encrypted, routing on SNI only |
+| ztunnel | The per-node proxy in ambient mode; it handles mTLS and L4 authorization, but not HTTP |
+| Waypoint | An Envoy proxy you deploy in ambient mode to enforce L7 (HTTP) policy |
 
-**The mesh**
+Older pages still use space metaphors (communications officer, signal,
+badge, guest list, airlock). Replace them with the real terms when you touch
+a page.
 
-| Term | Space picture |
-| --- | --- |
-| Sidecar proxy (Envoy) | The ship's communications officer: every signal in or out goes through them |
-| Sidecar injection | Putting a communications officer on board when the ship launches (ships already flying do not get one) |
-| `istiod` (control plane) | Mission control: it sends every communications officer their orders and issues ID badges |
-| xDS push | Mission control radioing new orders to every ship in flight, no landing needed (no restart) |
-
-**Identity and authentication**
-
-| Term | Space picture |
-| --- | --- |
-| Workload identity (SPIFFE ID) | The ship's ID badge, printed from its registration papers |
-| Certificate / SAN | The badge card itself; the SAN is the name printed on it |
-| Certificate authority (istiod CA) | The badge office at mission control |
-| Root certificate / trust domain | The fleet's official seal; badges with another seal are not trusted |
-| Certificate rotation | Mission control swapping each badge for a fresh one before it expires |
-| mTLS | A secret handshake: both ships show their badges before they talk |
-| `PeerAuthentication` | The rule on a ship's airlock: who must do the handshake before docking |
-| `STRICT` / `PERMISSIVE` / `DISABLE` | Handshake required / handshake welcome but not required / no handshake |
-| Mesh, namespace and workload scope | A rule for the whole fleet, for one planet, or for one ship; the closest rule wins |
-| Plain-text caller outside the mesh | A ship with no badge and no communications officer |
-| JWT (JSON Web Token) | A signed boarding pass an astronaut carries with every signal |
-| `RequestAuthentication` | The pass checker: it checks any pass shown, but does not demand one |
-| JWKS (key set) | The list of official stamps the pass checker compares passes against |
-| Claims | The lines printed on the boarding pass (who, which crew, which clearance) |
-
-**Authorization**
-
-| Term | Space picture |
-| --- | --- |
-| `AuthorizationPolicy` | The guard's list at the airlock: who may come aboard and what they may do |
-| `ALLOW` / `DENY` / `CUSTOM` / `AUDIT` | Guest list / banned list / ask an outside guard / write it in the log only |
-| Default-deny (`spec: {}` or first `ALLOW`) | Once a guest list exists, anyone not on it stays outside the airlock |
-| `from`, `to`, `when` | Who sends the signal, which door and channel it asks for, extra conditions |
-| `principals` | The name on the ship's ID badge |
-| `requestPrincipals` | The name on the astronaut's boarding pass |
-| `RBAC: access denied` (403) | The guard turned the signal away at the airlock |
-| Evaluation order (CUSTOM, DENY, ALLOW) | The guard checks the banned list before the guest list |
-
-**The borders of the solar system**
-
-| Term | Space picture |
-| --- | --- |
-| Ingress gateway | The spaceport arrival gate: the one door signals from outside the solar system come through |
-| TLS termination (`SIMPLE`) | The arrival gate opens the sealed signal, checks it, then sends it on inside |
-| Mutual TLS at the gate (`MUTUAL`) | The arrival gate also demands a badge from the visitor's ship |
-| TLS passthrough (`PASSTHROUGH`) | The gate forwards the sealed signal unopened; only the destination ship can open it |
-| SNI (Server Name Indication) | The address written on the outside of the sealed envelope |
-| Gateway credential (Kubernetes Secret) | The gate's own badge and key, kept in the gate's safe |
-| Source IP, `remoteIpBlocks`, `numTrustedProxies` | The return address on a signal, and how many relay stations to trust when reading it |
-
-**Ambient mode (section 060)**
-
-| Term | Space picture |
-| --- | --- |
-| Ambient mode | Ships fly without their own communications officer; shared relay towers do the job instead |
-| ztunnel | A shared relay tower, one per node (launch pad), for every ship docked there: it does the handshake and checks badges, but cannot read the signal's contents |
-| HBONE | The sealed tunnel the relay towers use between them |
-| Waypoint | A checkpoint station you build only where someone must read the signal's contents (L7 rules) |
-| L4 rule vs L7 rule | Checking the envelope (who, which channel) vs reading the letter (path, method, headers) |
-
-### The playground fleet: the Starfleet
+### The example workloads: the Starfleet
 
 The playgrounds and course pages run the Istio Bookinfo sample with **space
-names**, the same fleet as in the other Istio courses. The images are the
-official Bookinfo images; only the Kubernetes names change. Use these names
-everywhere (commands, YAML, prose). Never call it a "book review" app.
+names**, the same workloads as in the other Istio courses. The images are the
+official Bookinfo images; only the Kubernetes names change. Use these names in
+commands, YAML and example text. The names are the only space element: describe
+what each workload does in technical terms. Never call it a "book review" app.
 
-| Space name (Kubernetes name) | Was in Bookinfo / new-data | Service account | Role |
+| Kubernetes name | Was in Bookinfo / new-data | Service account | What it is |
 | --- | --- | --- | --- |
-| `starfleet` (namespace) | `bookinfo` | | The planet the fleet lives on (sidecar injection on) |
-| `bridge` | `productpage` | `starfleet-bridge` | The flagship command deck: the page astronauts see; it signals the other ships |
-| `cargo` | `details` | `starfleet-cargo` | The supply ship: answers with facts about an item |
-| `scout` v1/v2/v3 | `reviews` | `starfleet-scout` | Three ship classes of one scout: v1 no stars, v2 black stars, v3 red stars |
-| `navcom` | `ratings` | `starfleet-navcom` | The navigation computer the v2 and v3 scouts ask for the star rating |
-| `shuttle` | `curl` | `shuttle` | Your test client inside the mesh: every test signal is sent from here |
-| `probe` v1/v2 | `httpbin` | `probe` | The echo probe: sends back exactly what it receives (Service port `8000`, container port `8080`) |
-| `fortio` | `fortio` | `default` | The load generator; here mostly a second caller with another identity |
-| `outpost` (namespace) | `legacy` | | A planet with sidecar injection **off**, on purpose |
-| `drifter` (in `outpost`) | `legacy/curl` | `default` | An old ship with no communications officer and no ID badge: it can only send plain text |
-| `jason` | `jason` | | A fellow astronaut; logged in on the bridge, their signals carry `end-user: jason` |
+| `starfleet` (namespace) | `bookinfo` | | Namespace for the sample app, sidecar injection on |
+| `bridge` | `productpage` | `starfleet-bridge` | Web frontend (`/productpage`); calls `cargo` and `scout` |
+| `cargo` | `details` | `starfleet-cargo` | Backend that returns item details |
+| `scout` v1/v2/v3 | `reviews` | `starfleet-scout` | Backend in three versions: v1 no stars, v2 black stars, v3 red stars |
+| `navcom` | `ratings` | `starfleet-navcom` | Backend that `scout` v2 and v3 call for the star rating |
+| `shuttle` | `curl` | `shuttle` | Test client pod in the mesh; test requests are sent from here |
+| `probe` v1/v2 | `httpbin` | `probe` | HTTP echo server (go-httpbin); Service port `8000`, container port `8080` |
+| `fortio` | `fortio` | `default` | Load generator; mostly used as a second client with another identity |
+| `outpost` (namespace) | `legacy` | | Namespace with sidecar injection **off**, on purpose |
+| `drifter` (in `outpost`) | `legacy/curl` | `default` | Client pod with no sidecar: no certificate, sends plain text only |
+| `jason` | `jason` | | Example end user; after login on the bridge, its requests carry `end-user: jason` |
 
-Each ship's SPIFFE identity follows from the table, for example
+Each workload's SPIFFE identity follows from the table, for example
 `spiffe://cluster.local/ns/starfleet/sa/shuttle` or
 `spiffe://cluster.local/ns/starfleet/sa/starfleet-bridge`. The drifter has
 no identity at all.
 
 Built into the images and **unchanged**: the URL paths `/productpage`,
 `/details/0`, `/reviews/0`, `/ratings/0`, and the probe's `/headers`,
-`/get`, `/status/...`, `/ip`. So a signal to the probe is
+`/get`, `/status/...`, `/ip`. So a request to the probe goes to
 `http://probe:8000/headers`. The fleet manifests live in each playground's
 `bootstrap/manifests/` (`starfleet.yaml`, `shuttle.yaml`, `probe.yaml`,
 `outpost.yaml`, `fortio.yaml`, `access-logs.yaml`, `namespace.yaml`), copied
-from the same files in the ATS014 course so both courses show one fleet.
+from the same files in the ATS014 course so both courses use the same workloads.
 
 **Graded labs keep their own small apps for now.** The older labs and
 capstones run `booking-service` (service account `booking-sa`),
