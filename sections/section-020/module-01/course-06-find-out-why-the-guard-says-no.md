@@ -1,20 +1,18 @@
 # Troubleshoot An Authorization Denial
 
-Sooner or later a policy will not do what you meant. When that happens there are only two possibilities. Either the policy reached the workload's proxy and its rules are wrong, or the policy never reached the proxy at all. They need different fixes, and `kubectl get` cannot tell them apart: the object exists either way.
+Sooner or later a policy will not do what you meant. When that happens, there are only two possibilities. Either the policy reached the workload's proxy and its rules are wrong, or the policy never reached the proxy at all.
 
-This part shows the three tools that can: the receiving workload's access log, the proxy's configuration, and `istioctl analyze`.
+The two cases need different fixes, and `kubectl get` cannot tell them apart, because the object exists either way. This chapter shows the three tools that can: the receiving workload's access log, the proxy's configuration, and `istioctl analyze`. You will break one policy on purpose, find the fault with each tool, and fix it.
 
-The commands below need `allow-nothing` and the four least-privilege policies (`bridge-allow-get`, `cargo-allow-bridge`, `scout-allow-bridge`, `navcom-allow-scout`) applied in your playground, and the three helpers from the module's landing page.
+The commands below need `allow-nothing` and the four least-privilege policies (`bridge-allow-get`, `cargo-allow-bridge`, `scout-allow-bridge`, `navcom-allow-scout`) applied in your playground, and the three helper functions from the landing page.
 
 ## Read the decision in the access log
 
-Every proxy writes one line per request into its access log. For a denied request, the line also says which policy decided. You read it on the workload that **received** the request.
-
-### A denied shortcut
+Every proxy writes one line per request into its access log. For a denied request, the line also says which policy decided. You read it on the workload that **received** the request, because that is where the check ran.
 
 <!-- astrona:playground:renew -->
 
-Send a request from the `shuttle` straight to `scout`, then read the access logs of the `scout` pods:
+Send a request from the `shuttle` straight to `scout`, a shortcut that the least-privilege policies close. Then read the access logs of the `scout` pods:
 
 ```sh
 from_shuttle http://scout:9080/reviews/0
@@ -27,15 +25,13 @@ kubectl logs -n starfleet -l app=scout -c istio-proxy --tail=5 | grep rbac_acces
 [2026-10-09T07:42:04.120Z] "GET /reviews/0 HTTP/1.1" 403 - rbac_access_denied_matched_policy[none] - "-" 0 19 0 - "-" "curl/8.11.1" "d69c9218-bfce-4d76-a568-cdd460a5f7ea" "scout:9080" "-" inbound|9080|| - 10.244.0.10:9080 10.244.0.12:33766 outbound_.9080_._.scout.starfleet.svc.cluster.local default
 ```
 
-The `sleep 5` is there because the proxy writes its access log in small batches, a few seconds after the request. The line gives the answer in one field: `rbac_access_denied_matched_policy[none]`. The proxy held RBAC rules, and **no** `ALLOW` rule matched this request. If a `DENY` policy had denied it, the brackets would name that policy and rule instead, for example `ns[starfleet]-policy[some-deny]-rule[0]`.
+The `sleep 5` is there because the proxy writes its access log in small batches, a few seconds after the request. The line gives the answer in one field: `rbac_access_denied_matched_policy[none]`. The proxy held RBAC (role-based access control) rules, and **no** `ALLOW` rule matched this request. If a `DENY` policy had denied it, the brackets would name that policy and rule instead, for example `ns[starfleet]-policy[some-deny]-rule[0]`.
 
-`[none]` tells you that a policy arrived. It does not tell you whether the right policy arrived. For that, ask the proxy.
+`[none]` tells you that a policy arrived. It does not tell you whether the right policy arrived. For that, you have to ask the proxy itself.
 
 ## Break one policy on purpose
 
-The quietest failure is a `selector` that matches no pod. The object is valid, `kubectl apply` accepts it, and `kubectl` does not warn you. See it once on purpose, so you know it when it happens by accident.
-
-### Misspell the selector
+The quietest failure is a `selector` that matches no pod. The object is valid, `kubectl apply` accepts it, and `kubectl` does not warn you. It is worth seeing once on purpose, so you know it when it happens by accident.
 
 Save this as `authorizationpolicy-navcom-allow-scout.yaml`. It is the `navcom` policy with one typo, `navcomm`:
 
@@ -83,11 +79,13 @@ currently unavailable
 currently unavailable 
 ```
 
-The page still loads, and the reviews are there. But every `scout` pod that asks `navcom` for a rating is now denied, so the stars are replaced by an error (the page says `Ratings service is currently unavailable`). Empty lines are `scout` v1 loads, which never ask for a rating. `navcom` is covered only by `allow-nothing` again.
+The page still loads, and the reviews are there. But the `navcom` proxy now denies every `scout` pod that asks for a rating, so the stars are replaced by an error (the page says `Ratings service is currently unavailable`). Empty lines are `scout` v1 loads, which never ask for a rating. `navcom` is covered only by `allow-nothing` again.
 
-### Ask the proxy which policies it holds
+## Ask the proxy and istioctl
 
-`istiod` compiles every policy into the proxy's configuration, and each rule keeps its policy's name. A listener is the part of Envoy's configuration that accepts connections on one port. Ask the `navcom` proxy which policies it received on its inbound listener (port `15006`, where every incoming request enters):
+The log would only say `[none]` here, which does not explain the fault. The proxy's own configuration does. `istiod` compiles every policy into that configuration, and each rule keeps its policy's name.
+
+The place to look is a listener: the part of Envoy's configuration that accepts connections on one port. Ask the `navcom` proxy which policies it received on its inbound listener, port `15006`, where every incoming request enters:
 
 ```sh
 istioctl proxy-config listener deploy/navcom-v1 -n starfleet --port 15006 -o json \
@@ -100,9 +98,7 @@ ns[starfleet]-policy[allow-nothing]
 
 Only `allow-nothing` is there; `navcom-allow-scout` is missing. The object exists, but its selector matches no pod, so `istiod` never sent it to `navcom`. No edit to its rules would help.
 
-### Ask istioctl analyze
-
-`istioctl analyze` runs Istio's own checks over a namespace, and it compares objects with the pods they point at:
+`istioctl analyze` finds the same fault from the other side. It runs Istio's own checks over a namespace, and it compares objects with the pods they point at:
 
 ```sh
 istioctl analyze -n starfleet
@@ -112,11 +108,9 @@ istioctl analyze -n starfleet
 Warning [IST0127] (AuthorizationPolicy starfleet/navcom-allow-scout) No matching workloads for this resource with the following labels: app=navcomm
 ```
 
-`analyze` names the policy and the label that matches nothing. It is only a warning, so the command still exits with success; read the output, not the exit code. Run it after every security change: it catches typos before your test requests do.
+`analyze` names the policy and the label that matches nothing. It is only a warning, so the command still exits with success; read the output, not the exit code. Run it after every security change, because it catches typos before your test requests do.
 
-### Fix the selector
-
-Change `app: navcomm` back to `app: navcom` in `authorizationpolicy-navcom-allow-scout.yaml`, then apply it:
+To fix the fault, change `app: navcomm` back to `app: navcom` in `authorizationpolicy-navcom-allow-scout.yaml`, then apply it:
 
 ```sh
 kubectl apply -f authorizationpolicy-navcom-allow-scout.yaml
@@ -138,9 +132,7 @@ Both policies are in the proxy's configuration again. Wait up to about a minute 
 
 ## Wrong rule or missing policy
 
-Put the three tools together and every "the policy does nothing" case falls into one of two groups. The table shows how to tell them apart.
-
-### Two failures, two fixes
+Put the three tools together, and every "the policy does nothing" case falls into one of a few groups. The table shows how to tell them apart:
 
 | What you see | What it means | What to fix |
 | --- | --- | --- |
@@ -148,10 +140,12 @@ Put the three tools together and every "the policy does nothing" case falls into
 | Policy in `proxy-config listener`, log says `matched_policy[none]` | the policy arrived, but no rule matches | the rule: the service account name, a stray `spiffe://`, the method or path |
 | `000` and a reset connection, no log line with `403` | the authorization check never saw the request | `PeerAuthentication` and the caller's sidecar, not the policy |
 
-A wrong service account is the classic "arrived but wrong" case. A rule that names `sa/bridge` instead of `sa/starfleet-bridge` is in the proxy's configuration, it simply never matches.
+A wrong service account is the classic "arrived but wrong" case. A rule that names `sa/bridge` instead of `sa/starfleet-bridge` is in the proxy's configuration; it simply never matches.
 
 > [!TIP]
 > On the exam, debug a denied request in this order: `kubectl get authorizationpolicy -A` (what could apply), `istioctl proxy-config listener` on the receiver (what did arrive), then the receiver's access log (which policy decided). Three commands, and you know which case you have.
+
+In short, `kubectl get` shows what you wrote, the proxy configuration shows what arrived, and the access log shows what the proxy decided. With those three views you can tell a policy that never arrived from a rule that is wrong, and fix the right thing first.
 
 ## Common pitfalls
 
@@ -160,8 +154,6 @@ A wrong service account is the classic "arrived but wrong" case. A rule that nam
 > - **Reading the caller's log.** The decision is logged by the workload that received the request.
 > - **Trusting `kubectl get` as proof.** It shows the object exists, not that any proxy received it.
 > - **Skipping `istioctl analyze`.** A selector that matches no pod is exactly the kind of mistake it catches.
-
-> *`kubectl get` shows what you wrote. The proxy configuration shows what arrived. The access log shows what the proxy decided.*
 
 ## Your mission: Repair Broken AuthorizationPolicies
 

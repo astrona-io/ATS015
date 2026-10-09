@@ -1,14 +1,14 @@
 # Match The Caller By Identity
 
-A policy that lets in "any workload in the namespace" is better than no policy, but not by much. This part narrows an `ALLOW` rule to the exact identity in a workload's certificate. It shows why that identity only exists when mTLS works, and what happens when more than one `ALLOW` policy selects the same workload.
+A policy that lets in "any workload in the namespace" is better than no policy, but not by much. Any new workload in that namespace, including one you never meant to trust, gets the same access. To be precise, a rule has to name the one caller it means.
 
-The commands below need `allow-nothing` and `probe-allow-shuttle-get` (only the `shuttle` may `GET` the `probe`) applied in your playground, and the three helpers from the module's landing page.
+This chapter narrows an `ALLOW` rule to the exact identity in a workload's certificate. It shows where that identity comes from, why it only exists when mTLS works, and what happens when more than one `ALLOW` policy selects the same workload.
+
+The commands below need `allow-nothing` and `probe-allow-shuttle-get` (only the `shuttle` may `GET` the `probe`) applied in your playground, and the three helper functions from the landing page.
 
 ## The identity in the certificate
 
-A `principals` rule names one caller by its workload identity. That identity is the SPIFFE ID in the workload's certificate. `istiod` builds it from the pod's namespace and its Kubernetes service account.
-
-### The format
+A `principals` rule names one caller by its workload identity. That identity is the SPIFFE ID in the workload's certificate; SPIFFE (Secure Production Identity Framework For Everyone) is the open standard that defines this name format. `istiod` builds the name from the pod's namespace and its Kubernetes service account, and a `principals` value has three pieces:
 
 ```text
 cluster.local/ns/starfleet/sa/shuttle
@@ -18,11 +18,9 @@ trust domain    namespace    service account
 
 The certificate itself carries `spiffe://cluster.local/ns/starfleet/sa/shuttle`. In a `principals` rule you leave out the `spiffe://` part. A rule that keeps it matches nothing, and nothing warns you.
 
-### Find each workload's service account
-
 <!-- astrona:playground:renew -->
 
-You never guess a principal. You read the service account off the pods. First, remove the `probe-allow-headers` policy if your namespace still has it. It lets any caller read `/headers`, which would hide the effect of the steps below:
+You never guess a principal; you read the service account off the pods. Before you do, remove the `probe-allow-headers` policy if your namespace still has it. It lets any caller read `/headers`, which would hide the effect of the steps below:
 
 ```sh
 kubectl delete authorizationpolicy probe-allow-headers -n starfleet --ignore-not-found
@@ -50,27 +48,21 @@ shuttle-7b5db664c-bn84s      shuttle
 
 The output shows two things worth remembering. `fortio` has no service account of its own, so it runs as `default`. And all three `scout` versions share `starfleet-scout`, so a `principals` rule cannot tell them apart.
 
-A `principals` rule is about the service account, not the pod. Give another pod the same service account, and it gets the same identity and the same access.
+So a `principals` rule is about the service account, not the pod. Give another pod the same service account, and it gets the same identity and the same access.
 
 ## Why the identity needs mTLS
 
 A `principals` rule compares an identity that mTLS verified. If there is no mTLS, there is no certificate, and the rule has nothing to compare.
 
-### No certificate, no match
+Take a pod with no sidecar, like the `drifter`. It sends plain text, so it never presents a certificate. In a namespace in `PERMISSIVE` mode, its request passes the mTLS check and reaches the authorization check with no identity at all. The RBAC (role-based access control) filter compares an empty identity against the rules, finds no match, and answers `403`. The denial has nothing to do with who the caller is.
 
-Take a pod with no sidecar, like the `drifter`. It sends plain text, so it never presents a certificate. In a namespace in `PERMISSIVE` mode, its request passes the mTLS check and reaches the authorization check with no identity at all. The RBAC filter compares an empty identity against the rules, finds no match, and answers `403`. The denial has nothing to do with who the caller is.
-
-In your namespace `PeerAuthentication` is `STRICT`, so the `drifter` is cut off one stage earlier with a reset connection. It never reaches the authorization check at all. That is why this playground switches on `STRICT` before anything else.
-
-So when "my `principals` rule denies everyone", check `PeerAuthentication` first, not the rule.
+In your namespace, `PeerAuthentication` is `STRICT`, so the `drifter` is cut off one stage earlier with a reset connection. It never reaches the authorization check at all, which is why this playground switches on `STRICT` before anything else. So when "my `principals` rule denies everyone", check `PeerAuthentication` first, not the rule.
 
 A caller with no sidecar can never match `principals` or `namespaces`. To allow it in a `PERMISSIVE` namespace, match its address with `ipBlocks`, or give it a sidecar so it gets an identity.
 
 ## A whole namespace at once
 
-Sometimes the right caller is "every workload in this namespace", whatever its service account. The `namespaces` field does that. It reads the namespace from the same certificate, so it also needs mTLS.
-
-### Allow every workload in starfleet
+Sometimes the right caller really is "every workload in this namespace", whatever its service account. The `namespaces` field does that. It reads the namespace from the same certificate, so it also needs mTLS.
 
 Save this as `authorizationpolicy-probe-allow-starfleet-ns.yaml`:
 
@@ -112,15 +104,13 @@ drifter: 000
 command terminated with exit code 56
 ```
 
-`fortio` now gets in: its certificate says namespace `starfleet`, and the service account no longer matters. The `shuttle`'s `POST` gets in too, because this new rule has no `to` part. The `drifter` is still cut off by mTLS.
+`fortio` now gets in, because its certificate says namespace `starfleet` and the service account no longer matters. The `shuttle`'s `POST` gets in too, because this new rule has no `to` part. The `drifter` is still cut off by mTLS.
 
 ## Two policies on one workload
 
-The `probe` is now selected by three `ALLOW` policies: `allow-nothing`, `probe-allow-shuttle-get` and `probe-allow-starfleet-ns`. The `shuttle`'s `POST` was denied a moment ago, and now it gets in. Adding a policy let **more** requests in.
+That `POST` result deserves a second look. The `probe` is now selected by three `ALLOW` policies: `allow-nothing`, `probe-allow-shuttle-get` and `probe-allow-starfleet-ns`. The `shuttle`'s `POST` was denied before, and now it gets in, so adding a policy let **more** requests in.
 
-### The union rule
-
-The proxy combines every `ALLOW` policy that selects a workload. A request gets in if it matches a rule in **any** of them:
+The reason is that the receiving proxy combines every `ALLOW` policy that selects its workload. A request gets in if it matches a rule in **any** of them:
 
 ```text
    allow-nothing              rules: []                      --+
@@ -130,18 +120,20 @@ The proxy combines every `ALLOW` policy that selects a workload. A request gets 
 
 This is the opposite of most people's first guess. **Adding `ALLOW` policies can only ever let more in.** The narrowing happened once, when the first `ALLOW` policy selected the workload. To take something away, you need a `DENY` policy, which the proxy checks before any `ALLOW` policy.
 
-Compare that with `PeerAuthentication`, where only one policy applies to a workload:
+`PeerAuthentication` works differently, because only one policy applies to a workload:
 
 | Object | Several policies on one workload |
 | --- | --- |
 | `PeerAuthentication` | the most specific scope wins; the others are ignored |
 | `AuthorizationPolicy` (`ALLOW`) | all of them count; their rules add up (a union) |
 
-Remove the namespace-wide policy before you go on, so the `probe` is back to "only the `shuttle` may `GET`":
+Remove the namespace-wide policy before you go on, so that the `probe` is back to "only the `shuttle` may `GET`":
 
 ```sh
 kubectl delete -f authorizationpolicy-probe-allow-starfleet-ns.yaml
 ```
+
+You can now name a caller by the identity that mTLS verified, either one service account with `principals` or a whole namespace with `namespaces`. You also know that every `ALLOW` policy on a workload adds to a union that can only let more in. What is left is to use these tools on a whole application, not one test workload.
 
 ## Common pitfalls
 
@@ -151,8 +143,6 @@ kubectl delete -f authorizationpolicy-probe-allow-starfleet-ns.yaml
 > - **Guessing the service account.** Read it from the pod. `fortio` runs as `default`, and the `scout` pods share one account.
 > - **Expecting another `ALLOW` policy to restrict.** `ALLOW` policies add up. To take something away, you need `DENY`.
 > - **Using `namespaces` where one caller was meant.** Every workload in the namespace gets in, including ones deployed later.
-
-> *`principals` matches the identity that mTLS verified, so it needs mTLS. Every `ALLOW` policy on a workload adds to a union that can only let more in.*
 
 ## Your mission: Lock A Namespace Down With ALLOW Policies
 

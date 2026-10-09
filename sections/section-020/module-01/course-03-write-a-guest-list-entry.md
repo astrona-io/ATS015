@@ -1,16 +1,14 @@
 # Write An ALLOW Rule
 
-The namespace is closed. Now you open it again, one narrow call at a time. Each opening is a **rule** in an `ALLOW` policy: who may call, which operation they may use, and under which extra conditions.
+The namespace is closed, and now you open it again, one narrow call at a time. Each opening is a **rule** in an `ALLOW` policy. A rule says who may call, which operation they may use, and under which extra conditions.
 
-A rule has three optional parts, and they combine in a fixed way. Almost every policy that "looks right but does not work" comes from misreading how those parts combine. This part settles that.
+A rule has three optional parts, and they combine in a fixed way. Almost every policy that "looks right but does not work" comes from misreading how those parts combine. This chapter starts with one real rule, takes it apart, and then settles how the parts, rules and paths are matched.
 
-The commands below need the `allow-nothing` policy (`spec: {}` in `starfleet`) applied in your playground, and the three helpers from the module's landing page pasted into your terminal.
+The commands below need the `allow-nothing` policy (`spec: {}` in `starfleet`) applied in your playground, and the three helper functions from the landing page pasted into your terminal.
 
 ## Open one call
 
-Start with one real rule: only the `shuttle` may read from the `probe`. You apply it first, then take it apart.
-
-### Only the shuttle, only GET
+Start with one real rule: only the `shuttle` may read from the `probe`, and only with `GET`. You apply it first, and then read it.
 
 <!-- astrona:playground:renew -->
 
@@ -58,19 +56,13 @@ from_fortio http://probe:8000/get
 Code 403
 ```
 
-Only the first one gets in. The `shuttle`'s `POST` fails on the method. The `fortio` `GET` fails on the caller: its identity is `sa/default`, not `sa/shuttle`.
+Only the first request gets in. The `shuttle`'s `POST` fails on the method. The `fortio` `GET` fails on the caller, because its identity is `sa/default`, not `sa/shuttle`.
 
-### Read it out loud
-
-Read a rule as one sentence, starting with the selector: *on the `probe` pods, allow a caller with the identity `cluster.local/ns/starfleet/sa/shuttle` to use `GET`*. And, because `allow-nothing` is still there, nothing else.
-
-If a policy is hard to read aloud in one sentence, its parts probably do not combine the way its author thought.
+It helps to read a rule out loud as one sentence, starting with the selector: *on the `probe` pods, allow a caller with the identity `cluster.local/ns/starfleet/sa/shuttle` to use `GET`*. And, because `allow-nothing` is still there, nothing else. If you cannot read a policy aloud in one sentence, its parts probably do not combine the way its author thought.
 
 ## The three parts of a rule
 
-Every rule is built from up to three parts. Each part answers a different question, and each one gets its facts from a different stage of the request's path.
-
-### From, to and when
+The rule you just applied used two of the three parts. Each part answers a different question, and each one gets its facts from a different stage of the request's path through the receiving proxy. Here is the full shape, with every field this module uses:
 
 ```yaml
   rules:
@@ -91,15 +83,13 @@ Every rule is built from up to three parts. Each part answers a different questi
       values: ["apollo"]
 ```
 
-`from` facts come from mTLS, `to` facts from reading the HTTP request, and token facts in `when` from the JWT check. That is why `principals` fails quietly without mTLS, and why token conditions need a `RequestAuthentication`.
+`from` facts come from mTLS, `to` facts from reading the HTTP request, and token facts in `when` from the JWT (JSON Web Token) check. That is why `principals` fails quietly without mTLS, and why token conditions need a `RequestAuthentication`.
 
 Every field also has a "not" form, for example `notMethods`, `notPaths` and `notPrincipals`. It means "everything except these".
 
 ## How the pieces combine
 
-Values, fields, parts, rules and policies each combine in their own way. Get these five levels straight and most authorization questions answer themselves.
-
-### Five levels, two answers
+Knowing the parts is not enough; you also need to know how they add up. Values, fields, parts, rules and policies each combine in their own way. Get these five levels straight, and most authorization questions answer themselves.
 
 ```mermaid
 flowchart TB
@@ -112,16 +102,11 @@ flowchart TB
 
 Read the diagram from the top: OR inside a list of values, AND across fields and parts, then OR again across rules and policies.
 
-Two facts follow, and both catch people out:
-
-- **A part you leave out is not a limit.** No `to` means *any* operation, not *no* operation. A rule with only `from` lets that caller do anything.
-- **Two rules are never an "and".** A second rule can only let more requests in. To say "this caller, but only these methods", put both in **one** rule, as two parts.
+Two facts follow, and both catch people out. First, a part you leave out is not a limit. No `to` means *any* operation, not *no* operation, so a rule with only `from` lets that caller do anything. Second, two rules are never an "and". A second rule can only let more requests in, so to say "this caller, but only these methods", you put both in **one** rule, as two parts.
 
 Several `- source:` entries under one `from` are combined with OR. That is the usual way to say "either of these two callers" without copying the whole rule.
 
-### See a missing part at work
-
-This rule has a `to` part and no `from` part, so it lets **any** caller with a certificate read one path. Save this as `authorizationpolicy-probe-allow-headers.yaml`:
+You can see a missing part at work with a rule that has a `to` part and no `from` part. It lets **any** caller with a certificate read one path. Save this as `authorizationpolicy-probe-allow-headers.yaml`:
 
 ```yaml
 apiVersion: security.istio.io/v1
@@ -158,13 +143,11 @@ Code 200
 Code 403
 ```
 
-`fortio` now gets in on `/headers`, because the rule does not ask who is calling. `/get` is still closed to `fortio`, because no rule in any policy matches it.
+`fortio` now gets in on `/headers`, because the rule does not ask who is calling. `/get` is still closed to `fortio`, because no rule in any policy matches that request.
 
-## Path matching, exactly
+## Path matching
 
-`paths` is where policies quietly leave holes, because the matching is more literal than people expect. There are three forms, and only three.
-
-### Exact, prefix and suffix
+The `paths` field is where policies quietly leave holes, because the matching is more literal than people expect. There are three forms, and only three:
 
 | Form | Matches | Does **not** match |
 | --- | --- | --- |
@@ -172,17 +155,13 @@ Code 403
 | `/status/*` | prefix: `/status/200`, `/status/418` | `/status` |
 | `*/status` | suffix: `/api/status`, `/v1/status` | `/status/200` |
 
-There is no regular expression and no wildcard in the middle. A `*` only works at the very start or the very end. A path of just `*` matches any path.
+There is no regular expression and no wildcard in the middle. A `*` only works at the very start or the very end, and a path of just `*` matches any path. Matching is case-sensitive and looks at the path only, so the query string after `?` is not part of it. To check a header or a query value, use `when`.
 
-Matching is case-sensitive and looks at the path only. The query string after `?` is not part of it. To check a header or a query value, use `when`.
+Two habits follow from this. An exact path in an `ALLOW` rule is often too narrow: `/status` does not let in `/status/200`. And an exact path in a `DENY` rule often leaves a gap: denying `/admin` still lets in `/admin/users`.
 
-Two habits follow. An exact path in an `ALLOW` rule is often too narrow: `/status` does not let in `/status/200`. And an exact path in a `DENY` rule often leaves a gap: denying `/admin` still lets in `/admin/users`.
+## Extra conditions with `when`
 
-## `when`, briefly
-
-`when` checks facts that are not "who" or "which operation". Examples are request headers, the destination address and, after a `RequestAuthentication` has run, the JWT's claims (the facts written inside the token).
-
-### The syntax
+The last part, `when`, checks facts that are not "who" or "which operation". Examples are request headers, the destination address and the JWT's claims (the facts written inside the token, available after a `RequestAuthentication` has run). The syntax is short:
 
 ```yaml
     when:
@@ -190,9 +169,11 @@ Two habits follow. An exact path in an `ALLOW` rule is often too narrow: `/statu
       values: ["apollo"]
 ```
 
-Each entry has a `key` and either `values` or `notValues`. Entries are combined with AND, with each other and with the rest of the rule. That is the whole syntax.
+Each entry has a `key` and either `values` or `notValues`. The proxy combines entries with AND, with each other and with the rest of the rule. That is the whole syntax.
 
-A `when` on a header is only as trustworthy as the header. The caller sets it, so the caller controls it. Conditions on `request.auth.claims[...]` are different: the proxy checked a signature before those facts existed.
+A `when` on a header is only as trustworthy as the header. The caller sets it, so the caller controls it. Conditions on `request.auth.claims[...]` are different, because the proxy checked a signature before those facts existed.
+
+You can now write an `ALLOW` rule and predict what it lets in: values OR, fields AND, parts AND, rules OR, and a part you leave out is a wildcard, not a limit. The rules so far named the caller by an identity string, but where that string comes from, and what it needs to match, is still open.
 
 ## Common pitfalls
 
@@ -202,5 +183,3 @@ A `when` on a header is only as trustworthy as the header. The caller sets it, s
 > - **Leaving a part out and expecting it to limit.** No `from` means every caller; no `to` means every operation.
 > - **Splitting one idea over two rules.** "This caller, only GET" is one rule with a `from` and a `to`.
 > - **Guessing how paths match.** Exact, prefix (`/x/*`) and suffix (`*/x`) behave differently, and there is no regular expression.
-
-> *Values OR, fields AND, parts AND, rules OR. A part you leave out is not a limit, it is a wildcard.*
