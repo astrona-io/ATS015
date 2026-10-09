@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Install Istio (sidecar mode) into this playground's kind cluster with Helm:
 #   istio-system   istio-base (CRDs) + istiod (control plane)
-#   istio-ingress  the ingress gateway (the arrival gate), pod label istio=ingress
+#   istio-ingress  the ingress gateway, pod label istio=ingress
 # Change the version with:  ISTIO_VERSION=<version> astrona run -c .
 set -euo pipefail
 

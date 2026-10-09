@@ -1,5 +1,5 @@
-# Routes the sealed stream by the address on the envelope (SNI).
-# A tls block, not an http block: the gate cannot read a path or a header.
+# Routes the encrypted stream by the SNI name in the TLS ClientHello.
+# A tls block, not an http block: the gateway cannot read a path or a header.
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:

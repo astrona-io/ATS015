@@ -3,9 +3,9 @@
 #   - namespace starfleet (sidecar injection) + mesh-wide access logs
 #   - the Starfleet: bridge, cargo, scout v1-v3, navcom (Bookinfo with space names)
 #   - shuttle (test client inside the mesh)
-#   - tls-backend, "the vault": nginx with its OWN self-signed certificate,
+#   - tls-backend: nginx with its OWN self-signed certificate,
 #     serving HTTPS itself on port 8443
-#   - prerequisite: manifests/bridge-gateway.yaml, the bridge behind the gate
+#   - prerequisite: manifests/bridge-gateway.yaml, the bridge behind the gateway
 #     over plain HTTP at starfleet.example.com (port 80)
 # No passthrough Gateway, no TLS secret: writing them is the module.
 set -euo pipefail

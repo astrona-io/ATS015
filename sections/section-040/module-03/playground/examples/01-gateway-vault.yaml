@@ -1,6 +1,6 @@
-# A port 443 listener on the arrival gate that does NOT decrypt.
+# A port 443 listener on the ingress gateway that does NOT decrypt.
 # protocol TLS (not HTTPS), mode PASSTHROUGH, and no credentialName:
-# the gate has no badge of its own to show for this host.
+# the gateway has no certificate of its own to show for this host.
 apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata:

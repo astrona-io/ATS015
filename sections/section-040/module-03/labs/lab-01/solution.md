@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. Two objects do the whole job: a gateway server that does not decrypt, and a flight plan that routes on the address on the envelope (SNI). The proof is the certificate the visitor gets.
+Two objects do the whole job: a `Gateway` server that does not decrypt, and a `VirtualService` that routes on the SNI (Server Name Indication) name, the host name the client sends in clear text. The proof is the certificate the client gets.
 
 ---
 
@@ -100,13 +100,13 @@ kubectl apply -f virtualservice-passthrough.yaml
 virtualservice.networking.istio.io/passthrough created
 ```
 
-This is a `tls` block, not an `http` block. An `http` rule needs a method, a path or a header, and the gateway can read none of them: everything after the first handshake message is sealed. An `http` block here applies cleanly, and every connection fails.
+This is a `tls` block, not an `http` block. An `http` rule needs a method, a path or a header, and the gateway can read none of them: everything after the first handshake message is encrypted. An `http` block here applies cleanly, and every connection fails.
 
 `sniHosts` names the same host as the `Gateway`'s `hosts`, because both read the same value from the same handshake. The destination port is the backend's **TLS** port, `8443`.
 
 ## Step 4: Prove the gateway did not end TLS
 
-Wait about a minute for the gateway to get its new orders. Open the port forward to the gateway, then send one signal with the SNI name and read the certificate it comes with:
+Wait about a minute for `istiod`, Istio's control plane, to push the new configuration to the gateway. Open the port forward to the gateway, then send one request with the SNI name and read the certificate it comes with:
 
 ```sh
 kubectl -n istio-system port-forward svc/istio-ingressgateway 8443:443 >/dev/null 2>&1 &
@@ -156,4 +156,4 @@ astrona submit -c sections/section-040/module-03/labs/lab-01
 - **An `http` block in the `VirtualService`.** It applies cleanly and every connection fails. Use a `tls` block that matches on `sniHosts`.
 - **`hosts` and `sniHosts` naming different hosts.** Both read the same SNI name, so a mismatch routes nothing.
 - **`protocol: HTTPS` or a `credentialName`.** A `credentialName` belongs to a server that ends TLS, and `HTTPS` says the gateway reads HTTP. Istio 1.30.5 still passes the stream through when the mode is `PASSTHROUGH`, but the task and the grader ask for `protocol: TLS` and no credential, because that is what really happens.
-- **Testing without `--resolve`.** A signal to `127.0.0.1` carries no SNI name, so the rule has no input. That is a fault in the test, not in the setup.
+- **Testing without `--resolve`.** A request to `127.0.0.1` carries no SNI name, so the rule has no input. That is a fault in the test, not in the setup.

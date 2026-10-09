@@ -6,9 +6,9 @@ estimated_duration: 15m
 
 Solve this question on: `terminal`
 
-Astronaut, a backend team runs a ship that keeps its own lock and key. It shows its own certificate to every visitor, and nothing in the middle may open its signals. You still have to put it behind the shared arrival gate (the ingress gateway), next to everything else.
+A backend team runs a service that keeps its own certificate and private key. It shows its own certificate to every client, and nothing in the middle may decrypt its traffic. You still have to put it behind the shared ingress gateway, the Envoy proxy at the edge of the mesh that accepts traffic from outside the cluster, next to everything else.
 
-This mission uses its own small app, not the Starfleet. Istio 1.30.5 is installed with the `demo` profile, so the gateway `istio-ingressgateway` runs in `istio-system`, and its pods carry the label `istio: ingressgateway`. Namespace `passthrough-demo` has sidecar injection on and holds:
+This lab uses its own small app, not the Starfleet. Istio 1.30.5 is installed with the `demo` profile, so the gateway `istio-ingressgateway` runs in `istio-system`, and its pods carry the label `istio: ingressgateway`. Namespace `passthrough-demo` has sidecar injection on and holds:
 
 * `tls-backend`: an nginx that **makes its own self-signed certificate when it starts** (`CN=secure.ica.local`, `O=backend`) and serves HTTPS itself on container port `8443`, behind a Service on port `8443`.
 

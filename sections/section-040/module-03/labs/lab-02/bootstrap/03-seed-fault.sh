@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# The lab's starting state: a passthrough setup for the vault that applies
+# The lab's starting state: a passthrough setup for tls-backend that applies
 # cleanly and routes nothing. Two faults:
 #   1. the Gateway vault-gateway listens for "valt.starfleet.example.com"
 #      (one letter missing), not vault.starfleet.example.com
-#   2. the VirtualService tls-backend uses an http block, which cannot match a
-#      sealed stream; it needs a tls block that matches sniHosts
+#   2. the VirtualService tls-backend uses an http block, which cannot match an
+#      encrypted stream; it needs a tls block that matches sniHosts
 # Fixing both is the task. Do not change tls-backend.
 set -euo pipefail
 
