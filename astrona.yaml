@@ -969,3 +969,4 @@ modules:
       - type: lab
         title: "Ambient Authorization Capstone"
         path: sections/section-060/capstone/labs/lab-01
+        difficulty: advanced
