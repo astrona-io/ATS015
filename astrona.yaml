@@ -406,20 +406,64 @@ modules:
         title: "Authenticate End Users With JWT"
         path: sections/section-030/module-01/course.md
       - type: reading
-        title: "Two identities on one request"
-        path: sections/section-030/module-01/course-01-two-identities-and-the-filter.md
+        title: "Two Identities On One Signal"
+        path: sections/section-030/module-01/course-01-two-identities-on-one-signal.md
       - type: reading
-        title: "RequestAuthentication and the key set"
-        path: sections/section-030/module-01/course-02-requestauthentication-and-jwks.md
+        title: "Check The Token With RequestAuthentication"
+        path: sections/section-030/module-01/course-02-check-the-token.md
       - type: reading
-        title: "Requiring a token"
-        path: sections/section-030/module-01/course-03-requiring-a-token.md
+        title: "Require A Token"
+        path: sections/section-030/module-01/course-03-require-a-token.md
       - type: reading
         title: Question
         path: sections/section-030/module-01/labs/lab-01/question.md
       - type: lab
         title: "Require A Valid End-User Token Lab"
         path: sections/section-030/module-01/labs/lab-01
+        difficulty: beginner
+        estimated_duration: 20m
+        topic: jwt
+        task_kind: build
+        tags: [requestauthentication, authorizationpolicy, jwt, jwks, request-principals, jwt-401, rbac-403]
+        learning_goals:
+          - Check end-user tokens on one workload with a RequestAuthentication
+          - Make a token required with requestPrincipals in an ALLOW AuthorizationPolicy
+          - Tell a 401 from the token check apart from a 403 from the policy
+        resources:
+          - name: "RequestAuthentication reference"
+            url: https://istio.io/latest/docs/reference/config/security/request_authentication/
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+          - name: "Authentication policy task"
+            url: https://istio.io/latest/docs/tasks/security/authentication/authn-policy/
+      - type: reading
+        title: "Other Token Places And The DENY Form"
+        path: sections/section-030/module-01/course-04-other-token-places-and-deny.md
+      - type: reading
+        title: Question
+        path: sections/section-030/module-01/labs/lab-02/question.md
+      - type: lab
+        title: "Take The Token From The Query String Lab"
+        path: sections/section-030/module-01/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: jwt
+        task_kind: build
+        tags: [requestauthentication, authorizationpolicy, jwt, deny-policy, request-principals, jwt-401, rbac-403]
+        learning_goals:
+          - Read the end-user token from a query parameter with fromParams
+          - Require a token with a DENY policy that uses notRequestPrincipals
+          - Explain why a token in the ignored header gets 403 and not 401
+        resources:
+          - name: "RequestAuthentication reference"
+            url: https://istio.io/latest/docs/reference/config/security/request_authentication/
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+          - name: "Authorization with JWT task"
+            url: https://istio.io/latest/docs/tasks/security/authorization/authz-jwt/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-030/module-01/course-05-wrap-up.md
 
       - type: reading
         title: "Authorize On JWT Claims"

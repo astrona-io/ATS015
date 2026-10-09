@@ -1,14 +1,16 @@
-# Authenticate End Users With JWT (PLAYGROUND) — Playground
+# Authenticate End Users With JWT — Playground
 
-- **ID:** PLAYGROUND
 - **Slug:** ats-015-playground-030-01
 - **Author:** Paris Nakita Kejser
 - **Type:** Astrona playground — clean environment, no task, no grading
 
-Clean Istio sandbox for the module "Authenticate End Users With JWT".
+A training solar system in the simulator: it starts a `kind` cluster with Istio
+and the Starfleet (the Istio docs' Bookinfo sample, renamed), then waits for
+you, astronaut. Use it alongside the module's parts. Nothing to submit.
 
-A single sandbox environment that spins up, runs OS prep, and stays running so
-you can explore the module's topic on a clean machine. Nothing to submit.
+The cluster needs outbound internet. `istiod` downloads the sample signing keys
+from `raw.githubusercontent.com`, and you download the sample token from there
+too.
 
 ## Run it
 
@@ -17,15 +19,17 @@ astrona run -c .
 astrona destroy ats-015-playground-030-01
 ```
 
-`astrona destroy` takes the environment name (`metadata.name` = `ats-015-playground-030-01`), not
-the config path. `astrona submit` and `astrona test` do not apply — there is no
-grading.
+`astrona destroy` takes the environment name (`metadata.name`), not the configuration
+path. `astrona submit` and `astrona test` do not apply: there is no grading.
 
 ## Layout
 
 | Path | Purpose |
 | --- | --- |
-| `config.yaml` | Environment definition (runtime + bootstrap only) |
-| `manifests/` | Manifests applied at bootstrap (namespace, workloads, and any preconditions) |
-| `bootstrap/prepare.sh` | OS prep run once at startup |
-| `docs/overview.md` | What the environment contains and ideas to try |
+| `config.yaml` | Environment definition: kind runtime, the two bootstrap scripts |
+| `bootstrap/install-istio.sh` | Installs Istio 1.30.5 (`istio-base` + `istiod`) with Helm |
+| `bootstrap/deploy.sh` | Namespace `starfleet` with injection, access logs, the Starfleet, `shuttle` client, `probe` v1/v2 |
+| `bootstrap/manifests/` | The YAML `deploy.sh` applies |
+| `examples/01-require-a-token/` | Check tokens on the probe and require one, plus the cases in `cases/` (token in a query parameter, "token required" written as `DENY`) |
+| `docs/overview.md` | What is in the box, helpers, things to try |
+| `docs/practice.md` | Two exam-style tasks with solutions |

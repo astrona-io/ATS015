@@ -14,6 +14,7 @@ Two modules, and the first exists mainly to correct an expectation. Module 1 sho
 - Why a `RequestAuthentication` alone leaves a workload unprotected, and how `requestPrincipals` in an `AuthorizationPolicy` makes a token mandatory.
 - The request principal form `<issuer>/<subject>`, and `["*"]` for any valid token.
 - `401` versus `403` here: which object produced each, and which fix each points at.
+- Reading the token from another place with `fromParams` or `fromHeaders`, and writing "token required" as a `DENY` policy with `notRequestPrincipals`.
 - The request attributes a validated token exposes — `request.auth.principal`, `request.auth.audiences`, `request.auth.claims[...]`.
 - `when` conditions: values inside one entry ORed, multiple entries ANDed, and a list claim matching if any element matches.
 - That a missing claim never matches, so a `when` condition fails closed under `ALLOW` and open under `DENY`.
@@ -26,19 +27,18 @@ Two modules, and the first exists mainly to correct an expectation. Module 1 sho
 ### 1. Authenticate End Users With JWT
 *   **Module Reader:** **[Module 1: Authenticate End Users With JWT](./module-01/course.md)**
     Deep-dive parts, in reading order:
-    1. [Two identities on one request](./module-01/course-01-two-identities-and-the-filter.md)
-    2. [`RequestAuthentication` and the key set](./module-01/course-02-requestauthentication-and-jwks.md)
-    3. [Requiring a token](./module-01/course-03-requiring-a-token.md)
-*   **Hands-on Playground:** `sections/section-030/module-01/playground` — namespace `jwt-demo` with no security objects at all, so you can watch a tokenless request succeed before and after each object is added.
+    1. [Two Identities On One Signal](./module-01/course-01-two-identities-on-one-signal.md)
+    2. [Check The Token With RequestAuthentication](./module-01/course-02-check-the-token.md)
+    3. [Require A Token](./module-01/course-03-require-a-token.md)
+    4. [Other Token Places And The DENY Form](./module-01/course-04-other-token-places-and-deny.md)
+    5. [Wrap-Up](./module-01/course-05-wrap-up.md)
+*   **Hands-on Playground:** `sections/section-030/module-01/playground`: the Starfleet on the planet `starfleet`, with the echo `probe` you protect and the `shuttle` you send signals from. There are no security objects yet, so you can watch a signal without a token get in before and after each object you add.
     ```bash
-    astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-030/module-01/playground
+    astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-030/module-01/playground
     ```
-*   **Graded lab:** **[Require A Valid End-User Token](./module-01/labs/lab-01/)** — read the
-    [exam question](./module-01/labs/lab-01/docs/exam-question.md), solve it, then
-    ```bash
-    astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-030/module-01/labs/lab-01
-    astrona submit -c .
-    ```
+*   **Graded labs:**
+    - **[Require A Valid End-User Token](./module-01/labs/lab-01/)**: check tokens, require one, and tell `401` from `403` (its own small app on the planet `jwt-demo`).
+    - **[Take The Token From The Query String](./module-01/labs/lab-02/)**: read the token with `fromParams` and require it with a `DENY` policy (Starfleet).
 
 ### 2. Authorize On JWT Claims
 *   **Module Reader:** **[Module 2: Authorize On JWT Claims](./module-02/course.md)**

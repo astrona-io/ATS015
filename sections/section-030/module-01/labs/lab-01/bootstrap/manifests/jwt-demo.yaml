@@ -1,3 +1,7 @@
+# Starting workloads for lab ats-015-lab-030-01 on the planet jwt-demo:
+# booking-service-v1 (calls notification-service), notification-service-v1
+# (answers every path, including POST /notify) and the tester client pod.
+# No RequestAuthentication and no AuthorizationPolicy: writing them is the task.
 apiVersion: v1
 kind: Namespace
 metadata:

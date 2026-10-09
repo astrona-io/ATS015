@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
-# Grading for LAB015-030-01 — validate tokens, then require one.
+# Grading for ats-015-lab-030-01 - validate tokens, then require one.
+# Checks that a RequestAuthentication for the demo issuer and an
+# AuthorizationPolicy with requestPrincipals exist in jwt-demo (the old
+# resourceExists checks), then sends real requests from the tester pod:
+# no token -> 403, bad token -> 401, demo token -> 200, booking-service -> 200.
 set -uo pipefail
 
 NS="jwt-demo"
@@ -34,6 +38,18 @@ fi
 
 call() { kubectl -n "$NS" exec deploy/tester -- \
   curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$@" 2>/dev/null; }
+
+# A new policy reaches the proxies a few seconds after it is applied, and
+# connections opened before that keep the old rules for a while. Give the
+# requirement up to 90 seconds to show up before grading the behaviour.
+wait_for_policy() {
+  local i
+  for i in $(seq 1 45); do
+    [ "$(call -X POST http://notification-service/notify)" = "403" ] && return 0
+    sleep 2
+  done
+}
+wait_for_policy
 
 say "--- check 1: a RequestAuthentication selects notification-service ---"
 if kubectl -n "$NS" get requestauthentication -o yaml 2>/dev/null | grep -q 'testing@secure.istio.io'; then
