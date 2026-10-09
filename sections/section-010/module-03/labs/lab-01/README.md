@@ -4,9 +4,9 @@ estimated_duration: 20m
 
 # Migrate A Namespace To STRICT mTLS
 
-Welcome to a migration mission, astronaut. The planet `migrate-demo` has run in the mesh for months in the default `PERMISSIVE` mode. One caller, `outside-client` on the planet `outside`, still sends plain signals to it.
+In this lab you migrate a namespace to `STRICT` mTLS (mutual TLS). The namespace `migrate-demo` has run in the mesh for months in the default `PERMISSIVE` mode. One client, `outside-client` in the namespace `outside`, still sends plain-text requests to it.
 
-Your job is to bring that caller into the mesh and then switch `migrate-demo` to `STRICT` mTLS, in an order that never breaks it.
+Your job is to add a sidecar to that client and then switch `migrate-demo` to `STRICT` mTLS, in an order that never breaks it.
 
 ## Launching the Lab
 

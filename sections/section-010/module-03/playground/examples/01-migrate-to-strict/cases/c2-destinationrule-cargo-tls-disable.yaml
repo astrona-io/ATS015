@@ -1,6 +1,6 @@
-# Case 2: the client side can still break a STRICT planet.
-# This tells every sender in starfleet to send PLAIN signals to cargo.
-# Both ships are in the fleet, but cargo (STRICT) refuses the plain signal:
+# Case 2: the client side can still break a STRICT namespace.
+# This tells every client proxy in starfleet to send PLAIN text to cargo.
+# Both workloads are in the mesh, but cargo (STRICT) refuses the plain-text request:
 # the shuttle gets 503 with the flag UC in its access log.
 apiVersion: networking.istio.io/v1
 kind: DestinationRule

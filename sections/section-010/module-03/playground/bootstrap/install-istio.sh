@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Install Istio (sidecar mode) into this playground's kind cluster with Helm:
 #   istio-system   istio-base (CRDs) + istiod (control plane)
-# No gateways: every signal in this module stays inside the solar system.
+# No gateways: all traffic in this module stays inside the cluster.
 # Change the version with:  ISTIO_VERSION=1.29.3 astrona run -c .
 set -euo pipefail
 

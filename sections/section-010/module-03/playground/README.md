@@ -4,9 +4,9 @@
 - **Author:** Paris Nakita Kejser
 - **Type:** Astrona playground — clean environment, no task, no grading
 
-A training solar system in the simulator: it starts a `kind` cluster with Istio,
-the Starfleet (the Istio docs' Bookinfo sample, renamed) and one old ship, the
-`drifter`, that still sends plain signals. Then it waits for you, astronaut.
+A local sandbox: it starts a `kind` cluster with Istio, the Starfleet (the
+Istio docs' Bookinfo sample, renamed) and one client pod without a sidecar,
+`drifter`, that still sends plain-text requests. Then it keeps running for you.
 Use it alongside the module's parts. Nothing to submit.
 
 ## Run it
