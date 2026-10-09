@@ -1,52 +1,67 @@
 # Inspect Workload Identity And Certificates
 
-<!-- astrona:playground -->
-> [!NOTE]
-> 🧪 **Hands-on playground for this module** — a clean, throwaway machine to explore on. No task, no grading. Folder: [`playground/`](https://github.com/astrona-io/ATS015/tree/main/sections/section-010/module-01/playground)
->
-> ```sh
-> astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-010/module-01/playground
-> astrona destroy ats-015-playground-010-01
-> ```
-
-Every security rule in this course eventually comes down to one string, and it looks like this:
+Astronaut, every security rule you write in this course comes down to one string. It looks like this:
 
 ```text
-cluster.local/ns/identity-demo/sa/booking-sa
+spiffe://cluster.local/ns/starfleet/sa/starfleet-bridge
 ```
 
-That is a workload's **mesh identity**. `PeerAuthentication` decides whether it has to be proven. `AuthorizationPolicy` decides what it is allowed to do. Before either of those is worth writing, it is worth knowing exactly where the string comes from, because almost every "my policy denies traffic that should be allowed" problem is a mismatch between the identity you assumed and the identity the workload actually has.
+That string is a ship's **identity**: the name on its ID badge. A `PeerAuthentication` decides whether a ship must show its badge. An `AuthorizationPolicy` decides what a ship with that badge may do. Before either one is worth writing, you need to know exactly where the name comes from. Most "my rule blocks a signal it should let through" problems are a gap between the badge you assumed and the badge the ship really carries.
 
-This module does no configuring. It follows one certificate from the request that created it to the policy field that matches on it.
-
-## How this module is organised
-
-1. **[Part 1 — How a workload gets its identity](./course-01-how-identity-is-issued.md)** — the service account as the source, the SPIFFE URI form, and the issuance path from `istio-agent` through istiod's CA to the proxy.
-2. **[Part 2 — Reading the certificate a proxy holds](./course-02-reading-the-certificate.md)** — the `istioctl proxy-config` command family, the two secrets every proxy carries, and decoding the SAN.
-3. **[Part 3 — From SAN to policy principal](./course-03-principals-rotation-trust-domain.md)** — converting the URI into a `principals` value, certificate lifetime and rotation, the trust domain, and the one-pass method for settling an unexpected denial.
+In this module you follow one badge from the moment it is printed to the security rule that matches on it. You read real certificates from real ships, and you write one small guest list to prove that the badge is what the rule checks.
 
 ## Learning objectives
 
 After this module you can:
 
-- Name the Kubernetes object that determines a workload's mesh identity, and explain why two pods can share one identity.
-- Describe the issuance path from pod start to a certificate in the proxy, and name what proves the workload's claim to the CA.
-- Read the SPIFFE URI out of a workload certificate's Subject Alternative Name with `istioctl proxy-config secret` and `openssl`.
-- Distinguish a proxy's leaf certificate from the root CA certificate it also holds, and say what each is for.
-- Convert a SPIFFE URI into the exact `principals` string an `AuthorizationPolicy` expects.
-- State a workload certificate's default lifetime, what renews it, and what a stale certificate actually indicates.
-- Predict what breaks when `meshConfig.trustDomain` changes, and name the field that makes a migration survivable.
+- Name the Kubernetes object that decides a ship's identity, and explain why two ships can share one identity.
+- Describe how a badge is issued, from the ship's start to a certificate in its proxy, and name the proof the ship shows.
+- Read the SPIFFE name from a live certificate with `istioctl proxy-config secret` and `openssl`.
+- Tell a ship's own certificate (`default`) apart from the root certificate (`ROOTCA`) it also holds.
+- Turn a SPIFFE name into the exact `principals` value an `AuthorizationPolicy` expects.
+- State a badge's default lifetime, what renews it, and what a stale certificate points to.
+- Predict what breaks when `meshConfig.trustDomain` changes, and name the setting that makes the change safe.
 
 ## Before you start
 
-You should be comfortable with `kubectl` — listing pods, reading a resource with `-o jsonpath`, and running a command inside a pod with `kubectl exec`. You do not need to have written any Istio object yet; this module is the layer underneath them.
+Every mission starts with a pre-flight check. This one is short: what you should know, and what waits in your playground.
 
-The playground gives you a single-node `kind` cluster with **Istio 1.30.5 already installed** (the `demo` profile), `istioctl` and `openssl` on your PATH, and one injected namespace:
+### What you should already know
 
-- **`identity-demo`** — `booking-service-v1` running under the service account `booking-sa`, `notification-service-v1` and a `tester` client pod, both of which were given no service account and therefore run as `default`.
+- **Kubernetes basics.** Namespaces, Deployments, pods, and running a command inside a pod with `kubectl exec`.
+- **How the mesh works.** A sidecar proxy, the communications officer, sits beside every app and handles every signal in or out. `istiod`, mission control, sends each proxy its orders.
 
-No `PeerAuthentication` and no `AuthorizationPolicy` exist yet. That is deliberate: identity is issued regardless of whether any policy uses it, and seeing that is half the point.
+You do not need to have written any Istio security object yet. This module is the layer underneath all of them.
 
-## Where this fits
+### What is in your playground
 
-Istio's security objects are usually taught as a list of YAML fields, which hides the fact that they all read from the same source. The control plane, `istiod`, runs a certificate authority. Every injected pod's `istio-agent` asks that CA for a certificate at startup, proving who it is with its Kubernetes service account token. The CA writes the resulting identity into the certificate, and from then on every mutual TLS handshake in the mesh carries it. `principals`, `namespaces` and `requestPrincipals` in later modules are all just different ways of matching on what that handshake produced.
+Your playground is a training solar system: one `kind` cluster with **Istio 1.30.5** already installed with Helm. There is **no** `PeerAuthentication` and **no** `AuthorizationPolicy`. That is on purpose: every ship gets its badge even when no rule uses it.
+
+The ships live on the planet (namespace) **`starfleet`**. They are the Starfleet: the Istio docs' Bookinfo sample with space names. Each ship runs under a service account, its registration papers, and that decides its badge:
+
+| Ship | Service account | Its role |
+| --- | --- | --- |
+| `bridge` | `starfleet-bridge` | The flagship page; it signals the other ships |
+| `cargo` | `starfleet-cargo` | The supply ship |
+| `scout` v1, v2, v3 | `starfleet-scout` | Three ship classes of one scout, sharing one set of papers |
+| `navcom` | `starfleet-navcom` | The navigation computer the scouts ask for ratings |
+| `shuttle` | `shuttle` | Your test client; you send test signals from here with `curl` |
+| `probe` v1, v2 | `probe` | An echo probe that sends back what it receives (port `8000`) |
+| `fortio` | `default` | A second caller with no papers of its own |
+
+A second planet, **`outpost`**, has sidecar injection switched off. Its one ship, the **`drifter`**, has no communications officer and so no badge at all.
+
+You also need `jq` and `openssl` on your own machine. Most Linux and macOS systems have `openssl`; install `jq` with your package manager if `jq --version` fails.
+
+Launch your playground now, and keep it running next to you while you read the parts:
+
+<!-- astrona:playground -->
+
+## The parts of this module
+
+Read the parts in this order. Each one ends with something you have seen work in your playground.
+
+1. **[How A Ship Gets Its Badge](./course-01-how-a-ship-gets-its-badge.md)**: the service account as the source, the SPIFFE name, how istiod issues the certificate, and the trust domain.
+2. **[Read The Badge A Ship Carries](./course-02-read-the-badge-a-ship-carries.md)**: `istioctl proxy-config secret`, the two certificates every proxy holds, decoding the SAN with `openssl`, and rotation.
+3. **[From Badge To Guest List](./course-03-from-badge-to-guest-list.md)**: turning the name into a `principals` value, the `spiffe://` trap, settling a denial, and changing the trust domain. It ends with your graded mission.
+4. **[Wrap-Up](./course-04-wrap-up.md)**: a recap, questions to check yourself, and cleaning up the playground.

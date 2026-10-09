@@ -69,20 +69,41 @@ modules:
         title: "Inspect Workload Identity And Certificates"
         path: sections/section-010/module-01/course.md
       - type: reading
-        title: "How a workload gets its identity"
-        path: sections/section-010/module-01/course-01-how-identity-is-issued.md
+        title: "How A Ship Gets Its Badge"
+        path: sections/section-010/module-01/course-01-how-a-ship-gets-its-badge.md
       - type: reading
-        title: "Reading the certificate a proxy holds"
-        path: sections/section-010/module-01/course-02-reading-the-certificate.md
+        title: "Read The Badge A Ship Carries"
+        path: sections/section-010/module-01/course-02-read-the-badge-a-ship-carries.md
       - type: reading
-        title: "From SAN to policy principal"
-        path: sections/section-010/module-01/course-03-principals-rotation-trust-domain.md
+        title: "From Badge To Guest List"
+        path: sections/section-010/module-01/course-03-from-badge-to-guest-list.md
       - type: reading
         title: Question
         path: sections/section-010/module-01/labs/lab-01/question.md
       - type: lab
         title: "Prove A Workload Identity And Authorize On It Lab"
         path: sections/section-010/module-01/labs/lab-01
+        difficulty: beginner
+        estimated_duration: 20m
+        topic: identity
+        task_kind: build
+        tags: [spiffe, certificates, principals, authorizationpolicy, peerauthentication, mtls-strict, proxy-config, openssl]
+        learning_goals:
+          - Read a workload's SPIFFE identity from its live certificate with istioctl and openssl
+          - Require STRICT mutual TLS for a whole namespace with a PeerAuthentication
+          - Write an AuthorizationPolicy that allows exactly one principal and prove it with a 200 and a 403
+        resources:
+          - name: "Istio security concepts"
+            url: https://istio.io/latest/docs/concepts/security/
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+          - name: "PeerAuthentication reference"
+            url: https://istio.io/latest/docs/reference/config/security/peer_authentication/
+          - name: "Debugging Envoy and istiod (proxy-config)"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-010/module-01/course-04-wrap-up.md
 
       - type: reading
         title: "Enforce mTLS With PeerAuthentication At Three Scopes"

@@ -24,19 +24,20 @@ Three modules, in dependency order. Module 1 opens a certificate and reads the i
 
 ### 1. Inspect Workload Identity And Certificates
 *   **Module Reader:** **[Module 1: Inspect Workload Identity And Certificates](./module-01/course.md)**
-    Deep-dive parts, in reading order:
-    1. [How a workload gets its identity](./module-01/course-01-how-identity-is-issued.md)
-    2. [Reading the certificate a proxy holds](./module-01/course-02-reading-the-certificate.md)
-    3. [From SAN to policy principal](./module-01/course-03-principals-rotation-trust-domain.md)
-*   **Hands-on Playground:** `sections/section-010/module-01/playground` — a kind cluster with Istio installed and namespace `identity-demo` holding workloads with deliberately different service accounts. No policy of any kind.
+    Parts, in reading order:
+    1. [How A Ship Gets Its Badge](./module-01/course-01-how-a-ship-gets-its-badge.md)
+    2. [Read The Badge A Ship Carries](./module-01/course-02-read-the-badge-a-ship-carries.md)
+    3. [From Badge To Guest List](./module-01/course-03-from-badge-to-guest-list.md)
+    4. [Wrap-Up: Mission Debrief](./module-01/course-04-wrap-up.md)
+*   **Hands-on Playground:** `sections/section-010/module-01/playground`: a `kind` cluster with Istio and the Starfleet on the planet `starfleet`. Every ship runs under its own service account, so every ship carries its own badge; `fortio` runs as `default`, and the `drifter` on the planet `outpost` has no sidecar and no badge at all. No security rule of any kind.
     ```bash
     astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-010/module-01/playground
     ```
-*   **Graded lab:** **[Prove A Workload Identity And Authorize On It](./module-01/labs/lab-01/)** — read the
-    [exam question](./module-01/labs/lab-01/docs/exam-question.md), solve it, then
+*   **Graded lab:** **[Prove A Workload Identity And Authorize On It](./module-01/labs/lab-01/README.md)**: read the
+    [task](./module-01/labs/lab-01/question.md), solve it, then
     ```bash
-    astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-010/module-01/labs/lab-01
-    astrona submit -c .
+    astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-010/module-01/labs/lab-01
+    astrona submit -c sections/section-010/module-01/labs/lab-01
     ```
 
 ### 2. Enforce mTLS With PeerAuthentication At Three Scopes

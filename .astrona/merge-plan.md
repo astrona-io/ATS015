@@ -130,7 +130,7 @@ Work on exactly one module at a time. Read `CLAUDE.md` first, all of it.
 | CLAUDE.md, merge plan | done | |
 | astrona.yaml to ATS014 format | done | lab metadata fields added per module |
 | Mission Briefing (`sections/intro/`) | done | adapted from ATS014 |
-| 010-01 Inspect Workload Identity And Certificates | todo | |
+| 010-01 Inspect Workload Identity And Certificates | done | Starfleet playground (fleet manifests copied from ATS014, outpost/drifter added, fortio annotation dropped), 3 parts + wrap-up rewritten, lab-01 converted (own app, astrona test PASS); trust domain change described only |
 | 010-02 Enforce mTLS With PeerAuthentication At Three Scopes | todo | new-data 01-mtls |
 | 010-03 Migrate A Namespace From PERMISSIVE To STRICT mTLS | todo | new-data README order-to-apply |
 | 010 capstone | todo | |
