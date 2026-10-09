@@ -1,0 +1,19 @@
+# Case 2 (mistake): no targetPort. The sidecar starts TLS but connects to
+# port 80, where the server speaks plain HTTP, not TLS.
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: httpbin-org
+  namespace: starfleet
+spec:
+  hosts:
+  - httpbin.org
+  ports:
+  - number: 80
+    name: http
+    protocol: HTTP
+  - number: 443
+    name: https
+    protocol: HTTPS
+  location: MESH_EXTERNAL
+  resolution: DNS

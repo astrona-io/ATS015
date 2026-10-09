@@ -1,0 +1,22 @@
+# Register httpbin.org. The app calls plain http://httpbin.org (port 80);
+# the sidecar sends it to port 443 on the real server.
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: httpbin-org
+  namespace: starfleet
+spec:
+  hosts:
+  - httpbin.org
+  ports:
+  # Port the app uses, plain HTTP, so the sidecar can read and route it.
+  - number: 80
+    name: http
+    protocol: HTTP
+    # Real server port: the sidecar connects to 443 instead of 80.
+    targetPort: 443
+  - number: 443
+    name: https
+    protocol: HTTPS
+  location: MESH_EXTERNAL
+  resolution: DNS

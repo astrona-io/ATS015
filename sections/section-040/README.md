@@ -2,7 +2,7 @@
 
 Inside the mesh, Istio issues both certificates and mutual TLS happens without being asked for. At the edge none of that holds: the caller is a browser or an external system, the certificate must be one that caller already trusts, and you supply it.
 
-Three modules, one per `Gateway` TLS mode. Module 1 is `SIMPLE` — ordinary server-side HTTPS, and the namespace rule that makes almost everyone's first attempt fail. Module 2 is `MUTUAL`, requiring a client certificate signed by a CA you nominate. Module 3 is `PASSTHROUGH`, where the gateway forwards an encrypted stream it cannot read and routes on SNI alone.
+Four modules. The first three cover one `Gateway` TLS mode each. Module 1 is `SIMPLE` — ordinary server-side HTTPS, and the namespace rule that makes almost everyone's first attempt fail. Module 2 is `MUTUAL`, requiring a client certificate signed by a CA you nominate. Module 3 is `PASSTHROUGH`, where the gateway forwards an encrypted stream it cannot read and routes on SNI alone. Module 4 looks at signals that leave the mesh: the app sends plain HTTP, and its own sidecar adds the TLS seal on the way out. This is called TLS origination.
 
 **Curriculum item covered:** Securing Edge Traffic with TLS
 
@@ -19,6 +19,8 @@ Three modules, one per `Gateway` TLS mode. Module 1 is `SIMPLE` — ordinary ser
 - `protocol: TLS` with `mode: PASSTHROUGH`, and routing with a `VirtualService` `tls` block matching `sniHosts`.
 - Everything passthrough gives up at the edge — path and header routing, rewrites, L7 telemetry, and every authorization rule that mentions methods, paths or hosts.
 - Proving which end terminated TLS by reading the certificate the handshake actually returned.
+- A `ServiceEntry` port `80` with `targetPort: 443` and a `DestinationRule` with `tls.mode: SIMPLE`, so the sidecar seals an app's plain `http://` call to an outside service.
+- `subjectAltNames` to check an outside server's certificate name, and the three failures `400`, `WRONG_VERSION_NUMBER` and `CERTIFICATE_VERIFY_FAILED`.
 
 ---
 
@@ -99,6 +101,28 @@ Three modules, one per `Gateway` TLS mode. Module 1 is `SIMPLE` — ordinary ser
         ```bash
         astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-040/module-03/labs/lab-02
         astrona submit -c sections/section-040/module-03/labs/lab-02
+        ```
+
+### 4. Originate TLS For External Services
+*   **Module Reader:** **[Module 4: Originate TLS For External Services](./module-04/course.md)**
+    Parts, in reading order:
+    1. [Who Seals The Signal](./module-04/course-01-who-seals-the-signal.md)
+    2. [Chart The Planet And Seal The Signal](./module-04/course-02-chart-the-planet-and-seal-the-signal.md)
+    3. [Check The Planet's ID Card](./module-04/course-03-check-the-planets-id-card.md)
+    4. [A Seal On The Wrong Channel](./module-04/course-04-a-seal-on-the-wrong-channel.md)
+    5. [Use What You Won](./module-04/course-05-use-what-you-won.md)
+    6. [Wrap-Up: Mission Debrief](./module-04/course-06-wrap-up.md)
+
+    The shuttle calls `http://httpbin.org`, and its own sidecar seals the signal and sends it to port `443`. You add the two objects one at a time and see what each half does on its own. Then you make the sidecar check the server's certificate name, break the setup on purpose to learn the three failures, and put a timeout on an outside HTTPS service.
+*   **Hands-on Playground:** `sections/section-040/module-04/playground`: the shuttle on the planet `starfleet`, Istio 1.30.5 installed with Helm, no gateway. It needs outbound internet access to `httpbin.org`. No `ServiceEntry`, `DestinationRule` or `VirtualService` yet: you make them.
+    ```bash
+    astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-040/module-04/playground
+    ```
+*   **Graded lab:** one mission, right after the part it tests.
+    *   **[Seal The Signal To An Outside Planet](./module-04/labs/lab-01/README.md)**: read the [task](./module-04/labs/lab-01/question.md), solve it, then
+        ```bash
+        astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-040/module-04/labs/lab-01
+        astrona submit -c sections/section-040/module-04/labs/lab-01
         ```
 
 **No load balancer on `kind`.** A gateway Service never gets an outside address on `kind`; that is expected, not a fault. The playgrounds reach the gateway through the port forwards `astrona run` keeps open (`127.0.0.1:8080` and `127.0.0.1:8443`, see `astrona port-forward list`). The labs tell you which `kubectl port-forward` to start.

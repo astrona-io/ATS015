@@ -541,7 +541,8 @@ modules:
     description: >
       The three Gateway TLS modes: terminating with SIMPLE, requiring client
       certificates with MUTUAL, and forwarding an encrypted stream with
-      PASSTHROUGH.
+      PASSTHROUGH. Then the way out: the sidecar originates TLS for an
+      outside HTTPS service.
 
     content:
       - type: reading
@@ -735,6 +736,50 @@ modules:
       - type: reading
         title: "Wrap-Up: Mission Debrief"
         path: sections/section-040/module-03/course-06-wrap-up.md
+
+      - type: reading
+        title: "Originate TLS For External Services"
+        path: sections/section-040/module-04/course.md
+      - type: reading
+        title: "Who Seals The Signal"
+        path: sections/section-040/module-04/course-01-who-seals-the-signal.md
+      - type: reading
+        title: "Chart The Planet And Seal The Signal"
+        path: sections/section-040/module-04/course-02-chart-the-planet-and-seal-the-signal.md
+      - type: reading
+        title: "Check The Planet's ID Card"
+        path: sections/section-040/module-04/course-03-check-the-planets-id-card.md
+      - type: reading
+        title: Question
+        path: sections/section-040/module-04/labs/lab-01/question.md
+      - type: lab
+        title: "Seal The Signal To An Outside Planet Lab"
+        path: sections/section-040/module-04/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: egress-tls
+        task_kind: build
+        tags: [serviceentry, destinationrule, tls-origination, external-services, access-log, proxy-config]
+        learning_goals:
+          - Let the sidecar originate TLS with a ServiceEntry targetPort and a DestinationRule in SIMPLE mode
+          - Make the sidecar check the server's certificate name with subjectAltNames
+          - Prove from the server's answer, the access log and proxy-config that only port 80 is sealed
+        resources:
+          - name: "Egress TLS origination task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/egress/egress-tls-origination/
+          - name: "ServiceEntry reference"
+            url: https://istio.io/latest/docs/reference/config/networking/service-entry/
+          - name: "DestinationRule reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+      - type: reading
+        title: "A Seal On The Wrong Channel"
+        path: sections/section-040/module-04/course-04-a-seal-on-the-wrong-channel.md
+      - type: reading
+        title: "Use What You Won"
+        path: sections/section-040/module-04/course-05-use-what-you-won.md
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-040/module-04/course-06-wrap-up.md
 
       - type: reading
         title: Question
