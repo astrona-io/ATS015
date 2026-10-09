@@ -179,9 +179,9 @@ section is only true for this one.
   | 060 | Authorization In Ambient Mode | Authorization |
 
 - **The version:** everything is built and checked on **Istio 1.30.5** on a
-  single-node `kind` cluster. Playgrounds and labs install it with
-  `istioctl install --set profile=demo -y`; section 060 is the only one
-  installed with `--set profile=ambient`, so it has no sidecars. Do not teach
+  single-node `kind` cluster. Playgrounds and most labs install it with
+  Helm (see "Environment facts" below); section 060 is the only one
+  installed in ambient mode, so it has no sidecars. Do not teach
   fields or behaviour from other versions without saying so.
 - **The main sources:** the Istio security concepts page,
   <https://istio.io/latest/docs/concepts/security/>, and the API reference
