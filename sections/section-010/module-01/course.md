@@ -8,7 +8,7 @@ spiffe://cluster.local/ns/starfleet/sa/starfleet-bridge
 
 That string is a workload's **identity**: the name in its certificate. A `PeerAuthentication` decides whether a workload must present its certificate. An `AuthorizationPolicy` decides what a workload with that identity may do. Before you write either one, you need to know exactly where the name comes from. Most "my rule blocks a request it should allow" problems are a gap between the identity you assumed and the identity the workload really has.
 
-In this module you follow one identity from the moment its certificate is issued to the security rule that matches on it. You read real certificates from real pods. Then you write one small `AuthorizationPolicy` to prove that the identity is what the rule checks.
+This module follows one identity from the moment its certificate is issued to the security rule that matches on it, in three parts. **How A Workload Gets Its Certificate** starts at the source: the pod's service account, and how `istiod` checks the pod and signs its certificate. **Read A Workload's Certificate** takes that certificate out of a running proxy, reads the name in it, and shows how the certificate is renewed. **Turn An Identity Into An AuthorizationPolicy Principal** closes the loop with one small `AuthorizationPolicy` that proves the identity is what the rule checks.
 
 ## Learning objectives
 
@@ -24,16 +24,7 @@ After this module you can:
 
 ## Before you start
 
-This section lists what you should know already and what is in your playground.
-
-### What you should already know
-
-- **Kubernetes basics.** Namespaces, Deployments, pods, and running a command inside a pod with `kubectl exec`.
-- **How the mesh works.** A sidecar proxy (Envoy) is a proxy container that Istio adds to each pod; all inbound and outbound traffic of the pod passes through it. `istiod` is Istio's control plane; it sends configuration and certificates to every proxy.
-
-You do not need to have written any Istio security object yet. This module is the layer underneath all of them.
-
-### What is in your playground
+You need Kubernetes basics: namespaces, Deployments, pods, and running a command inside a pod with `kubectl exec`. You also need a rough picture of the mesh. A sidecar proxy (Envoy) is a proxy container that Istio adds to each pod; all inbound and outbound traffic of the pod passes through it. `istiod` is Istio's control plane; it sends configuration and certificates to every proxy. You do not need to have written any Istio security object yet, because this module is the layer underneath all of them.
 
 Your playground is one `kind` cluster with **Istio 1.30.5** already installed with Helm. There is **no** `PeerAuthentication` and **no** `AuthorizationPolicy`. That is on purpose: every workload gets its certificate even when no rule uses it.
 

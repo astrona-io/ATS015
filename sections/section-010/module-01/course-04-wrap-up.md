@@ -4,31 +4,21 @@ You have finished every part and the graded lab in this module. Before you move 
 
 ## What you learned
 
-This module was about the identity in every workload's certificate: where it comes from, how to read it, and how a security rule matches on it.
+This module followed one identity from start to end: where it comes from, how to read it, and how a security rule matches on it.
 
-**From [How A Workload Gets Its Certificate](./course-01-how-a-ship-gets-its-badge.md):**
+[How A Workload Gets Its Certificate](./course-01-how-a-ship-gets-its-badge.md) asked where the identity comes from. The answer is the **service account**, not the pod name or labels, in the shape `spiffe://<trust-domain>/ns/<namespace>/sa/<service-account>`. Its token is the proof: the `audience` is `istio-ca`, and istiod checks it with the Kubernetes API before it signs. So workloads that share a service account share one identity, like `scout` v1, v2 and v3.
 
-- A workload's identity comes from its **service account**, not from its pod name or labels. The shape is `spiffe://<trust-domain>/ns/<namespace>/sa/<service-account>`.
-- Workloads that share a service account share one identity. `scout` v1, v2 and v3 all have `.../sa/starfleet-scout`, and no rule can tell them apart.
-- The service account token is the proof. Its `audience` is `istio-ca`, and istiod checks it with the Kubernetes API before it signs.
-- The istio-agent makes the private key in memory and hands the certificate to Envoy over SDS. No Kubernetes Secret holds workload keys.
-- The trust domain, `cluster.local` by default, is one setting for the whole mesh, in `meshConfig.trustDomain`.
+The same part showed that the istio-agent makes the private key in memory and hands the certificate to Envoy over SDS, so no Kubernetes Secret holds workload keys. The trust domain, `cluster.local` by default, is one setting for the whole mesh, in `meshConfig.trustDomain`.
 
-**From [Read A Workload's Certificate](./course-02-read-the-badge-a-ship-carries.md):**
+[Read A Workload's Certificate](./course-02-read-the-badge-a-ship-carries.md) asked what the proxy really holds. `istioctl proxy-config secret` showed `default`, the workload's own certificate, and `ROOTCA`, the root certificate it checks others against. With `-o json`, `jq`, `base64 --decode` and `openssl x509 -ext subjectAltName`, you found the name in the SAN, as a URI; the subject is empty.
 
-- `istioctl proxy-config secret` shows what a running proxy holds: `default` (the workload's own certificate) and `ROOTCA` (the root certificate it checks others against).
-- The name sits in the certificate's SAN, as a URI. The subject is empty.
-- `-o json`, `jq`, `base64 --decode` and `openssl x509 -ext subjectAltName` read it.
-- A pod without a sidecar, like `drifter`, has no certificate and no identity.
-- Workload certificates live 24 hours and are renewed after about half that time, with no restart. A stale certificate means the proxy lost its connection to istiod.
+That part also showed that a pod without a sidecar, like `drifter`, has no certificate and no identity. Workload certificates live 24 hours and are renewed after about half that time, with no restart. A stale certificate means the proxy lost its connection to istiod.
 
-**From [Turn An Identity Into An AuthorizationPolicy Principal](./course-03-from-badge-to-guest-list.md):**
+[Turn An Identity Into An AuthorizationPolicy Principal](./course-03-from-badge-to-guest-list.md) asked how a rule uses that name. Auto mTLS lets the receiving proxy know the caller's identity, and an `ALLOW` policy denies every request that matches no rule, including plain-text callers. `principals` takes the name **without** `spiffe://`; with it, the object is accepted, `istioctl analyze` is clean, and the rule never matches.
 
-- Between two pods with sidecars, auto mTLS sets up mutual TLS, so the receiving proxy knows the caller's identity.
-- `principals` takes the name **without** `spiffe://`. With it, the object is accepted, `istioctl analyze` is clean, and the proxy looks for `spiffe://spiffe://...`, which never matches.
-- An `ALLOW` policy denies every request that matches no rule, including plain-text callers that present no certificate.
-- To settle a denial: read the caller's certificate, drop `spiffe://`, compare letter by letter.
-- Changing the trust domain breaks every `principals` value that names the old one. `meshConfig.trustDomainAliases` keeps both working during the move.
+To settle a denial, you read the caller's certificate, drop `spiffe://`, and compare letter by letter. Changing the trust domain breaks every `principals` value that names the old one, and `meshConfig.trustDomainAliases` keeps both working during the move.
+
+Put together, every security rule in the mesh matches on an identity that istiod built from a service account. Read the identity in the certificate, and you know what the rule must say.
 
 ## Your missions
 
@@ -82,9 +72,7 @@ It stops matching workloads that have new certificates, and at first only some w
 
 ## Clean up the playground
 
-Your playground is a whole Kubernetes cluster running on your machine. When you are done with this module, remove it, and any lab that is still running.
-
-First, see what is still running:
+Your playground is a whole Kubernetes cluster running on your machine. When you are done with this module, remove it, and any lab that is still running. First, see what is still running:
 
 ```sh
 astrona list
@@ -113,5 +101,3 @@ No astrona labs running.
 ```
 
 You can start the playground again at any time with the `astrona run` command from the module's landing page. It always starts clean, so nothing you broke carries over.
-
-> *Every security rule in the mesh matches on an identity that istiod built from a service account. Read the identity in the certificate, and you know what the rule must say.*
