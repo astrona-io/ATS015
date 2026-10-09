@@ -1,12 +1,12 @@
 # Block A Client Range With `remoteIpBlocks`
 
-A range of addresses keeps attacking the `starfleet` app, and you must stop it at the ingress gateway. There is a proxy in front of the gateway, so the connection only shows the proxy. This part uses the second address field, `remoteIpBlocks`, which reads the real client's address from the `X-Forwarded-For` header. It shows the rule, the proof, and why a block-list should be a `DENY`.
+A range of addresses keeps attacking the `starfleet` app, and you must stop it at the ingress gateway. There is a proxy in front of the gateway, so the connection only shows the proxy, never the attacker. A rule on the connection address would miss the attack completely.
+
+This chapter uses the second address field, `remoteIpBlocks`, which reads the real client's address from the `X-Forwarded-For` header. You will write the rule, prove it with requests that must pass and must fail, and read the decision in the access log. You will also see why a block-list should be a `DENY` and not an `ALLOW`.
 
 ## The two address fields side by side
 
-Both fields sit in the `source` part of a rule, and both take address ranges written in CIDR form (an address plus how many leading bits must match, such as `192.168.0.0/16`). They differ only in which address they read.
-
-### Which address each field reads
+Both address fields sit in the `source` part of a rule. Both take address ranges written in CIDR form (Classless Inter-Domain Routing): an address plus how many leading bits must match, such as `192.168.0.0/16`. They differ only in which address they read:
 
 | Field | Reads | Behind a proxy it sees |
 | --- | --- | --- |
@@ -14,13 +14,11 @@ Both fields sit in the `source` part of a rule, and both take address ranges wri
 | `remoteIpBlocks` | the client address the gateway took from `X-Forwarded-For`, using `numTrustedProxies` | the real client, if the number is right |
 | `notIpBlocks`, `notRemoteIpBlocks` | the same addresses, negated: "not in this range" | |
 
-`remoteIpBlocks` is only as good as `numTrustedProxies`. With no trusted proxies, the gateway ignores the header, and `remoteIpBlocks` sees the same peer as `ipBlocks`.
+The connection peer is whoever opened the connection to the gateway. `numTrustedProxies` is the setting that tells the gateway how many proxies run in front of it, so it knows which entry of `X-Forwarded-For` to believe. That makes `remoteIpBlocks` only as good as `numTrustedProxies`. With no trusted proxies, the gateway ignores the header, and `remoteIpBlocks` sees the same peer as `ipBlocks`.
 
 <!-- astrona:playground:renew -->
 
-### Check that the gateway trusts one proxy
-
-The rule below needs the gateway to trust one proxy. Ask its listener:
+So before you write the rule, ask the gateway's listener whether it trusts one proxy:
 
 ```sh
 istioctl proxy-config listener deploy/istio-ingress -n istio-ingress -o json | grep xffNumTrustedHops
@@ -34,11 +32,7 @@ If this prints nothing, `numTrustedProxies` is not set. Set `meshConfig.defaultC
 
 ## Deny the range at the gateway
 
-The attacking range is `192.168.0.0/16`. Everyone else must still get through, on every host the gateway serves.
-
-### Write the block-list
-
-Save this as `authorizationpolicy-gateway-ip-deny.yaml`:
+With the gateway trusting one proxy, you can write the rule itself. The attacking range is `192.168.0.0/16`, and everyone else must still get through, on every host the gateway serves. Save this as `authorizationpolicy-gateway-ip-deny.yaml`:
 
 ```yaml
 apiVersion: security.istio.io/v1
@@ -63,7 +57,7 @@ Apply it:
 kubectl apply -f authorizationpolicy-gateway-ip-deny.yaml
 ```
 
-Wait about a minute, so the gateway gets its new configuration. Then check the result. Send one request from a normal client, one from the attacking range, and one with no header at all:
+Wait about a minute, so the gateway gets its new configuration. Then check the result with three requests: one from a normal client, one from the attacking range, and one with no header at all:
 
 ```sh
 gate_status /productpage 10.1.2.3
@@ -77,11 +71,9 @@ gate_status /productpage
 200
 ```
 
-Only the request from `192.168.5.5` is denied. Two requests that differ only in one header get different answers: the rule reads the client address, not the connection. The request with no header passes too: with no entry to read, the gateway falls back to the connection peer, `127.0.0.1`, which is not in the range.
+Only the request from `192.168.5.5` is denied. Two requests that differ only in one header get different answers, so the rule reads the client address, not the connection. The request with no header passes too. With no entry to read, the gateway falls back to the connection peer, `127.0.0.1`, which is not in the range.
 
-### Read the denial in the access log
-
-Print the last two lines of the gateway's access log, for the denied request and the one without a header:
+The status codes tell you what happened, but not why. For that, print the last two lines of the gateway's access log, for the denied request and the one without a header:
 
 ```sh
 gate_log 2
@@ -92,11 +84,12 @@ gate_log 2
 [2026-10-09T11:11:48.734Z] "GET /productpage HTTP/1.1" 200 - via_upstream - "-" 0 15068 23 23 "10.244.0.18" "curl/8.7.1" "c03bbb5c-750a-9951-865c-b26274ed8e08" "starfleet.example.com" "10.244.0.12:9080" outbound|9080||bridge.starfleet.svc.cluster.local 10.244.0.18:48876 127.0.0.1:80 127.0.0.1:41648 - -
 ```
 
-The denied line names the policy and the rule that matched, and ends with the client address the gateway decided on: `192.168.5.5:0`. The second line, for the request with no header, ends with the tunnel's address, `127.0.0.1`. This is the only place where the decision and the address appear side by side, so it is the first place to look when a rule surprises you.
+The denied line names the policy and the rule that matched, and ends with the client address the gateway decided on: `192.168.5.5:0`. The second line, for the request with no header, ends with the tunnel's address, `127.0.0.1`.
 
-### A forged entry does not help the attacker
+> [!TIP]
+> When an address rule surprises you, read the gateway's access log first. It is the only place where the decision and the client address appear side by side on one line.
 
-An attacker from `192.168.5.5` might put a harmless address in front, hoping the gateway reads the first entry. In this playground your `curl` acts as the trusted proxy, so the **last** entry is the one a proxy wrote:
+An attacker from `192.168.5.5` might try one more trick: put a harmless address in front, hoping the gateway reads the first entry. In this playground your `curl` acts as the trusted proxy, so the **last** entry is the one a proxy wrote. Send both orders:
 
 ```sh
 gate_status /productpage "10.1.2.3, 192.168.5.5"
@@ -114,19 +107,17 @@ The first request is denied: the trusted last entry is `192.168.5.5`, and the fo
 
 The task was "deny this range, keep everything else". A `DENY` policy says exactly that: it denies the requests that match, and leaves every other request alone.
 
-### What an `ALLOW` would do on a shared gateway
+You could also write "allow everyone **not** in the range" as an `ALLOW` with `notRemoteIpBlocks`. On this one policy it gives the same answers. But the gateway is shared, and an `ALLOW` policy changes the rules for everyone. Once any `ALLOW` policy selects the gateway, every request that matches none of its rules is denied, on every host.
 
-You could also write "allow everyone **not** in the range" as an `ALLOW` with `notRemoteIpBlocks`. On this one policy it gives the same answers. But the gateway is shared, and an `ALLOW` policy changes the rules for everyone: once any `ALLOW` policy selects the gateway, every request that matches none of its rules is denied, on every host. Add a host or a path to that rule later, and you close the gateway for everything outside it. A `DENY` never closes anything it does not name.
+That makes an `ALLOW` fragile over time. Add a host or a path to its rule later, and you close the gateway for everything outside it. A `DENY` never closes anything it does not name. Keep the `ALLOW` shape for real allow-lists, and even then narrow the rule with `hosts` so you know which hosts you are closing.
 
-Keep the `ALLOW` shape for real allow-lists, and even then narrow the rule with `hosts` so you know which hosts you are closing.
-
-### Clean up
-
-Remove the policy before the lab and the next part:
+Remove the policy before the lab:
 
 ```sh
 kubectl delete -f authorizationpolicy-gateway-ip-deny.yaml
 ```
+
+You now know that `remoteIpBlocks` matches the client address the gateway took from `X-Forwarded-For`, so it is only as trustworthy as `numTrustedProxies`. A block-list is a `DENY` with `remoteIpBlocks`, proved with one request that must pass and one that must fail. The opposite need, letting only one network reach a path, needs a little more thought on a shared gateway.
 
 ## Common pitfalls
 
@@ -135,8 +126,6 @@ kubectl delete -f authorizationpolicy-gateway-ip-deny.yaml
 > - **`ipBlocks` for a client behind a proxy.** It reads the connection, never the header, so the attacking range is never matched.
 > - **An `ALLOW` for a block-list.** On a shared gateway, an `ALLOW` decides for every host. A `DENY` only touches what it names.
 > - **Testing only one address.** Always send one request that must pass and one that must be denied. A rule that denies everything also "blocks the range".
-
-> *`remoteIpBlocks` matches the client address the gateway took from `X-Forwarded-For`, so it is only as trustworthy as `numTrustedProxies`.*
 
 ## Your mission: Block A Client Range At The Gateway
 
