@@ -1,6 +1,6 @@
 # Three Scopes, Narrowest Wins
 
-Astronaut, a `PeerAuthentication` is the rule on a ship's airlock: who must do the handshake before docking. The same few lines of YAML can be a rule for the whole fleet, for one planet, or for a few ships. Nothing in the YAML says which. In this part you learn the two facts that decide the scope, and the one rule that picks a winner when several policies cover the same ship.
+A `PeerAuthentication` sets whether a workload accepts plain text, mTLS or both on inbound connections. The same few lines of YAML can be a policy for the whole mesh, for one namespace, or for a few pods. Nothing in the YAML says which. In this part you learn the two facts that decide the scope, and the one rule that picks a winner when several policies cover the same pod.
 
 ## Scope is not a field
 
@@ -10,7 +10,7 @@ A `PeerAuthentication` has no "scope" field. Two things decide how far it reache
 
 | Scope | Where it lives | `selector` |
 | --- | --- | --- |
-| **Mesh-wide** | the root namespace, `istio-system` (mission control's own planet) | none |
+| **Mesh-wide** | the root namespace, `istio-system` (where `istiod` runs) | none |
 | **Namespace-wide** | the namespace it covers | none |
 | **Workload** | the namespace of the pods | yes, matching pod labels |
 
@@ -35,7 +35,7 @@ The root namespace can be changed at install time (the `meshConfig.rootNamespace
 
 ## Narrowest wins
 
-When several policies cover the same ship, exactly one of them decides. The rule is short: **the narrowest one wins**. A rule for one ship beats a rule for its planet, and a rule for the planet beats a rule for the whole fleet. The closest rule wins.
+When several policies cover the same pod, exactly one of them decides. The rule is short: **the narrowest one wins**. A policy for one workload beats a policy for its namespace, and a policy for the namespace beats a policy for the whole mesh.
 
 ### The order
 
@@ -58,11 +58,11 @@ Do not put two policies at the same level on the same pods, for example two name
 
 ## An exception for one workload
 
-Start with the planet locked, then give one ship an exception. This is the most common real-world shape: everyone strict, one ship that still has a caller without a sidecar.
+Start with the namespace set to `STRICT`, then give one workload an exception. This is the most common real-world shape: everyone strict, one workload that still has a caller without a sidecar.
 
 <!-- astrona:playground:renew -->
 
-### Lock the planet, open the probe
+### Make the namespace strict, open the probe
 
 The commands below need the `starfleet` namespace policy with `mode: STRICT` applied. Apply the file you saved for it:
 
@@ -104,11 +104,11 @@ drifter: 200  exit=0
 drifter: 000  exit=56
 ```
 
-Two ships on one planet, one shared namespace policy, and two different answers. The probe is covered by something narrower (the workload policy), so the namespace policy no longer decides for it. The scout has no workload policy, so the namespace policy still decides there.
+Two workloads in one namespace, one shared namespace policy, and two different answers. The probe is covered by something narrower (the workload policy), so the namespace policy no longer decides for it. The scout has no workload policy, so the namespace policy still decides there.
 
-## The whole mesh, and a planet that opts out
+## The whole mesh, and a namespace that opts out
 
-Now go one level wider. A mesh-wide policy covers every planet, and a namespace policy can still overrule it for its own planet. This is how a real migration runs: strict for everyone, then exceptions for planets that are not ready yet, removed one by one.
+Now go one level wider. A mesh-wide policy covers every namespace, and a namespace policy can still overrule it for its own namespace. This is how a real migration runs: strict for everyone, then exceptions for namespaces that are not ready yet, removed one by one.
 
 ### Make the mesh strict
 
@@ -149,7 +149,7 @@ drifter: 000  exit=56
 
 No policy exists in `starfleet` now, yet the probe refuses the drifter. The mesh-wide policy in `istio-system` decided.
 
-### Let one planet opt out
+### Let one namespace opt out
 
 Save this as `peerauthentication-starfleet-permissive.yaml`:
 
@@ -170,7 +170,7 @@ Apply it:
 kubectl apply -f peerauthentication-starfleet-permissive.yaml
 ```
 
-Then send the same signal:
+Then send the same request:
 
 ```sh
 from_drifter $PROBE_URL
@@ -202,15 +202,15 @@ kubectl delete -f peerauthentication-starfleet-permissive.yaml -f peerauthentica
 
 ## Your mission: Enforce mTLS At Three Scopes
 
-You can now place a `PeerAuthentication` at mesh, namespace and workload scope, and predict which one wins. Now prove it in a graded mission: build a strict mesh, a planet that opts out, and one sensitive workload on that planet that still requires the handshake. This mission uses its own small app, with the planets `mtls-demo` and `outside`.
+You can now place a `PeerAuthentication` at mesh, namespace and workload scope, and predict which one wins. Now prove it in a graded lab: build a strict mesh, a namespace that opts out, and one sensitive workload in that namespace that still requires mTLS. This lab uses its own small app, with the namespaces `mtls-demo` and `outside`.
 
-The mission runs in its own training solar system, so first pause your playground. Nothing in it is lost:
+The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
 
 ```sh
 astrona stop ats-015-playground-010-02
 ```
 
-Then start the mission:
+Then start the lab:
 
 ```sh
 astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-010/module-02/labs/lab-01
@@ -222,7 +222,7 @@ Read the task in [`question.md`](./labs/lab-01/question.md) and solve it on your
 astrona submit -c sections/section-010/module-02/labs/lab-01
 ```
 
-When the mission is done, remove it and wake your playground up again:
+When the lab is done, remove it and start your playground again:
 
 ```sh
 astrona destroy ats-015-lab-010-02

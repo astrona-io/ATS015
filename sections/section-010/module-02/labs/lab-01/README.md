@@ -4,9 +4,9 @@ estimated_duration: 3m
 
 # Enforce mTLS At Three Scopes
 
-Welcome to a build mission, astronaut. Security wants the secret handshake (mTLS) required across the whole mesh. One team on the planet `mtls-demo` still has a caller outside the mesh, so their planet gets an exception. Their notification service is the sensitive one, and it does not get the exception.
+This is a build lab. The security team wants mTLS (mutual TLS, where both sides present a certificate) required across the whole mesh. One team in the namespace `mtls-demo` still has a caller outside the mesh, so their namespace gets an exception. Their notification service is the sensitive one, and it does not get the exception.
 
-Your job is to write three `PeerAuthentication` policies at three scopes, so that the narrowest one wins for each workload, and to prove it with real signals. This mission uses its own small app, not the Starfleet.
+Your job is to write three `PeerAuthentication` policies at three scopes, so that the narrowest one wins for each workload, and to prove it with real requests. This lab uses its own small app, not the Starfleet.
 
 ## Launching the Lab
 

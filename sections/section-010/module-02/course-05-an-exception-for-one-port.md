@@ -1,6 +1,6 @@
 # An Exception For One Port
 
-Astronaut, sometimes a ship must stay strict for almost everyone, but one radio channel has to stay open to an old caller. Think of a health checker or a metrics collector that runs outside the mesh and only ever calls one port. A workload `PeerAuthentication` (the airlock rule for one ship) is too wide for that. In this part you open exactly one port, and you learn the one detail that makes this field fail silently.
+Sometimes a workload must stay strict for almost every caller, but one port has to stay open to an old caller. Think of a health checker or a metrics collector that runs outside the mesh and only ever calls one port. A workload `PeerAuthentication` (a policy that sets the mTLS mode for the pods its `selector` matches) is too wide for that. In this part you open exactly one port, and you learn the one detail that makes this field fail silently.
 
 ## The narrowest level of all
 
@@ -34,9 +34,9 @@ The PeerAuthentication "noselector" is invalid: spec: Invalid value: portLevelMt
 
 This is the detail that trips almost everyone. The probe has two port numbers, and only one of them works here.
 
-### Two numbers for one channel
+### Two numbers for one port
 
-The probe's Service listens on port `8000`, and sends each signal on to port `8080` on the pod (`targetPort: 8080`). Callers use `8000`. The pod itself only ever sees `8080`.
+The probe's Service listens on port `8000`, and sends each request on to port `8080` on the pod (`targetPort: 8080`). Callers use `8000`. The pod itself only ever sees `8080`.
 
 ```mermaid
 flowchart LR
@@ -45,11 +45,11 @@ flowchart LR
     O --> P["probe"]
 ```
 
-The Service port is the call sign callers dial. The policy is enforced by the sidecar's inbound listener, and that listener only knows the port the pod actually listens on, `8080`. So the key in `portLevelMtls` is always the **container port**.
+The Service port is the port callers use. The policy is enforced by the sidecar's inbound listener, and that listener only knows the port the pod actually listens on, `8080`. So the key in `portLevelMtls` is always the **container port**.
 
 ## Open port 8080
 
-Now try it on the fleet. You lock the planet, open one port on the probe, and check that the rest of the planet stays locked.
+Now try it in your playground. You make the namespace strict, open one port on the probe, and check that the rest of the namespace stays strict.
 
 <!-- astrona:playground:renew -->
 
@@ -100,11 +100,11 @@ drifter: 000  exit=56
 shuttle: 200
 ```
 
-The drifter reaches the probe again, through port `8080`. The scout still refuses it, because the namespace policy decides there. The shuttle keeps using the handshake, as before.
+The drifter reaches the probe again, through port `8080`. The scout still refuses it, because the namespace policy decides there. The shuttle keeps using mTLS, as before.
 
 ## The Service-port mistake
 
-Now make the classic mistake on purpose, so you recognise it later. Use the port callers dial, `8000`, as the key.
+Now make the classic mistake on purpose, so you recognise it later. Use the port callers use, `8000`, as the key.
 
 ### Use the wrong key
 
@@ -137,7 +137,7 @@ kubectl apply -f peerauthentication-probe-port-8000.yaml
 peerauthentication.security.istio.io/probe configured
 ```
 
-Then send the drifter's signal again:
+Then send the drifter's request again:
 
 ```sh
 from_drifter $PROBE_URL
@@ -151,7 +151,7 @@ The policy was accepted without a warning, and even `istioctl analyze -n starfle
 
 ### Clean up
 
-Remove both policies, so the planet is back to the default:
+Remove both policies, so the namespace is back to the default:
 
 ```sh
 kubectl delete -f peerauthentication-probe-port-8000.yaml -f peerauthentication-starfleet-strict.yaml
@@ -163,21 +163,21 @@ kubectl delete -f peerauthentication-probe-port-8000.yaml -f peerauthentication-
 > - **Using the Service port as the key.** `portLevelMtls` takes the container port (`targetPort`). A Service port that the pod does not listen on is accepted and silently ignored.
 > - **Leaving out the `selector`.** Port-level settings only work in a workload policy. Without a `selector`, `kubectl apply` fails with `portLevelMtls requires selector`.
 > - **Opening a whole workload when one port would do.** A workload-level `PERMISSIVE` opens every port on the pod. `portLevelMtls` opens only the one the old caller needs.
-> - **Checking only the port you opened.** Also send a signal to another ship on the same planet, to prove the rest is still strict.
+> - **Checking only the port you opened.** Also send a request to another workload in the same namespace, to prove the rest is still strict.
 
 > *`portLevelMtls` is the narrowest level there is, and it speaks the pod's language: the container port, never the Service port.*
 
-## Your mission: Open One Port For The Drifter
+## Your mission: Open One Port With portLevelMtls
 
-You can now open a single container port on an otherwise strict workload. Now prove it in a graded mission: the whole mesh is `STRICT`, and the drifter must reach the probe through one open port while every other ship keeps refusing it.
+You can now open a single container port on an otherwise strict workload. Now prove it in a graded lab: the whole mesh is `STRICT`, and the drifter must reach the probe through one open port while every other workload keeps refusing it.
 
-The mission runs in its own training solar system, so first pause your playground. Nothing in it is lost:
+The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
 
 ```sh
 astrona stop ats-015-playground-010-02
 ```
 
-Then start the mission:
+Then start the lab:
 
 ```sh
 astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-010/module-02/labs/lab-02
@@ -189,7 +189,7 @@ Read the task in [`question.md`](./labs/lab-02/question.md) and solve it on your
 astrona submit -c sections/section-010/module-02/labs/lab-02
 ```
 
-When the mission is done, remove it and wake your playground up again:
+When the lab is done, remove it and start your playground again:
 
 ```sh
 astrona destroy ats-015-lab-010-02-02

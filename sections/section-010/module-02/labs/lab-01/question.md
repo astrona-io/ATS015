@@ -6,7 +6,7 @@ estimated_duration: 20m
 
 Solve this question on: `terminal`
 
-Astronaut, security has signed off on a rule: every ship in the mesh must use the secret handshake (mTLS). One team cannot comply yet. Their planet still has a caller outside the mesh, so they get an exception for a few weeks. Their notification service is sensitive, and it does **not** get the exception, even though it lives on the same planet.
+The security team has signed off on a rule: every workload in the mesh must use mTLS (mutual TLS, where both sides present a certificate). One team cannot comply yet. Their namespace still has a caller outside the mesh, so they get an exception for a few weeks. Their notification service is sensitive, and it does **not** get the exception, even though it runs in the same namespace.
 
 The cluster has two namespaces:
 
@@ -21,7 +21,7 @@ Using `PeerAuthentication` objects only, produce this end state:
 2.  **Namespace exception:** a `PeerAuthentication` named `default` in `mtls-demo` sets the whole namespace back to `PERMISSIVE`.
 3.  **Workload override:** a `PeerAuthentication` in `mtls-demo` makes `notification-service` `STRICT` again. `booking-service` must not be covered by it.
 
-The result, checked with real signals:
+The result, checked with real requests:
 
 | Caller | Call | Expected |
 | --- | --- | --- |
@@ -35,4 +35,4 @@ Constraints:
 * Do not add a sidecar to `outside-client`, and do not delete it. It is the only plain-text caller, and the grader needs it.
 * Use `PeerAuthentication` only. No `AuthorizationPolicy`, no `DestinationRule`.
 
-The grader checks that the policies exist at the right scopes, then sends live signals from `outside-client` and `tester`, so the result has to work, not merely exist.
+The grader checks that the policies exist at the right scopes, then sends live requests from `outside-client` and `tester`, so the result has to work, not merely exist.

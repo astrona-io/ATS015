@@ -1,24 +1,24 @@
-# Wrap-Up: Mission Debrief
+# Wrap-Up
 
-Well flown, astronaut. You have finished every part and every mission in this module. Before you move on, look back at what you learned, check yourself, and land the playground cleanly.
+You have finished every part and every lab in this module. Before you move on, look back at what you learned, check yourself, and clean up the playground.
 
 ## What you learned
 
-This module was about one object, `PeerAuthentication`, which decides whether a receiving ship demands the secret handshake (mTLS), and about the `DestinationRule` setting that decides what the sending ship offers.
+This module was about one object, `PeerAuthentication`, which decides whether a receiving workload requires mTLS, and about the `DestinationRule` setting that decides what the sending sidecar uses.
 
 **From [Two Callers, One Default](./course-01-two-callers-one-default.md):**
 
-- mTLS means both ships show a certificate (an ID badge signed by `istiod`), and the signal between them is encrypted.
-- The name on the badge is a SPIFFE ID, `spiffe://cluster.local/ns/<namespace>/sa/<service account>`. It belongs to the service account, not the pod.
-- With no policy, every ship is `PERMISSIVE`: it accepts mTLS and plain text. Auto mTLS makes meshed callers do the handshake by themselves.
-- `200` proves nothing about mTLS. The `X-Forwarded-Client-Cert` header on the receiving side shows the caller's identity when the signal used mTLS.
+- mTLS means both sides present a certificate signed by `istiod`, and the connection between them is encrypted.
+- The name in the certificate is a SPIFFE ID, `spiffe://cluster.local/ns/<namespace>/sa/<service account>`. It belongs to the service account, not the pod.
+- With no policy, every workload is `PERMISSIVE`: it accepts mTLS and plain text. Auto mTLS makes meshed callers use mTLS by themselves.
+- `200` proves nothing about mTLS. The `X-Forwarded-Client-Cert` header on the receiving side shows the caller's identity when the request used mTLS.
 - The inbound listener peeks at the first bytes (`tls_inspector`) and picks the mTLS chain or the plain-text chain.
 
-**From [Require The Handshake With STRICT](./course-02-require-the-handshake.md):**
+**From [Require mTLS With STRICT](./course-02-require-the-handshake.md):**
 
 - The four modes: `PERMISSIVE` (both), `STRICT` (mTLS only), `DISABLE` (plain text only) and `UNSET` (ask the wider policy).
 - `STRICT` removes the plain-text chain. A caller without a sidecar gets `000` and `curl` exit code `56`: a reset connection, not an HTTP error.
-- The refused connection leaves only a short line in the receiver's flight log: no request, and `NR filter_chain_not_found`.
+- The refused connection leaves only a short line in the receiver's access log: no request, and `NR filter_chain_not_found`.
 - `000` points at `PeerAuthentication`. `403 RBAC: access denied` points at an authorization rule.
 
 **From [Three Scopes, Narrowest Wins](./course-03-three-scopes-narrowest-wins.md):**
@@ -27,12 +27,12 @@ This module was about one object, `PeerAuthentication`, which decides whether a 
 - The narrowest policy wins and decides alone: port, then workload, then namespace, then mesh. A `PERMISSIVE` namespace policy beats a `STRICT` mesh policy.
 - A mesh-wide policy in the wrong namespace, or a `selector` added by mistake, applies without any error.
 
-**From [Read The Mode Off The Ship](./course-04-read-the-mode-off-the-ship.md):**
+**From [Read The mTLS Mode A Pod Uses](./course-04-read-the-mode-off-the-ship.md):**
 
 - `kubectl get peerauthentication -A` lists every policy and its mode.
 - `istioctl x describe pod` shows the mode that won and lists every policy that covers the pod. The narrowest one in the list decides.
 - `istioctl proxy-config listener <pod> --port 15006` shows the inbound filter chains: `Trans: tls` only under `STRICT`, plus `Trans: raw_buffer` under `PERMISSIVE`.
-- Prove a policy with real traffic first, then confirm with `istioctl` that the ship received it.
+- Prove a policy with real traffic first, then confirm with `istioctl` that the sidecar received it.
 
 **From [An Exception For One Port](./course-05-an-exception-for-one-port.md):**
 
@@ -41,22 +41,22 @@ This module was about one object, `PeerAuthentication`, which decides whether a 
 
 **From [Client And Server Must Agree](./course-06-client-and-server-must-agree.md):**
 
-- `PeerAuthentication` controls what a ship accepts. A `DestinationRule` with `trafficPolicy.tls.mode` controls what callers send.
-- `tls.mode: DISABLE` on the caller against a `STRICT` server gives `503 UC` in the caller's flight log.
+- `PeerAuthentication` controls what a workload accepts. A `DestinationRule` with `trafficPolicy.tls.mode` controls what callers send.
+- `tls.mode: DISABLE` on the caller against a `STRICT` server gives `503 UC` in the caller's access log.
 - `ISTIO_MUTUAL` is what auto mTLS picks anyway. Once you set `tls.mode`, auto mTLS no longer decides for that host.
 - A `DISABLE` server makes auto mTLS send plain text: nothing breaks, but the caller's identity is gone.
 
 ## Your missions
 
-You proved each skill in a graded mission, right after the part that taught it:
+You proved each skill in a graded lab, right after the part that taught it:
 
-| Mission | After the part | What you proved |
+| Lab | After the part | What you proved |
 | --- | --- | --- |
 | [Enforce mTLS At Three Scopes](./labs/lab-01/README.md) | Three Scopes, Narrowest Wins | build mesh, namespace and workload policies where the narrowest wins |
-| [Open One Port For The Drifter](./labs/lab-02/README.md) | An Exception For One Port | open one container port on a strict workload, and nothing else |
-| [Fix The Broken Handshake](./labs/lab-03/README.md) | Client And Server Must Agree | find a client-side `tls.mode: DISABLE` behind a `503 UC` and fix it without weakening the server |
+| [Open One Port With portLevelMtls](./labs/lab-02/README.md) | An Exception For One Port | open one container port on a strict workload, and nothing else |
+| [Fix A DestinationRule That Breaks mTLS](./labs/lab-03/README.md) | Client And Server Must Agree | find a client-side `tls.mode: DISABLE` behind a `503 UC` and fix it without weakening the server |
 
-If you skipped one, go back to it now. Each mission is short, and the exam asks for exactly these skills.
+If you skipped one, go back to it now. Each lab is short, and the exam asks for exactly these skills.
 
 ## Check yourself
 
@@ -93,9 +93,9 @@ Yes. The narrowest policy decides alone, and the namespace policy is narrower th
 </details>
 
 <details>
-<summary>6. Two meshed, healthy ships. The caller's flight log shows <code>503 UC</code>. The server is <code>STRICT</code>. What do you check first?</summary>
+<summary>6. Two meshed, healthy workloads. The caller's access log shows <code>503 UC</code>. The server is <code>STRICT</code>. What do you check first?</summary>
 
-The `DestinationRule` for the server's host. A `trafficPolicy.tls.mode: DISABLE` makes the caller send plain text, and the strict server hangs up. Set it to `ISTIO_MUTUAL` or remove the `tls` block.
+The `DestinationRule` for the server's host. A `trafficPolicy.tls.mode: DISABLE` makes the caller send plain text, and the strict server closes the connection. Set it to `ISTIO_MUTUAL` or remove the `tls` block.
 </details>
 
 <details>
@@ -106,7 +106,7 @@ The `DestinationRule` for the server's host. A `trafficPolicy.tls.mode: DISABLE`
 
 ## Clean up the playground
 
-Your playground is a whole Kubernetes cluster running on your machine. When you are done with this module, remove it, and any mission that is still running.
+Your playground is a whole Kubernetes cluster running on your machine. When you are done with this module, remove it, and any lab that is still running.
 
 First, see what is still running:
 
@@ -120,7 +120,7 @@ Remove the playground. The command takes its **name**, not its folder path:
 astrona destroy ats-015-playground-010-02
 ```
 
-If `astrona list` also showed a mission, remove it the same way, for example:
+If `astrona list` also showed a lab, remove it the same way, for example:
 
 ```sh
 astrona destroy ats-015-lab-010-02-03
@@ -138,4 +138,4 @@ No astrona labs running.
 
 You can start the playground again at any time with the `astrona run` command from the module's landing page. It always starts clean, so nothing you broke carries over.
 
-> *A `PeerAuthentication` decides what a ship accepts, at the narrowest scope that covers it; a `DestinationRule` decides what callers send. Both sides must agree.*
+> *A `PeerAuthentication` decides what a workload accepts, at the narrowest scope that covers it; a `DestinationRule` decides what callers send. Both sides must agree.*

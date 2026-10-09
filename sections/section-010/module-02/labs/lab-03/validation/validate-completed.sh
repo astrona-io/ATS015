@@ -40,13 +40,13 @@ esac
 ptls=$(kubectl -n "$NS" get destinationrule probe -o jsonpath='{.spec.trafficPolicy.portLevelSettings[*].tls.mode}' 2>/dev/null)
 grep -qE 'DISABLE|SIMPLE|MUTUAL' <<<"${ptls//ISTIO_MUTUAL/}" && fail "destinationrule/probe has a portLevelSettings tls.mode ($ptls) that is not ISTIO_MUTUAL"
 
-# --- 3. live signals -------------------------------------------------------------
+# --- 3. live requests ------------------------------------------------------------
 code() {  # $1 = namespace, $2 = deployment, $3 = URL; prints the HTTP code (000 = no answer)
   local c
   c=$(kubectl -n "$1" exec "deploy/$2" -- curl -s -o /dev/null -w '%{http_code}' --max-time 8 "$3" 2>/dev/null)
   echo "${c:-000}"
 }
-expect() {  # $1 = wanted code, rest = code args; retries while the new orders reach the proxies
+expect() {  # $1 = wanted code, rest = code args; retries while the new configuration reaches the proxies
   local want=$1 got i; shift
   for i in $(seq 1 45); do
     got=$(code "$@")

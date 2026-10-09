@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. Three policies at three widths, and for each workload the narrowest one decides. The trick is that scope is not a field: the namespace an object lives in and whether it has a `selector` decide how far it reaches.
+Three policies at three scopes, and for each workload the narrowest one decides. The trick is that scope is not a field: the namespace an object lives in and whether it has a `selector` decide how far it reaches.
 
 ---
 
@@ -49,7 +49,7 @@ kubectl apply -f peerauthentication-mesh-default.yaml
 peerauthentication.security.istio.io/default created
 ```
 
-Right now `outside-client` is refused by both services. The next policy opens the planet again.
+Right now `outside-client` is refused by both services. The next policy opens the namespace again.
 
 ## Step 3: Give mtls-demo its exception
 
@@ -125,7 +125,7 @@ mtls-demo      default               PERMISSIVE   0s
 mtls-demo      notification-strict   STRICT       0s
 ```
 
-Then send the three signals the task asks for. A new policy can take up to a minute to reach every proxy, so if a result looks old, wait and send it again:
+Then send the three requests the task asks for. A new policy can take up to a minute to reach every proxy, so if a result looks old, wait and send it again:
 
 ```sh
 kubectl -n outside exec deploy/outside-client -- sh -c \
@@ -141,7 +141,7 @@ booking:      200
 in-mesh:      200
 ```
 
-Two workloads on one planet, one shared namespace policy, and two different answers. `notification-service` is covered by something narrower.
+Two workloads in one namespace, one shared namespace policy, and two different answers. `notification-service` is covered by something narrower.
 
 You can also ask the pod which policy won:
 
@@ -180,4 +180,4 @@ astrona submit -c sections/section-010/module-02/labs/lab-01
 - **A selector on the namespace exception.** It becomes a workload policy and covers far less than the namespace.
 - **`outside-client` still reaches `notification-service`.** The workload policy's selector does not match the pods. Compare it with `kubectl -n mtls-demo get pods --show-labels`.
 - **`outside-client` cannot reach `booking-service` either.** The namespace exception is missing, or it was saved in the wrong namespace.
-- **Testing too fast.** `kubectl apply` returns before the proxies have the new orders. If a result looks old, wait up to a minute and send the signal again.
+- **Testing too fast.** `kubectl apply` returns before the proxies have the new configuration. If a result looks old, wait up to a minute and send the request again.
