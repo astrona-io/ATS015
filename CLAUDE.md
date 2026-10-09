@@ -146,7 +146,7 @@ Strict guidelines:
   `astrona.yaml`, the playground guide `docs/overview.md`, and a lab's
   `question.md` and `solution.md`) never links to or points the reader at
   another page or file of the repository: no links to parts, summaries,
-  labs, `question.md`, other modules, sections or the Mission Briefing, and no
+  labs, `question.md`, other modules, sections or the Introduction, and no
   "see `practice.md`" or "open `config.yaml`". The platform shows the pages in
   the order of `astrona.yaml`, so a link only adds a second, often wrong,
   path. Name a thing in plain words when the reader needs it ("the task is on
@@ -159,7 +159,7 @@ Strict guidelines:
   RFCs), and they have no "Reference" or "Official docs" lists. Everything the
   reader needs is explained on the page itself. Not affected: addresses the
   reader actually uses in a command or browser (`http://127.0.0.1:9080`,
-  `curl https://httpbin.org`), and the Mission Briefing's contributors and
+  `curl https://httpbin.org`), and the Introduction's contributors and
   "report a mistake" links.
 - **Configuration goes to a file first.** Whenever the reader should apply
   YAML (course parts, playground docs, labs), use three separate steps:
@@ -323,7 +323,7 @@ use the Starfleet.
 | --- | --- |
 | Course outline the platform reads: every reading page and lab, in order. Never list `solution.md` here | `astrona.yaml` |
 | Overview, sections table, how to run things | `README.md` |
-| Mission Briefing: course intro, setup, how the course is made, maintainers, how to report mistakes (first in `astrona.yaml`) | `sections/intro/` |
+| Introduction: course intro, setup, how the course is made, maintainers, how to report mistakes (first in `astrona.yaml`) | `sections/intro/` |
 | Section overview and its modules | `sections/section-0N0/README.md` |
 | Module reading: landing page, deep-dive parts, summary | `sections/section-0N0/module-0M/course.md`, `course-0N-*.md` |
 | Graded lab: task, walkthrough, setup, grader | `.../labs/lab-0N/` (`question.md`, `solution.md`, `bootstrap/`, `solution/apply.sh`, `validation/`) |

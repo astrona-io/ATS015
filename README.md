@@ -21,7 +21,7 @@ The way through each module is simple. Read its parts with its playground open a
 
 ## Start Here
 
-New to the course? Read the **[Mission Briefing](sections/intro/README.md)** first. It explains how the course is laid out, how to get your machine ready, how the content is made, who maintains it, and how to report a mistake.
+New to the course? Read the **[Introduction](sections/intro/README.md)** first. It explains how the course is laid out, how to get your machine ready, how the content is made, who maintains it, and how to report a mistake.
 
 ---
 
@@ -47,7 +47,7 @@ Here is why the order works:
 - **The edge comes after the mesh.** Gateways, TLS and address rules build on what you already know inside the mesh.
 - **Ambient mode comes last.** It reuses all of it, without sidecars.
 
-[`astrona.yaml`](astrona.yaml) lists 157 entries: the briefing and the six sections, in the order you should work through them. The lab walkthroughs (`solution.md`) are left out of it on purpose, so you try each lab before you see the answer.
+[`astrona.yaml`](astrona.yaml) lists 157 entries: the introduction and the six sections, in the order you should work through them. The lab walkthroughs (`solution.md`) are left out of it on purpose, so you try each lab before you see the answer.
 
 ---
 
