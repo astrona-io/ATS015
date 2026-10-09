@@ -30,4 +30,4 @@ is no grading.
 | `bootstrap/manifests/` | The YAML `deploy.sh` applies |
 | `examples/01-allow-policies/` | Allow-nothing, "only the shuttle may GET the probe", least privilege for every Starfleet workload, plus the cases in `cases/` (a whole namespace, `rules: [{}]`, a selector typo) |
 | `docs/overview.md` | What is in the box, helpers, things to try |
-| `docs/practice.md` | Two exam-style tasks with checked solutions |
+| `docs/overview.md` (end) | Exam-style practice tasks with solutions, now part of the guide |

@@ -28,4 +28,4 @@ path. `astrona submit` and `astrona test` do not apply: there is no grading.
 | `bootstrap/manifests/` | The YAML `deploy.sh` applies |
 | `examples/01-deny-policies/` | The authors' reference policies: DENY a path, an ALLOW policy for the shuttle, plus the cases in `cases/` (DENY with `notMethods`, `rules: [{}]` as ALLOW and as DENY) |
 | `docs/overview.md` | What is in the box, helpers, things to try |
-| `docs/practice.md` | Two exam-style tasks with solutions |
+| `docs/overview.md` (end) | Exam-style practice tasks with solutions, now part of the guide |

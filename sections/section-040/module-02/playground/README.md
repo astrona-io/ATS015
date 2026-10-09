@@ -29,4 +29,4 @@ path. `astrona submit` and `astrona test` do not apply: there is no grading.
 | `examples/` | The module's numbered YAML (`01-…`, `02-…`, `03-…`) |
 | `examples/cases/` | The helper script for the "client certificate from another CA" case |
 | `docs/overview.md` | What is in the box, how to make the certificates, the helper, things to try |
-| `docs/practice.md` | An exam-style task with a solution |
+| `docs/overview.md` (end) | Exam-style practice tasks with solutions, now part of the guide |

@@ -21,7 +21,7 @@ The way through each module is simple. Read its parts with its playground open a
 
 ## Start Here
 
-New to the course? Read the **[Mission Briefing](sections/intro/README.md)** first. It explains how the course is laid out, how to get your machine ready, how the content is made, who maintains it, and how to report a mistake.
+New to the course? Read the **[Introduction](sections/intro/README.md)** first. It explains how the course is laid out, how to get your machine ready, how the content is made, who maintains it, and how to report a mistake.
 
 ---
 
@@ -47,7 +47,7 @@ Here is why the order works:
 - **The edge comes after the mesh.** Gateways, TLS and address rules build on what you already know inside the mesh.
 - **Ambient mode comes last.** It reuses all of it, without sidecars.
 
-[`astrona.yaml`](astrona.yaml) lists 157 entries: the briefing and the six sections, in the order you should work through them. The lab walkthroughs (`solution.md`) are left out of it on purpose, so you try each lab before you see the answer.
+[`astrona.yaml`](astrona.yaml) lists 157 entries: the introduction and the six sections, in the order you should work through them. The lab walkthroughs (`solution.md`) are left out of it on purpose, so you try each lab before you see the answer.
 
 ---
 
@@ -99,7 +99,7 @@ astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section
 astrona destroy ats-015-playground-010-01
 ```
 
-Playgrounds are **ungraded**. There is no task, no `astrona submit` and no pass or fail, so break things as often as you like. Each playground's `docs/overview.md` says what is in the box, and its `docs/practice.md` has exam-style tasks to try.
+Playgrounds are **ungraded**. There is no task, no `astrona submit` and no pass or fail, so break things as often as you like. Each playground's `docs/overview.md` says what is in the box and ends with exam-style practice tasks.
 
 `astrona destroy` takes the environment **name**, not the folder path. The name is `metadata.name` in the playground's `config.yaml`, and it always follows the form `ats-015-playground-<section>-<module>`.
 

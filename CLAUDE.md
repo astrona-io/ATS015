@@ -142,13 +142,43 @@ Strict guidelines:
     and short message text.
   - Anything longer (cluster names, full hostnames) goes in the sentence under
     the diagram.
+- **Every course starts with an Introduction.** It lives in `sections/intro/`
+  and is the first entry in `astrona.yaml` (`id: module-intro`, title
+  "Introduction"). It has exactly these four pages, in this order:
+  - `README.md`, `# Introduction`: what the introduction covers and its three
+    pages, named in prose (no links), ending with the topic the course starts
+    with.
+  - `course-01-welcome.md`, `# Welcome To The Course`: who the course is for,
+    the exam domain and what the reader can do at the end, the words the
+    course uses, the example app, how the course is laid out and how to read
+    a page.
+  - `course-02-get-your-machine-ready.md`, `# Get Your Machine Ready`: the
+    tools to install, the `astrona` commands used every day, and what to do
+    when a start goes wrong.
+  - `course-03-how-this-course-is-made.md`, `# How This Course Is Made`: how
+    content is written and checked, the maintainers, how to report a mistake,
+    and the license.
+  The Introduction teaches no product content and has no playground, labs or
+  summary. Its only links are the repository's contributors page, issues
+  page and license.
+- **No links to other course files.** A course page (every reading listed in
+  `astrona.yaml`, the playground guide `docs/overview.md`, and a lab's
+  `question.md` and `solution.md`) never links to or points the reader at
+  another page or file of the repository: no links to parts, summaries,
+  labs, `question.md`, other modules, sections or the Introduction, and no
+  "see `practice.md`" or "open `config.yaml`". The platform shows the pages in
+  the order of `astrona.yaml`, so a link only adds a second, often wrong,
+  path. Name a thing in plain words when the reader needs it ("the task is on
+  the next page"), and state a fact on the page itself instead of sending the
+  reader somewhere else. Repository files for authors (the root `README.md`,
+  a lab's or playground's `README.md`) may link.
 - **No links to outside sources.** Course pages, labs and playground docs do
   not link to or point at outside websites (the one exception is the
   `resources` field of a lab entry in `astrona.yaml`) (official docs, GitHub, blogs,
   RFCs), and they have no "Reference" or "Official docs" lists. Everything the
   reader needs is explained on the page itself. Not affected: addresses the
   reader actually uses in a command or browser (`http://127.0.0.1:9080`,
-  `curl https://httpbin.org`), and the Mission Briefing's contributors and
+  `curl https://httpbin.org`), and the Introduction's contributors and
   "report a mistake" links.
 - **Configuration goes to a file first.** Whenever the reader should apply
   YAML (course parts, playground docs, labs), use three separate steps:
@@ -312,11 +342,11 @@ use the Starfleet.
 | --- | --- |
 | Course outline the platform reads: every reading page and lab, in order. Never list `solution.md` here | `astrona.yaml` |
 | Overview, sections table, how to run things | `README.md` |
-| Mission Briefing: course intro, setup, how the course is made, maintainers, how to report mistakes (first in `astrona.yaml`) | `sections/intro/` |
+| Introduction (see "Every course starts with an Introduction") | `sections/intro/` |
 | Section overview and its modules | `sections/section-0N0/README.md` |
 | Module reading: landing page, deep-dive parts, summary | `sections/section-0N0/module-0M/course.md`, `course-0N-*.md` |
 | Graded lab: task, walkthrough, setup, grader | `.../labs/lab-0N/` (`question.md`, `solution.md`, `bootstrap/`, `solution/apply.sh`, `validation/`) |
-| Ungraded sandbox for a module | `.../playground/` (`docs/overview.md` says what is in the box, `docs/practice.md` has exam-style tasks, `examples/` the authors' reference YAML) |
+| Ungraded sandbox for a module | `.../playground/` (`docs/overview.md` is the only learner page: what is in the box, helpers, and a final `## Practice tasks` section; `examples/` holds the authors' reference YAML) |
 | One graded integration lab per section | `sections/section-0N0/capstone/labs/lab-01/` |
 | Merge notes for the new-data import (temporary) | `.astrona/merge-plan.md` |
 

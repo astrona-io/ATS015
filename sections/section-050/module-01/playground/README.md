@@ -35,4 +35,4 @@ path. `astrona submit` and `astrona test` do not apply: there is no grading.
 | `examples/05-one-path-one-network/` | One path open to one network only, and the `ALLOW` mistake |
 | `examples/06-https/` | An HTTPS server on the gateway, to see that a gateway policy covers it too |
 | `docs/overview.md` | What is in the box, helpers, things to try |
-| `docs/practice.md` | Exam-style tasks with solutions |
+| `docs/overview.md` (end) | Exam-style practice tasks with solutions, now part of the guide |

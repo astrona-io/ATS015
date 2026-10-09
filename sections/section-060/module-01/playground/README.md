@@ -30,4 +30,4 @@ path. `astrona submit` and `astrona test` do not apply: there is no grading.
 | `examples/01-l4-policy/` | Identity and namespace rules that ztunnel enforces, plus the mistake case in `cases/` |
 | `examples/02-waypoint-l7/` | The method rule for the waypoint and the waypoint `Gateway`, plus a variant in `cases/` |
 | `docs/overview.md` | What is in the box, things to try |
-| `docs/practice.md` | Two exam-style tasks with solutions |
+| `docs/overview.md` (end) | Exam-style practice tasks with solutions, now part of the guide |

@@ -1,7 +1,5 @@
 # Overview: Authenticate End Users With JWT (Playground)
 
-> Declared in [`../config.yaml`](../config.yaml) under `metadata.docs.guide`.
-
 This is a **playground**, not a lab: a clean environment for practice. It
 starts a fresh cluster, installs Istio and the Starfleet sample app, and then
 waits. There is no task, no `astrona submit` and no pass or fail. Explore,
@@ -80,7 +78,7 @@ happens. The module's parts show the full YAML for every step.
 - Move the token to a query parameter with `fromParams`, and send it in the
   header anyway.
 
-For exam-style practice, see [practice.md](./practice.md).
+Exam-style practice tasks with solutions are at the end of this page.
 
 ## Start over without a new cluster
 
@@ -110,3 +108,140 @@ astrona destroy ats-015-playground-030-01
 ```
 
 (`astrona destroy` takes the environment name, not the configuration path.)
+
+## Practice tasks
+
+Two exam-style tasks for this playground. Start the playground
+first, and paste the helpers from the Helpers section above. The
+solutions use them.
+
+Try each task on your own first, then open the solution. If you already
+applied objects while reading the module, start task 1 from a clean namespace:
+
+```bash
+kubectl delete requestauthentication,authorizationpolicy --all -n starfleet
+```
+
+### Task 1: no token, no entry
+
+> In namespace `starfleet`, check tokens from the issuer
+> `testing@secure.istio.io` on the `probe`. Its keys are at
+> `https://raw.githubusercontent.com/istio/istio/release-1.30/security/tools/jwt/samples/jwks.json`.
+> Requests to the probe with no token must be refused with `403`, requests with
+> a broken token with `401`, and requests with the demo token must get `200`.
+> No other workload may be affected.
+
+<details><summary>Solution</summary>
+
+Two objects, in this order: first the one that checks tokens, then the one
+that requires them. The other order refuses every request, even valid ones.
+
+Save this as `requestauthentication-probe.yaml`:
+
+```yaml
+apiVersion: security.istio.io/v1
+kind: RequestAuthentication
+metadata: {name: probe-jwt, namespace: starfleet}
+spec:
+  selector: {matchLabels: {app: probe}}
+  jwtRules:
+  - issuer: testing@secure.istio.io
+    jwksUri: https://raw.githubusercontent.com/istio/istio/release-1.30/security/tools/jwt/samples/jwks.json
+```
+
+Apply it:
+
+```bash
+kubectl apply -f requestauthentication-probe.yaml
+```
+
+Save this as `authorizationpolicy-probe-require-jwt.yaml`:
+
+```yaml
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata: {name: probe-require-jwt, namespace: starfleet}
+spec:
+  selector: {matchLabels: {app: probe}}
+  action: ALLOW
+  rules:
+  - from:
+    - source: {requestPrincipals: ["*"]}
+```
+
+Apply it:
+
+```bash
+kubectl apply -f authorizationpolicy-probe-require-jwt.yaml
+```
+
+Then check the result, about a minute later:
+
+```bash
+check_status $PROBE/headers
+check_status -H "$AUTH broken" $PROBE/headers
+check_status -H "$AUTH $TOKEN" $PROBE/headers
+check_status http://cargo:9080/details/0
+```
+
+```text
+403 403 403 
+401 401 401 
+200 200 200 
+200 200 200 
+```
+
+The `selector` keeps both objects on the probe, so `cargo` still answers
+without a token.
+
+</details>
+
+### Task 2: one end user only
+
+> Keep the `RequestAuthentication` from task 1. Change the policy so the probe
+> lets in **only** the user whose request principal is
+> `testing@secure.istio.io/testing@secure.istio.io`. Any other valid user, and
+> any request without a token, must be refused.
+
+<details><summary>Solution</summary>
+
+A request principal is the token's `iss` claim, a slash, and its `sub` claim.
+The demo token has `testing@secure.istio.io` in both.
+
+Save this as `authorizationpolicy-probe-require-jwt.yaml`:
+
+```yaml
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata: {name: probe-require-jwt, namespace: starfleet}
+spec:
+  selector: {matchLabels: {app: probe}}
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        requestPrincipals: ["testing@secure.istio.io/testing@secure.istio.io"]
+```
+
+Apply it:
+
+```bash
+kubectl apply -f authorizationpolicy-probe-require-jwt.yaml
+```
+
+Then check the result, about a minute later:
+
+```bash
+check_status -H "$AUTH $TOKEN" $PROBE/headers
+check_status $PROBE/headers
+```
+
+```text
+200 200 200 
+403 403 403 
+```
+
+Compare it with `requestPrincipals: ["*"]` from task 1. The star lets in any
+user with a valid token; the full value lets in one user only.
+
+</details>

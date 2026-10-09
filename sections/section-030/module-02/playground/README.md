@@ -33,4 +33,4 @@ path. `astrona submit` and `astrona test` do not apply: there is no grading.
 | `bootstrap/manifests/` | The YAML `deploy.sh` applies |
 | `examples/03-jwt-claims/` | Claim rules on the probe: require a group, one rule per role, plus the cases in `cases/` (a claim no token has, a public path, a claim name typo) |
 | `docs/overview.md` | What is in the box, helpers, things to try |
-| `docs/practice.md` | Two exam-style tasks with checked solutions |
+| `docs/overview.md` (end) | Exam-style practice tasks with solutions, now part of the guide |

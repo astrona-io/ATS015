@@ -200,7 +200,7 @@ Then start the lab:
 astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-040/module-01/labs/lab-02
 ```
 
-Read the task in [`question.md`](./labs/lab-02/question.md) and solve it on your own first. When you think you are done, send it for grading:
+The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
 
 ```sh
 astrona submit -c sections/section-040/module-01/labs/lab-02

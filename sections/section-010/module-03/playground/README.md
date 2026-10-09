@@ -29,4 +29,4 @@ path. `astrona submit` and `astrona test` do not apply: there is no grading.
 | `bootstrap/manifests/` | The YAML `deploy.sh` applies |
 | `examples/01-migrate-to-strict/` | The migration in order: `PERMISSIVE` written down, then `STRICT`; plus the client-side mistake in `cases/` |
 | `docs/overview.md` | What is in the box, helpers, things to try |
-| `docs/practice.md` | Two exam-style tasks with solutions |
+| `docs/overview.md` (end) | Exam-style practice tasks with solutions, now part of the guide |

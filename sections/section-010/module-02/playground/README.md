@@ -29,4 +29,4 @@ no grading.
 | `bootstrap/manifests/` | The YAML `deploy.sh` applies |
 | `examples/01-mtls/` | `PeerAuthentication` at namespace, workload and mesh scope, a client-side `DestinationRule`, plus the cases in `cases/` |
 | `docs/overview.md` | What is in the box, helpers, things to try |
-| `docs/practice.md` | Exam-style tasks with checked solutions |
+| `docs/overview.md` (end) | Exam-style practice tasks with solutions, now part of the guide |
