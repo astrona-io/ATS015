@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Creates the planet `starfleet` (sidecar injection on), mesh-wide access logs
+# Creates the namespace `starfleet` (sidecar injection on), mesh-wide access logs
 # and the shuttle client. The shuttle calls httpbin.org on the internet, so the
 # lab needs outbound internet access.
 # No ServiceEntry, DestinationRule or VirtualService: writing them is the task.

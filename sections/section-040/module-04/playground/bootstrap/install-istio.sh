@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Install Istio (sidecar mode) into this playground's kind cluster with Helm:
 #   istio-system   istio-base (CRDs) + istiod (control plane)
-# No gateway: the shuttle's own sidecar seals signals to httpbin.org.
+# No gateway: the shuttle's own sidecar originates TLS to httpbin.org.
 # Change the version with:  ISTIO_VERSION=<version> astrona run -c .
 set -euo pipefail
 

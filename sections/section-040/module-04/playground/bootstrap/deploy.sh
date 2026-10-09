@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Deploy what the 040-04 playground needs (runs after install-istio.sh):
 #   - namespace starfleet (sidecar injection) + mesh-wide access logs
-#   - shuttle, the test client that sends every signal to httpbin.org
-# No gateway is needed: the shuttle's own sidecar seals the signal.
+#   - shuttle, the test client that sends every request to httpbin.org
+# No gateway is needed: the shuttle's own sidecar originates TLS.
 # No ServiceEntry, DestinationRule or VirtualService is created: writing them
 # is the module.
 set -euo pipefail

@@ -2,11 +2,11 @@
 estimated_duration: 20m
 ---
 
-# Seal The Signal To An Outside Planet
+# Originate TLS To An External Service
 
-Welcome to your mission, astronaut. The shuttle on the planet `starfleet` sends plain `http://` signals to `httpbin.org`, a planet in another solar system. Today they cross the internet unsealed. Your job is to make the shuttle's sidecar, its communications officer, seal every one of them with TLS on the way out, and check the planet's ID card while it does.
+The `shuttle` pod in the `starfleet` namespace sends plain `http://` requests to `httpbin.org`, a public service outside the cluster. Today they cross the internet unencrypted. Your job is to make the `shuttle` pod's sidecar proxy (Envoy) originate TLS for every one of them on the way out, and check the server's certificate name while it does.
 
-httpbin.org reports the scheme it was reached on, so there is no guessing whether the seal was added. This lab needs **outbound internet access**.
+httpbin.org reports the scheme it was reached on, so there is no guessing whether TLS was used. This lab needs **outbound internet access**.
 
 ## Launching the Lab
 
