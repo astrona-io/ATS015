@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Confirms the gate trusts the right badge office again: the secret
+# Confirms the gateway trusts the right CA again: the secret
 # starfleet-credential-mutual in istio-ingress keeps the server certificate and
-# now carries the fleet's CA (example.com) as ca.crt, the Gateway and the
+# now carries the trusted CA (example.com) as ca.crt, the Gateway and the
 # VirtualService are unchanged, the gateway proxy holds the CA and demands a
-# client certificate, and - the part that matters - live signals through the
-# gate: the partner gets 200, a client without a certificate and the stranger
+# client certificate, and - the part that matters - live requests through the
+# gateway: the partner gets 200, a client without a certificate and the stranger
 # are refused in the handshake.
 
 set -u
@@ -85,7 +85,7 @@ req=$(istioctl proxy-config listener deploy/istio-ingress -n "$GW_NS" -o json 2>
   | grep -c '"requireClientCertificate": true')
 [[ "${req:-0}" -ge 1 ]] || fail "no gateway listener has requireClientCertificate: true. The gate is not asking for a badge"
 
-# --- 4. live signals through the gate ---------------------------------------
+# --- 4. live requests through the gateway ------------------------------------
 kubectl -n "$GW_NS" port-forward svc/istio-ingress "$LOCAL_PORT:443" >/dev/null 2>&1 &
 PF_PID=$!
 sleep 4
