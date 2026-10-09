@@ -1,12 +1,12 @@
 # Troubleshoot A Passthrough Setup
 
-A wrong passthrough setup does not answer with a helpful `404` or `403`. To send either code, the ingress gateway would have to read the request, and it cannot. So every mistake looks the same from outside: the connection simply ends. This part breaks the passthrough setup of `tls-backend` three ways on purpose, so you can tell the causes apart when it happens by accident.
+A wrong passthrough setup does not answer with a helpful `404` or `403`. To send either code, the ingress gateway would have to read the request, and it cannot. So every mistake looks the same from outside: the connection simply ends.
 
-The commands below start from the working setup: the `Gateway` `vault-gateway` and the `VirtualService` `tls-backend` in `starfleet`, saved as `gateway-vault.yaml` and `virtualservice-tls-backend.yaml`.
+That makes passthrough faults hard to tell apart, and the exam likes to hand you exactly such a setup. In this chapter you break the passthrough setup of `tls-backend` three ways on purpose, and look at each failure from the inside. The commands below start from the working setup: the `Gateway` `vault-gateway` and the `VirtualService` `tls-backend` in `starfleet`, saved as `gateway-vault.yaml` and `virtualservice-tls-backend.yaml`.
 
 ## Mistake 1: an `http` block
 
-This is the typical passthrough mistake, because every check short of real traffic says it is fine.
+The first mistake is the typical one, because every check short of real traffic says it is fine. Someone writes the routing rule as an `http` block, out of habit.
 
 ```mermaid
 flowchart TB
@@ -20,9 +20,7 @@ The object is accepted and listed, and `istioctl analyze` says nothing. Only a r
 
 <!-- astrona:playground:renew -->
 
-### Break it
-
-Save this as `virtualservice-tls-backend-http.yaml`. It is the same routing rule, written as an `http` block:
+To see this for yourself, save this as `virtualservice-tls-backend-http.yaml`. It is the same routing rule, written as an `http` block:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -66,7 +64,7 @@ istioctl analyze -n starfleet
 ✔ No validation issues found when analyzing namespace: starfleet.
 ```
 
-`000`: the connection ended during the handshake, and `istioctl analyze` found nothing wrong. Now ask the gateway itself:
+The `000` means the connection ended during the handshake, yet `istioctl analyze` found nothing wrong. The objects give no clue, so ask the gateway itself:
 
 ```sh
 istioctl proxy-config listener deploy/istio-ingress -n istio-ingress --port 443
@@ -90,9 +88,7 @@ virtualservice.networking.istio.io/tls-backend configured
 
 ## Mistake 2: the gateway listens for another host
 
-The `Gateway`'s `hosts` and the `VirtualService`'s `sniHosts` both read the same SNI (Server Name Indication) name. If they disagree, the gateway picks no route for the name the client sends.
-
-### Break it
+The second mistake is a mismatch between the two objects. The `Gateway`'s `hosts` and the `VirtualService`'s `sniHosts` both read the same SNI (Server Name Indication) name. If they disagree, the gateway picks no route for the name the client sends.
 
 Save this as `gateway-vault-typo.yaml`. The host is missing one letter:
 
@@ -156,11 +152,7 @@ gateway.networking.istio.io/vault-gateway configured
 
 ## Mistake 3: no SNI at all
 
-The setup can be perfect and still route nothing if the client sends no SNI name. That happens when you connect to an IP address, or with a client that leaves SNI out.
-
-### Connect by address only
-
-Send one request to `127.0.0.1` with no host name:
+The third mistake is not in the setup at all. The setup can be perfect and still route nothing if the client sends no SNI name. That happens when you connect to an IP address, or with a client that leaves SNI out. Send one request to `127.0.0.1` with no host name:
 
 ```sh
 curl -sk -o /dev/null -w "%{http_code}\n" https://127.0.0.1:8443/
@@ -184,11 +176,11 @@ CONNECTED(00000003)
 no peer certificate available
 ```
 
-Both fail. The gateway closed the connection without a response (`unexpected eof`), and no server showed a certificate (`no peer certificate available`). The ClientHello carries no host name, so the routing rule has no input at all. This is a fault in the test, not in the setup. Always test with `--resolve` or with a real DNS name.
+Both fail. The gateway closed the connection without a response (`unexpected eof`), and no server showed a certificate (`no peer certificate available`). The ClientHello, the client's first message, carries no host name, so the routing rule has no input at all. This is a fault in the test, not in the setup. Always test with `--resolve` or with a real DNS name.
 
 ## Reading the shape of the failure
 
-All three mistakes end the same way, so read the shape of the failure, not just the code:
+All three mistakes end the same way, with a closed connection. So read the shape of the failure, not just the code:
 
 | What you see | Most likely cause | Where to look |
 | --- | --- | --- |
@@ -202,6 +194,8 @@ None of these gives a `404` or a `403`. Either code would need the gateway to re
 > [!TIP]
 > When a passthrough host gives `000`, read the gateway's port 443 listener first: `istioctl proxy-config listener deploy/istio-ingress -n istio-ingress --port 443`. If the SNI name is not in the `MATCH` column (or the listener is not there at all), the gateway cannot route it, whatever the objects look like.
 
+A passthrough mistake never sends an error page: the connection just has nowhere to go. So you now read the gateway's listener, not the status code, and you check your own test command before you change the setup. So far, though, the gateway has served only one host, and only in passthrough. A real gateway usually ends TLS for most hosts and passes only a few through.
+
 ## Common pitfalls
 
 > [!WARNING]
@@ -210,8 +204,6 @@ None of these gives a `404` or a `403`. Either code would need the gateway to re
 > - **Waiting for a `404` or `403`.** A broken passthrough setup ends the connection; it never sends an HTTP code.
 > - **Fixing the setup when the test is wrong.** A request sent to an IP address carries no SNI name and fails with any setup.
 > - **Changing only one side of a host name.** `Gateway` `hosts` and `VirtualService` `sniHosts` must name the same host.
-
-> *A passthrough mistake never sends an error page: the connection just has nowhere to go, so read the gateway's listener, not the status code.*
 
 ## Your mission: Fix A Passthrough Gateway That Routes Nothing
 

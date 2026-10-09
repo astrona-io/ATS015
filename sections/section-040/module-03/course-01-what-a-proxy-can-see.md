@@ -1,16 +1,14 @@
 # What A Proxy Can See
 
-Every passthrough setting in this module follows from one question. A proxy in the middle has no key. How much of an encrypted connection can it still read? The answer is: only the first message, and only parts of it. This part shows what that first message holds, and then looks at `tls-backend`, the workload that keeps its own certificate and key.
+A proxy in the middle of an encrypted connection has no key. How much of that connection can it still read? Every passthrough setting in this module follows from the answer: only the first message, and only parts of it.
+
+This chapter looks at that first message and the one field in it that a gateway can route on. Then it turns to `tls-backend`, the workload that keeps its own certificate and key. You will read its certificate before any gateway setting exists, so that later you can recognise the same certificate when it comes back through the gateway.
 
 ## The handshake, seen from the middle
 
 A TLS (Transport Layer Security) connection starts with a short exchange called the **handshake**. The two ends agree on a secret key, and from then on everything is encrypted. A proxy that sits in the middle without a key sees this exchange from the outside.
 
-### The first message is open
-
-The client speaks first. Its first message is called the **ClientHello**. It is sent before any key exists, so it cannot be encrypted. Anyone on the path can read it.
-
-The ClientHello carries a few fields in the open:
+The client speaks first. Its first message is called the **ClientHello**. It is sent before any key exists, so it cannot be encrypted, and anyone on the path can read it. The ClientHello carries a few fields in the open:
 
 | Field | What it says | Readable without the key? |
 | --- | --- | --- |
@@ -21,9 +19,9 @@ The ClientHello carries a few fields in the open:
 
 SNI is the host name the client sends in clear text, before encryption starts. It is there for a simple reason. One server can host many sites, and it must pick the right certificate **before** it can show one. So the client names the host first, in the open.
 
-### Why SNI is all a passthrough gateway has
+## Why SNI is all a passthrough gateway has
 
-A gateway with no key can read the SNI name, and nothing after the handshake. It sees no method, no path, no header and no status code.
+That open host name is exactly what a passthrough gateway works with. A gateway with no key can read the SNI name, and nothing after the handshake. It sees no method, no path, no header and no status code.
 
 ```mermaid
 flowchart TB
@@ -41,13 +39,11 @@ ALPN is readable too. Istio uses it to tell HTTP/2 from HTTP/1.1, but a `Virtual
 
 ## The backend owns its certificate
 
-In this module the certificate is not yours. `tls-backend` makes its own when its pod starts, and serves HTTPS itself on port `8443`. Look at it before any gateway setting exists. Later, when the same certificate comes back through the gateway, you know nothing in between replaced it.
+If the gateway never decrypts, someone else must show a certificate and finish the handshake. In this module that is `tls-backend`. It makes its own certificate when its pod starts, and serves HTTPS itself on port `8443`. Look at it now, before any gateway setting exists. Later, when the same certificate comes back through the gateway, you will know that nothing in between replaced it.
 
 <!-- astrona:playground:renew -->
 
-### See the backend in your playground
-
-List the pod and the Service of `tls-backend`:
+Start by listing the pod and the Service of `tls-backend`:
 
 ```sh
 kubectl get pods,svc -n starfleet -l app=tls-backend
@@ -63,9 +59,7 @@ service/tls-backend   ClusterIP   10.96.174.179   <none>        8443/TCP   51s
 
 The pod shows `2/2`: the nginx container plus its sidecar proxy. The sidecar proxy is an Envoy container Istio adds to each pod, and all traffic in and out of the pod passes through it. The Service port is named `tls`, so every proxy treats this port as an encrypted stream, not as HTTP.
 
-### Read the certificate on the backend's own disk
-
-Copy the certificate file out of the pod and let `openssl` on your machine read it:
+Next, read the certificate that nginx uses. Copy the file out of the pod and let `openssl` on your machine read it:
 
 ```sh
 kubectl exec -n starfleet deploy/tls-backend -c nginx -- cat /etc/nginx/certs/tls.crt \
@@ -77,13 +71,9 @@ subject=CN=vault.starfleet.example.com, O=vault
 sha256 Fingerprint=8D:AA:16:3B:52:67:DB:24:B8:5B:4E:2E:AA:B1:76:CB:C3:40:76:49:68:C5:F9:3C:ED:C7:33:B6:1B:95:05:B4
 ```
 
-Your fingerprint is different: `tls-backend` makes a new certificate every time its pod starts.
+Your fingerprint is different, because `tls-backend` makes a new certificate every time its pod starts. Write it down. The fingerprint is a checksum of this one certificate. A new certificate with the same name would still get a different fingerprint, so the fingerprint is the real proof of "same certificate".
 
-Write down the fingerprint. It is a checksum of this one certificate. A new certificate with the same name would still get a different fingerprint, so the fingerprint is the real proof of "same certificate".
-
-### Send a request straight to the backend
-
-Now send one request from the `shuttle` pod directly to `tls-backend`, with no gateway on the path. The `-k` option tells `curl` not to check the certificate, because it is self-signed:
+Finally, send one request from the `shuttle` pod directly to `tls-backend`, with no gateway on the path. The `-k` option tells `curl` not to check the certificate, because it is self-signed:
 
 ```sh
 kubectl exec -n starfleet deploy/shuttle -- curl -sk https://tls-backend:8443/
@@ -95,6 +85,8 @@ vault ended TLS itself
 
 The response comes from nginx, inside `tls-backend`. The sidecar proxy of `shuttle` did not decrypt the request on the way: the port is named `tls`, so it forwarded the encrypted stream as it was.
 
+You now know what a proxy without a key can see. The ClientHello is open and everything after it is encrypted, so a gateway without the key can route on the SNI name and on nothing else. You also have the fingerprint of the certificate that `tls-backend` owns. The open question is how to tell the ingress gateway to forward this stream instead of decrypting it.
+
 ## Common pitfalls
 
 > [!WARNING]
@@ -102,5 +94,3 @@ The response comes from nginx, inside `tls-backend`. The sidecar proxy of `shutt
 > - **Expecting the gateway's certificate.** In passthrough the client gets the backend's own certificate, here the one from `tls-backend`.
 > - **Comparing certificates by name only.** Two certificates can carry the same subject. Compare the fingerprint.
 > - **Calling passthrough "more secure".** It moves the work of ending TLS, and the duty to do it well, from the gateway to the backend.
-
-> *The ClientHello is open and everything after it is encrypted, so a gateway without the key can route on SNI and on nothing else.*

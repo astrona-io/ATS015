@@ -1,8 +1,8 @@
 # Termination And Passthrough On One Gateway
 
-A real ingress gateway rarely serves only passthrough hosts. Most hosts are better off when the gateway decrypts the traffic, and only a few must stay encrypted until they reach the backend. This part puts both on the same gateway: `bridge`, which the gateway decrypts with its own certificate, and `tls-backend`, which the gateway passes through. Seeing them side by side makes the cost of passthrough concrete, and leads to one simple question for choosing a mode.
+A real ingress gateway rarely serves only passthrough hosts. Most hosts are better off when the gateway decrypts the traffic, and only a few must stay encrypted until they reach the backend. So you need to know how both modes live side by side, and how to choose between them.
 
-The commands below need the passthrough setup for `tls-backend` applied: the `Gateway` `vault-gateway` and the `VirtualService` `tls-backend` in `starfleet`.
+In this chapter you put both on the same gateway: `bridge`, which the gateway decrypts with its own certificate, and `tls-backend`, which the gateway passes through. Seeing them next to each other makes the cost of passthrough concrete, and leads to one simple question for choosing a mode. The commands below need the passthrough setup for `tls-backend` applied: the `Gateway` `vault-gateway` and the `VirtualService` `tls-backend` in `starfleet`.
 
 ## Give the gateway its own certificate
 
@@ -10,9 +10,7 @@ To end TLS (Transport Layer Security) itself, the gateway needs a certificate an
 
 <!-- astrona:playground:renew -->
 
-### Make a certificate with openssl
-
-Make a self-signed certificate for `starfleet.example.com` on your own machine. `-addext` writes the host name into the certificate's SAN (Subject Alternative Name) field, the name that clients check:
+Start by making a self-signed certificate for `starfleet.example.com` on your own machine. `-addext` writes the host name into the certificate's SAN (Subject Alternative Name) field, the name that clients check:
 
 ```sh
 openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
@@ -23,9 +21,7 @@ openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
 
 `openssl` prints a few lines of dots and plus signs while it makes the key, then `-----`. After that the files `starfleet.key` and `starfleet.crt` are in your current folder.
 
-### Store it in a Secret
-
-Store the certificate and key as a TLS Secret in the gateway's namespace:
+Then store the certificate and key as a TLS Secret in the gateway's namespace:
 
 ```sh
 kubectl create secret tls starfleet-credential -n istio-ingress \
@@ -38,11 +34,7 @@ secret/starfleet-credential created
 
 ## End TLS for `bridge` at the gateway
 
-`bridge` already has a `Gateway`, `starfleet-gateway`, with a plain HTTP server on port `80`. Add a second server on port `443` that ends TLS with the new Secret.
-
-### Add an HTTPS server
-
-Save this as `gateway-starfleet.yaml`:
+With the Secret in place, the gateway can end TLS for `bridge`. `bridge` already has a `Gateway`, `starfleet-gateway`, with a plain HTTP server on port `80`. You add a second server on port `443` that ends TLS with the new Secret. Save this as `gateway-starfleet.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -83,9 +75,7 @@ gateway.networking.istio.io/starfleet-gateway configured
 
 `mode: SIMPLE` means the gateway ends TLS with the certificate named in `credentialName`. The `VirtualService` of `bridge` is already bound to `starfleet-gateway`, so its `http` rule now serves this HTTPS server too. Nothing else needs to change.
 
-### Compare the two hosts
-
-Wait about a minute for the gateway to load its new certificate. Then send one request to each host on the same port, and ask which certificate each one gets:
+Now compare the two hosts. Wait about a minute for the gateway to load its new certificate. Then send one request to each host on the same port, and ask which certificate each one gets:
 
 ```sh
 tls_status starfleet.example.com /productpage
@@ -105,9 +95,7 @@ sha256 Fingerprint=8D:AA:16:3B:52:67:DB:24:B8:5B:4E:2E:AA:B1:76:CB:C3:40:76:49:6
 
 The same gateway, on the same port `443`, returns two different certificates. For `starfleet.example.com` it shows its own (`O=starfleet-gate`), because it ends TLS. For `vault.starfleet.example.com` the client gets the certificate of `tls-backend` (`O=vault`), because the gateway passes the connection through. The gateway picks between the two servers by the SNI (Server Name Indication) name, at connection time.
 
-### Look at the listener and the routes again
-
-Read the gateway's port 443 listener, then its HTTP routes:
+The gateway's own configuration shows the same split. Read its port 443 listener, then its HTTP routes:
 
 ```sh
 istioctl proxy-config listener deploy/istio-ingress -n istio-ingress --port 443
@@ -127,13 +115,11 @@ http.80                                         starfleet.example.com:80      st
                                                 backend                       *                         /healthz/ready*        
 ```
 
-One listener, two rows, picked by SNI. The row for `bridge` leads to an HTTP **route**, because the gateway decrypts and reads those requests, and the route table now holds `bridge` on port `443` too. The row for `tls-backend` leads straight to a **cluster** (a group of backend endpoints in Envoy), and `tls-backend` still has no route.
+There is one listener with two rows, picked by SNI. The row for `bridge` leads to an HTTP **route**, because the gateway decrypts and reads those requests, and the route table now holds `bridge` on port `443` too. The row for `tls-backend` leads straight to a **cluster** (a group of backend endpoints in Envoy), and `tls-backend` still has no route.
 
 ## What passthrough costs
 
-The two hosts above sit side by side, but the gateway can do far less for `tls-backend`. This section lists what goes and what you get in return.
-
-### The two modes next to each other
+The two hosts above sit side by side, but the gateway can do far less for `tls-backend`. The table puts the two modes next to each other:
 
 | | Ended at the gateway (`SIMPLE` or `MUTUAL`) | Passthrough |
 | --- | --- | --- |
@@ -144,9 +130,7 @@ The two hosts above sit side by side, but the gateway can do far less for `tls-b
 | Gateway sees the request | yes | no |
 | Client certificate reaches the backend | only as a header the gateway adds | as the real certificate |
 
-### What the gateway can no longer do
-
-For a passthrough host the gateway cannot:
+Because the gateway never sees the request, every feature that reads it is gone for a passthrough host. For such a host the gateway cannot:
 
 - route on `uri`, `headers`, `method` or `queryParams`;
 - rewrite a path or a host, or redirect HTTP to HTTPS for that host;
@@ -155,15 +139,11 @@ For a passthrough host the gateway cannot:
 - apply retries, timeouts, fault injection or any other `http` rule;
 - apply an `AuthorizationPolicy` rule that checks `methods`, `paths` or other request fields. Rules on the connection still work: source IP blocks and destination ports.
 
-### What you get in return
-
-- The client and the backend share a TLS session that nothing in between can read.
-- The backend shows its own certificate, which is what a client that pins that certificate expects.
-- A backend that checks its clients' certificates gets the **real** certificate, not a summary in a header.
+In return, the client and the backend share a TLS session that nothing in between can read. The backend shows its own certificate, which is what a client that pins that certificate expects. And a backend that checks its clients' certificates gets the **real** certificate, not a summary in a header.
 
 ## Choosing a mode
 
-The choice comes down to one question: **does the backend need the original TLS session?**
+With the costs and the gains in view, the choice comes down to one question: **does the backend need the original TLS session?**
 
 ```mermaid
 flowchart TB
@@ -179,6 +159,8 @@ Ending TLS at the gateway is the better default when nothing forces you otherwis
 
 One related mode has a similar name: **`AUTO_PASSTHROUGH`**. It routes on the SNI name without any `VirtualService`. It exists for gateways between clusters in a multicluster mesh, where the SNI name itself encodes the destination Service. It is not meant for ordinary ingress.
 
+You can now run both modes on one gateway and tell them apart from the certificate the client gets. Passthrough trades every HTTP feature at the gateway for a session no one in the middle can read, and that certificate shows which side of the trade a host is on. The question to ask for every new host stays the same: does its backend need the original TLS session?
+
 ## Common pitfalls
 
 > [!WARNING]
@@ -186,5 +168,3 @@ One related mode has a similar name: **`AUTO_PASSTHROUGH`**. It routes on the SN
 > - **Expecting HTTP features on a passthrough host.** Path routing, header changes, retries, HTTP metrics and request-level authorization are all gone for it.
 > - **Choosing passthrough "to be safe".** It moves the work of ending TLS to the backend. Choose it only when the backend needs the original session.
 > - **Mixing up `PASSTHROUGH` and `AUTO_PASSTHROUGH`.** Ingress uses `PASSTHROUGH` with a `VirtualService`. `AUTO_PASSTHROUGH` is for gateways between clusters.
-
-> *Passthrough trades every HTTP feature at the gateway for a session no one in the middle can read, and the certificate the client gets shows which side of that trade a host is on.*

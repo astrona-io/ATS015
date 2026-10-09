@@ -1,16 +1,14 @@
 # Prove Where TLS Ends
 
-A `200` looks the same whether the ingress gateway decrypted the traffic or passed it through. So a `200` alone proves nothing about the mode. This part collects three kinds of evidence: the certificate the client gets, the gateway's own listener, and what is missing from the gateway's route table and access log.
+A `200` looks the same whether the ingress gateway decrypted the traffic or passed it through. So a `200` alone proves nothing about the mode. On the exam, and in real work, you need proof that the backend itself ended TLS (Transport Layer Security), and that nothing in between could read the stream.
 
-The commands below need the passthrough setup for `tls-backend` applied: the `Gateway` `vault-gateway` and the `VirtualService` `tls-backend` in `starfleet`.
+This chapter collects three kinds of evidence, each from a different place. The client shows which certificate it got. The gateway's own configuration shows how it handles the port. And the gateway's route table and access log show what is missing. The commands below need the passthrough setup for `tls-backend` applied: the `Gateway` `vault-gateway` and the `VirtualService` `tls-backend` in `starfleet`.
 
-## Evidence 1: whose certificate answered
+## Whose certificate answered
 
-In passthrough, the backend at the end finishes the TLS (Transport Layer Security) handshake, so the client gets the **backend's** certificate. If the gateway had ended TLS, the client would get the gateway's certificate instead.
+The strongest evidence comes from the client side. In passthrough, the backend at the end finishes the TLS handshake, so the client gets the **backend's** certificate. If the gateway had ended TLS, the client would get the gateway's certificate instead.
 
 <!-- astrona:playground:renew -->
-
-### Read the certificate through the gateway
 
 Ask the gateway for the certificate it returns for the SNI (Server Name Indication) name of `tls-backend`:
 
@@ -23,15 +21,11 @@ subject=CN=vault.starfleet.example.com, O=vault
 sha256 Fingerprint=8D:AA:16:3B:52:67:DB:24:B8:5B:4E:2E:AA:B1:76:CB:C3:40:76:49:68:C5:F9:3C:ED:C7:33:B6:1B:95:05:B4
 ```
 
-Compare the fingerprint with the one you read from the disk of `tls-backend`, with no gateway on the path. They are the same. `tls-backend` made the certificate when its pod started, and nothing in between replaced it or signed a new one. That is what "end to end" means in practice.
+This is the same fingerprint as the certificate file on the disk of `tls-backend`, `/etc/nginx/certs/tls.crt`, which nginx inside that pod uses. `tls-backend` made the certificate when its pod started, and nothing in between replaced it or signed a new one. That is what "end to end" means in practice.
 
-## Evidence 2: what the gateway's listener holds
+## What the gateway's listener holds
 
-The same fact shows up inside the gateway. The gateway is an Envoy proxy, so `istioctl proxy-config` reads the configuration that `istiod`, Istio's control plane, sent to it. A listener is the part of Envoy that accepts connections on one port and decides where they go.
-
-### Read the port 443 listener
-
-Ask the gateway for its listener on port `443`:
+The same fact shows up inside the gateway. The gateway is an Envoy proxy, so `istioctl proxy-config` can read the configuration that `istiod`, Istio's control plane, sent to it. A listener is the part of Envoy that accepts connections on one port and decides where they go. Ask the gateway for its listener on port `443`:
 
 ```sh
 istioctl proxy-config listener deploy/istio-ingress -n istio-ingress --port 443
@@ -42,15 +36,11 @@ ADDRESSES PORT MATCH                            DESTINATION
 0.0.0.0   443  SNI: vault.starfleet.example.com Cluster: outbound|8443||tls-backend.starfleet.svc.cluster.local
 ```
 
-The `MATCH` column shows your `sniHosts` turned into a match on the SNI name. The `DESTINATION` is a cluster, not a route. In Envoy a cluster is a group of backend endpoints, here the `tls-backend` Service on port `8443`. A server that ended TLS would show an HTTP route here instead. The TLS inspector reads the SNI name, and the gateway sends the stream straight to that cluster.
+The `MATCH` column shows your `sniHosts` turned into a match on the SNI name. The `DESTINATION` is a cluster, not a route. In Envoy a cluster is a group of backend endpoints, here the `tls-backend` Service on port `8443`. A server that ended TLS would show an HTTP route here instead. So the TLS inspector reads the SNI name, and the gateway sends the stream straight to that cluster.
 
-## Evidence 3: what is missing
+## What is missing
 
-The last proof is an absence. A gateway that ends TLS builds an HTTP route for each host. A passthrough server builds none, because there is no HTTP to route.
-
-### Look for an HTTP route that is not there
-
-List the gateway's HTTP routes:
+The last proof is an absence. A gateway that ends TLS builds an HTTP route for each host. A passthrough server builds none, because there is no HTTP to route. List the gateway's HTTP routes:
 
 ```sh
 istioctl proxy-config routes deploy/istio-ingress -n istio-ingress
@@ -66,9 +56,7 @@ http.80     starfleet.example.com:80     starfleet.example.com     /static*     
 
 You see the routes of `bridge` on port `80`, because the gateway reads those plain HTTP requests. The two `backend` rows are the gateway's own health and metrics pages. You see nothing for `vault.starfleet.example.com`. Here a missing route is not a fault to fix: it is the mode working.
 
-### Read the gateway's access log
-
-Send one request to `tls-backend`:
+The gateway's access log tells the same story from the traffic side. Send one request to `tls-backend`:
 
 ```sh
 tls_status vault.starfleet.example.com
@@ -88,9 +76,9 @@ kubectl logs -n istio-ingress deploy/istio-ingress --tail=1
 [2026-10-09T10:27:00.681Z] "- - -" 0 - - - "-" 542 2221 12 - "-" "-" "-" "-" "10.244.0.14:8443" outbound|8443||tls-backend.starfleet.svc.cluster.local 10.244.0.6:42530 127.0.0.1:443 127.0.0.1:50748 vault.starfleet.example.com -
 ```
 
-Where an HTTP line shows the method, the path and the protocol, this one shows `"- - -"`. The status code is `0`. The gateway never saw any of them. The line still shows the bytes moved (`542` in, `2221` out), the `tls-backend` pod it reached (`10.244.0.14:8443`), the cluster it chose and, near the end, the SNI name it routed on. This is the log line of a gateway that passed the connection through.
+Where an HTTP line shows the method, the path and the protocol, this one shows `"- - -"`, and the status code is `0`. The gateway never saw any of them. The line still shows the bytes moved (`542` in, `2221` out), the `tls-backend` pod it reached (`10.244.0.14:8443`), the cluster it chose and, near the end, the SNI name it routed on. This is the log line of a gateway that passed the connection through.
 
-Together, the three pieces of evidence leave no other explanation. The certificate says `tls-backend` ended TLS. The listener and the missing route say the gateway never tried.
+Together, the three pieces of evidence leave no other explanation. The certificate the client gets says `tls-backend` ended TLS. The gateway's listener and its missing HTTP route say the gateway never tried. You can now set up passthrough and prove it. What you have not seen yet is how a passthrough setup looks when it is wrong.
 
 ## Common pitfalls
 
@@ -99,8 +87,6 @@ Together, the three pieces of evidence leave no other explanation. The certifica
 > - **"Fixing" the missing HTTP route.** For a passthrough host, no HTTP route is correct.
 > - **Comparing only the subject line.** A gateway certificate can carry the same name. The fingerprint tells two certificates apart.
 > - **Expecting a status code in the gateway's access log.** For passthrough traffic the gateway logs a connection, not a request.
-
-> *The client's certificate says who ended TLS; the gateway's listener and its missing HTTP route say the gateway never tried.*
 
 ## Your mission: Route An Encrypted Stream By SNI
 
