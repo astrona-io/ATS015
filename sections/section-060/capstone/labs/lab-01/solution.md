@@ -1,12 +1,12 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. The rule reads the letter (method and path), so a relay tower cannot enforce it. You write the rule for the waypoint, build the waypoint, and send the traffic through it. Until the last step, the rule exists and does nothing.
+The rule reads the HTTP request (method and path), so ztunnel cannot enforce it. You write the rule for the waypoint, deploy the waypoint, and send the traffic through it. Until the last step, the rule exists and does nothing.
 
 ---
 
 ## Step 1: Confirm the starting point
 
-Ask the relay towers which ships they carry, and look for a waypoint:
+Ask ztunnel which workloads it handles, and look for a waypoint:
 
 ```sh
 istioctl ztunnel-config workload --namespace ambient-authz
@@ -15,7 +15,7 @@ kubectl -n ambient-authz get gateway
 
 <!-- OUTPUT PENDING: workload table with PROTOCOL HBONE and WAYPOINT None for each pod; then "No resources found in ambient-authz namespace." -->
 
-`HBONE` on each workload means a relay tower carries its traffic through the sealed tunnel and does the handshake for it. `None` in the waypoint column and no `Gateway` mean there is nobody yet who can read a signal's contents.
+`HBONE` on each workload means ztunnel carries its traffic through an encrypted mTLS tunnel and does mTLS for it. `None` in the waypoint column and no `Gateway` mean that no proxy can read HTTP yet.
 
 ---
 
@@ -61,11 +61,11 @@ kubectl -n ambient-authz exec deploy/tester -- \
 
 <!-- OUTPUT PENDING: expect "GET (should be blocked): 200" (no waypoint yet, so nothing enforces the rule) -->
 
-Accepted, listed, and ignored. `targetRefs` points the rule at the waypoint in front of `notification-service`, and there is no waypoint yet. The relay tower cannot see that this was a `GET`. This is the ambient trap.
+Accepted, listed, and ignored. `targetRefs` points the rule at the waypoint in front of `notification-service`, and there is no waypoint yet. ztunnel cannot see that this was a `GET`. This is the ambient trap.
 
 ---
 
-## Step 3: Build the waypoint and send traffic through it
+## Step 3: Deploy the waypoint and send traffic through it
 
 ```sh
 istioctl waypoint apply -n ambient-authz --enroll-namespace --wait
@@ -92,7 +92,7 @@ kubectl -n ambient-authz exec deploy/tester -- sh -c \
 
 <!-- OUTPUT PENDING: expect other POST /notify 403, tester POST /notify 200, tester GET /notify 403, tester POST /admin 403 -->
 
-Every refusal is a `403` from the waypoint. It reads both the ID badge (`other-client` has the wrong one) and the letter (`GET` and `/admin` are not allowed).
+Every refusal is a `403` from the waypoint. It checks both the caller's identity (`other-client` has the wrong one) and the HTTP request (`GET` and `/admin` are not allowed).
 
 ---
 
@@ -105,9 +105,9 @@ istioctl proxy-config listener deploy/waypoint -n ambient-authz -o json | grep -
 
 <!-- OUTPUT PENDING: ztunnel policy list (expect no entry for notification-l7); then RBAC filter lines from the waypoint listener -->
 
-The relay towers do not hold `notification-l7`. The waypoint does. A policy that shows up in `kubectl get` but in neither place is a policy that nothing enforces.
+The ztunnel proxies do not hold `notification-l7`. The waypoint does. A policy that shows up in `kubectl get` but in neither place is a policy that nothing enforces.
 
-You did not write a second rule with a label `selector` for the relay towers. With the waypoint in the path, the notification pod sees signals arriving from the waypoint, with the waypoint's ID badge. A selector rule that names `tester-sa` would refuse the waypoint itself, and nobody would get through.
+You did not write a second rule with a label `selector` for ztunnel. With the waypoint in the path, the notification pod sees requests arriving from the waypoint, with the waypoint's identity. A selector rule that names `tester-sa` would refuse the waypoint itself, and nobody would get through.
 
 Now submit:
 
@@ -122,5 +122,5 @@ astrona submit -c sections/section-060/capstone/labs/lab-01
 - **`GET` returns `200`.** There is no waypoint, it was never enrolled, or the policy uses a `selector` instead of `targetRefs`.
 - **`other-client` gets `000`.** Its connection was dropped before any HTTP answer, so the waypoint is not in the path, or an extra rule refuses connections.
 - **Every call fails, even `tester POST /notify`.** A selector rule on the notification pod is refusing the waypoint's own identity. Delete it.
-- **Waypoint created but not enrolled.** Creating the station and sending traffic through it are two steps. Check for the `istio.io/use-waypoint` label.
+- **Waypoint created but not enrolled.** Creating the waypoint and sending traffic through it are two steps. Check for the `istio.io/use-waypoint` label.
 - **Using `istioctl proxy-config` on an application pod.** In ambient mode there is no sidecar there. Use `istioctl ztunnel-config`, or `proxy-config` on the waypoint.

@@ -4,7 +4,7 @@ estimated_duration: 45m
 
 # Capstone: Terminate And Pass Through TLS On One Gateway
 
-Astronaut, this is your Section 040 capstone mission. Two services share one arrival gate on port 443, and they want opposite things. For one, the gate opens the sealed signal and routes it by path. For the other, the gate must forward the sealed signal unopened. You also send plain-text visitors to the secure door.
+This is the Section 040 capstone lab. Two services share one ingress gateway on port 443, and they need opposite things. For one, the gateway terminates TLS and routes the request by path. For the other, the gateway must pass the encrypted connection through without decrypting it. You also redirect plain HTTP requests to HTTPS.
 
 There is no walkthrough until you have tried it. Work from the task.
 

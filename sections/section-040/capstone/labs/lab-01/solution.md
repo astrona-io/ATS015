@@ -1,12 +1,12 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. One arrival gate, three listeners. Two listeners share port `443`, and the gate picks between them by the address on the sealed envelope (SNI). One opens the signal with your badge and key. The other forwards it unopened.
+One ingress gateway, three listeners. Two listeners share port `443`, and the gateway picks between them by the hostname in the SNI (Server Name Indication). One decrypts the connection with your certificate and key. The other forwards it still encrypted.
 
 ---
 
-## Step 1: The gate's badge, for the terminated hostname only
+## Step 1: The gateway certificate, for the terminated hostname only
 
-The gate reads its badge and key from a Secret in its own namespace, `istio-system`. Create it from the files the setup left in `/tmp`:
+The gateway reads its certificate and key from a Secret in its own namespace, `istio-system`. Create it from the files the setup left in `/tmp`:
 
 ```sh
 kubectl -n istio-system create secret tls booking-credential \
@@ -15,7 +15,7 @@ kubectl -n istio-system create secret tls booking-credential \
 
 <!-- OUTPUT PENDING: expect "secret/booking-credential created" -->
 
-The passthrough hostname gets no Secret. The gate never opens those signals, so it has nothing to present.
+The passthrough hostname gets no Secret. The gateway never decrypts that traffic, so it has no certificate to present.
 
 ---
 
@@ -66,15 +66,15 @@ Apply it:
 kubectl apply -f gateway-edge-gateway.yaml
 ```
 
-Two listeners share port `443`, told apart by `hosts`. The gate reads the SNI from the first message of the TLS handshake, before anything is opened. That is why the mode is chosen per listener, not per gateway.
+Two listeners share port `443`, told apart by `hosts`. The gateway reads the SNI from the first message of the TLS handshake, before anything is decrypted. That is why the mode is chosen per listener, not per gateway.
 
-`protocol: HTTPS` means "open it and treat the contents as HTTP". `protocol: TLS` means "a sealed stream", with no promise about what is inside.
+`protocol: HTTPS` means "decrypt it and treat the contents as HTTP". `protocol: TLS` means "an encrypted stream", with no promise about what is inside.
 
 ---
 
-## Step 3: Two flight plans
+## Step 3: Two VirtualServices
 
-The terminated hostname uses an `http` block, because the gate can see a method and a path.
+The terminated hostname uses an `http` block, because the gateway can see a method and a path.
 
 Save this as `virtualservice-booking.yaml`:
 
@@ -106,7 +106,7 @@ Apply it:
 kubectl apply -f virtualservice-booking.yaml
 ```
 
-The passthrough hostname uses a `tls` block on `sniHosts`, because the envelope address is the only thing the gate can read.
+The passthrough hostname uses a `tls` block on `sniHosts`, because the SNI hostname is the only thing the gateway can read.
 
 Save this as `virtualservice-passthrough.yaml`:
 
@@ -145,7 +145,7 @@ An `http` block on the passthrough hostname would apply without an error and rou
 
 ## Step 4: Prove each hostname separately
 
-Open two port-forwards to the gate, then call each hostname. `--resolve` makes `curl` send the right SNI to `127.0.0.1`:
+Open two port-forwards to the gateway, then call each hostname. `--resolve` makes `curl` send the right SNI to `127.0.0.1`:
 
 ```sh
 kubectl -n istio-system port-forward svc/istio-ingressgateway 8443:443 >/dev/null 2>&1 &
@@ -167,7 +167,7 @@ curl -s -o /dev/null -w 'http: %{http_code}\n' -H "Host: booking.ica.local" http
 http: 301
 ```
 
-`O=ica` on one hostname and `O=backend` on the other tells the whole story. The gate showed your badge for one hostname and never held a key for the other. A `200` alone proves nothing here: it looks the same in both modes.
+`O=ica` on one hostname and `O=backend` on the other tells the whole story. The gateway presented your certificate for one hostname and never held a key for the other. A `200` alone proves nothing here: it looks the same in both modes.
 
 Stop the port-forwards with `kill %1 %2`.
 
@@ -181,8 +181,8 @@ astrona submit -c sections/section-040/capstone/labs/lab-01
 
 ## Common Mistakes
 
-- **The Secret is in `tls-demo`.** The gate reads credentials from its own namespace, `istio-system`. The handshake for `booking.ica.local` then fails.
+- **The Secret is in `tls-demo`.** The gateway reads credentials from its own namespace, `istio-system`. The handshake for `booking.ica.local` then fails.
 - **`secure.ica.local` gets the `CN=booking.ica.local` certificate.** SNI matched the wrong listener. Check the `hosts` on each `servers` entry.
 - **`secure.ica.local` does not connect.** Most often an `http` block in its `VirtualService`, or `protocol: HTTPS` on its listener.
 - **`booking.ica.local` returns `404`.** TLS works, but its `VirtualService` does not route: check `gateways` and the `/book` prefix.
-- **Testing without `--resolve`.** Without the hostname in the request, `curl` sends no matching SNI and the gate cannot pick a listener.
+- **Testing without `--resolve`.** Without the hostname in the request, `curl` sends no matching SNI and the gateway cannot pick a listener.

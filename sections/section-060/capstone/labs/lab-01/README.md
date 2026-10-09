@@ -4,7 +4,7 @@ estimated_duration: 40m
 
 # Capstone: Enforce Request Rules Through A Waypoint
 
-Astronaut, this is your Section 060 capstone mission. The planet runs in ambient mode: ships fly without their own communications officer, and shared relay towers carry their signals. Relay towers cannot read a signal's contents, so a rule about methods and paths needs a checkpoint station that can. You build that station, send the traffic through it, and attach the rule to it.
+This is the Section 060 capstone lab. The namespace runs in ambient mode: pods have no sidecar proxy, and a shared per-node proxy called ztunnel carries their traffic. ztunnel cannot read HTTP, so a rule about methods and paths needs a waypoint proxy that can. You deploy the waypoint, send the traffic through it, and attach the rule to it.
 
 There is no walkthrough until you have tried it. Work from the task.
 

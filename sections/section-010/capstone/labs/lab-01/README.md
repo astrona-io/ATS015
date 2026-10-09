@@ -4,9 +4,9 @@ estimated_duration: 45m
 
 # Capstone: Turn On Mesh-Wide mTLS Without Stranding A Caller
 
-Astronaut, this is your Section 010 capstone mission. It joins ID badges, handshakes and badge checks into one job. You make the secret handshake (mutual TLS) required for the whole fleet, bring one old ship without a badge into the mesh first, and let only one named ship reach the notification service.
+This is the Section 010 capstone lab. It joins workload identity, mutual TLS (mTLS) and identity-based authorization into one task. You require mTLS for the whole mesh, first bring one client without a sidecar into the mesh, and let only one service account call the notification service.
 
-The order matters. Turn on the handshake too early, and the old ship loses contact. There is no walkthrough until you have tried it. Work from the task.
+The order matters. If you require mTLS too early, the client without a sidecar can no longer connect. There is no walkthrough until you have tried it. Work from the task.
 
 ## Launching the Lab
 

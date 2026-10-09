@@ -6,19 +6,19 @@ estimated_duration: 45m
 
 Solve this question on: `terminal`
 
-Astronaut, two services are moving behind the same spaceport arrival gate, on the same port, and they want opposite things. The booking service is a normal public HTTPS service: you hold its certificate, and the gate should open each signal so it can route by path. The other team refuses to hand over their key: nothing in the middle may open their signals. Both must work on port `443` at the same time.
+Two services are moving behind the same ingress gateway, on the same port, and they need opposite things. The booking service is a normal public HTTPS service: you hold its certificate, and the gateway should decrypt each request so it can route by path. The other team refuses to hand over their key: nothing in the middle may decrypt their traffic. Both must work on port `443` at the same time.
 
 A few words before you start:
 
-* The **ingress gateway** is the spaceport arrival gate: the one door signals from outside the solar system come through. A **`Gateway`** object tells it which ports and hostnames to open.
-* **TLS termination** (`tls.mode: SIMPLE`) means the gate opens the sealed signal, checks it, and sends it on inside. It needs its own badge and key, kept in a Kubernetes Secret (the **gateway credential**, named in `credentialName`).
-* **TLS passthrough** (`tls.mode: PASSTHROUGH`) means the gate forwards the sealed signal unopened. Only the destination ship can open it.
-* **SNI** (Server Name Indication) is the address written on the outside of the sealed envelope. The gate reads it to pick a listener before anything is opened.
-* A **`VirtualService`** is the flight plan: it says where a signal goes once it is through the gate.
+* The **ingress gateway** is an Envoy proxy at the edge of the mesh that accepts traffic from outside the cluster. A **`Gateway`** object tells it which ports and hostnames to listen on.
+* **TLS termination** (`tls.mode: SIMPLE`) means the gateway decrypts the connection and sends the request on inside. It needs its own certificate and key, kept in a Kubernetes Secret (the **gateway credential**, named in `credentialName`).
+* **TLS passthrough** (`tls.mode: PASSTHROUGH`) means the gateway forwards the encrypted connection without decrypting it. Only the destination workload can decrypt it.
+* **SNI** (Server Name Indication) is the hostname the client sends, unencrypted, at the start of the TLS handshake. The gateway reads it to pick a listener before anything is decrypted.
+* A **`VirtualService`** holds routing rules: it says where a request goes once it has passed the gateway.
 
 ## What is in the cluster
 
-The cluster runs Istio 1.30.5, installed with the `demo` profile, with its ingress gateway in `istio-system`. The planet `tls-demo` has sidecar injection on and runs:
+The cluster runs Istio 1.30.5, installed with the `demo` profile, with its ingress gateway in `istio-system`. The namespace `tls-demo` has sidecar injection on and runs:
 
 | Workload | Serves |
 | --- | --- |
@@ -42,7 +42,7 @@ No `Gateway`, no `VirtualService` and no TLS secret exist yet.
 Build **one** `Gateway` named **`edge-gateway`** in `tls-demo` that serves two hostnames in two different modes, plus a redirect:
 
 1. **`booking.ica.local`, terminated.** HTTPS on port `443`, using a credential named **`booking-credential`**. Route `/book` to `booking-service` on port `80`.
-2. **`secure.ica.local`, passthrough.** Port `443`, not opened at the gate, routed to `tls-backend` on port `8443`. `tls-backend` must stay the end that opens the signal. Do not create a credential for this hostname.
+2. **`secure.ica.local`, passthrough.** Port `443`, not decrypted at the gateway, routed to `tls-backend` on port `8443`. `tls-backend` must stay the end that decrypts the traffic. Do not create a credential for this hostname.
 3. **Port `80`** for `booking.ica.local` redirects to HTTPS instead of serving the page.
 
 The result must be:
