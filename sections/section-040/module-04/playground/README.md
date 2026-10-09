@@ -28,4 +28,4 @@ path. `astrona submit` and `astrona test` do not apply: there is no grading.
 | `bootstrap/manifests/` | The YAML `deploy.sh` applies |
 | `examples/01-egress-tls-origination/` | The `ServiceEntry` and `DestinationRule` for TLS origination to `httpbin.org`, plus the cases in `cases/` |
 | `docs/overview.md` | What is in the box, helpers, things to try |
-| `docs/practice.md` | An exam-style task with a checked solution |
+| `docs/overview.md` (end) | Exam-style practice tasks with solutions, now part of the guide |

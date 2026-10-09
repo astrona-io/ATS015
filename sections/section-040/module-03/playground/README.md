@@ -29,4 +29,4 @@ path. `astrona submit` and `astrona test` do not apply: there is no grading.
 | `examples/` | The module's numbered YAML (`01-…`, `02-…`, `03-…`) |
 | `examples/cases/` | The YAML for each mistake case in the overview |
 | `docs/overview.md` | What is in the box, the helpers, things to try |
-| `docs/practice.md` | An exam-style task with a solution |
+| `docs/overview.md` (end) | Exam-style practice tasks with solutions, now part of the guide |

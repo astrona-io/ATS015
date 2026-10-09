@@ -30,4 +30,4 @@ no grading.
 | `bootstrap/manifests/` | The YAML `deploy.sh` applies; every workload has its own service account except `fortio` and the `drifter` |
 | `examples/01-identity/` | Identity-based `AuthorizationPolicy` examples for `probe` and `cargo`, plus the `spiffe://` mistake in `cases/` |
 | `docs/overview.md` | What is in the box, helpers, things to try |
-| `docs/practice.md` | Two exam-style tasks with checked solutions |
+| `docs/overview.md` (end) | Exam-style practice tasks with solutions, now part of the guide |
