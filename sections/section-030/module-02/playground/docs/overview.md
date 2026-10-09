@@ -2,7 +2,7 @@
 
 > Declared in [`../config.yaml`](../config.yaml) under `metadata.docs.guide`.
 
-This is a **playground**, not a lab: your training solar system, astronaut. It
+This is a **playground**, not a lab: a cluster of your own to explore. It
 starts a fresh cluster, installs Istio and the Starfleet, and then waits. There
 is no task, no `astrona submit` and no pass or fail. Explore, break things,
 `astrona destroy`, start over.
@@ -11,22 +11,23 @@ is no task, no `astrona submit` and no pass or fail. Explore, break things,
 
 - A single-node `kind` Kubernetes cluster. `kubectl` is already pointed at it.
 - **Istio 1.30.5**, installed with Helm (`istio-base` and `istiod` only, no
-  gateways). `istiod` is mission control: it sends every proxy its orders.
-- Mesh-wide **access logs**, so every proxy writes one line per request. This
-  is the ship's flight log, and you read it with
+  gateways). `istiod` is the control plane: it sends configuration and
+  certificates to every proxy.
+- Mesh-wide **access logs**, so every proxy writes one line per request. You read
+  the access log with
   `kubectl logs -n starfleet deploy/probe-v1 -c istio-proxy`.
-- Namespace **`starfleet`** (the planet you work on), labelled
+- Namespace **`starfleet`** (the namespace you work in), labelled
   `istio-injection=enabled`, with:
   - **The Starfleet** (the Istio docs' Bookinfo sample with space names):
     `bridge`, `cargo`, `scout` v1 to v3 and `navcom`. This module does not use
-    them; they are there so the planet looks like the other playgrounds.
-  - **`shuttle`**, your client pod inside the mesh. You send every test signal
+    them; they are there so the namespace looks like the other playgrounds.
+  - **`shuttle`**, your client pod inside the mesh. You send every test request
     from it with the `curl` command.
   - **`probe`** v1 and v2 behind one Service on port `8000`. It echoes what
     it receives. `/headers`, `/get` and `/anything/...` all answer `200`, so
     any other status comes from the mesh, not from the probe.
-- Every pod (spaceship) shows `2/2`: the app plus its `istio-proxy` sidecar,
-  the communications officer that every signal in or out goes through.
+- Every pod shows `2/2`: the app plus its `istio-proxy` sidecar, the Envoy
+  proxy that every inbound and outbound request goes through.
 - A **`RequestAuthentication`** named `probe-jwt` on the probe, for Istio's
   sample issuer `testing@secure.istio.io`. It is a precondition: tokens are
   checked, but none is required yet.
@@ -38,7 +39,7 @@ from GitHub, and you download the sample tokens from there too.
 ## Helpers
 
 Paste this once in each new terminal. It downloads Istio's two sample tokens
-and defines `check_status`, which sends 3 signals from the shuttle and prints
+and defines `check_status`, which sends 3 requests from the `shuttle` pod and prints
 each status code. Any `curl` options you give it are passed on.
 
 ```sh

@@ -1,6 +1,6 @@
 # TLS Passthrough Instead Of Termination (PLAYGROUND) — Playground environment
 # A clean sandbox: it spins up, installs Istio, the ingress gateway, the Starfleet
-# and the vault (tls-backend), then stays running for free exploration.
+# and tls-backend, then stays running for free exploration.
 # No task, no grading, no `astrona submit`.
 #   astrona run -c .                          new kind cluster "astro-ats-015-playground-040-03"
 #   astrona destroy ats-015-playground-040-03 delete the cluster again
@@ -35,7 +35,7 @@ bootstrap:
       type: "file"
       source: "bootstrap/install-istio.sh"
     - name: "deploy"
-      description: "Namespace starfleet, access logs, the Starfleet (bridge, cargo, scout v1-v3, navcom), shuttle, the vault (tls-backend, its own certificate) and the bridge behind the gate over HTTP"
+      description: "Namespace starfleet, access logs, the Starfleet (bridge, cargo, scout v1-v3, navcom), shuttle, tls-backend (its own certificate) and the bridge behind the gateway over HTTP"
       type: "file"
       source: "bootstrap/deploy.sh"
 

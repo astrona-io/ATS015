@@ -4,10 +4,9 @@
 - **Author:** Paris Nakita Kejser
 - **Type:** Astrona playground — clean environment, no task, no grading
 
-A training solar system in the simulator: it starts a `kind` cluster with Istio, an ingress gateway,
-the Starfleet (the Istio docs' Bookinfo sample, renamed) and the vault (`tls-backend`, a ship that
-ends TLS itself with its own certificate), then waits for you, astronaut. Use it alongside the
-module's parts. Nothing to submit.
+It starts a `kind` cluster with Istio, an ingress gateway, the Starfleet (the Istio docs' Bookinfo
+sample, renamed) and `tls-backend` (an nginx server that ends TLS itself with its own certificate),
+then waits for you. Use it alongside the module's parts. Nothing to submit.
 
 ## Run it
 
@@ -25,7 +24,7 @@ path. `astrona submit` and `astrona test` do not apply: there is no grading.
 | --- | --- |
 | `config.yaml` | Environment definition: kind runtime, port forwards to the gateway's ports `80` (`127.0.0.1:8080`) and `443` (`127.0.0.1:8443`), the two bootstrap scripts |
 | `bootstrap/install-istio.sh` | Installs Istio 1.30.5 with Helm: `istio-base` and `istiod` in `istio-system`, the ingress gateway in `istio-ingress` |
-| `bootstrap/deploy.sh` | Namespace `starfleet` with injection, access logs, the Starfleet, the `shuttle` client, the vault (`tls-backend`), and the bridge behind the gate over HTTP |
+| `bootstrap/deploy.sh` | Namespace `starfleet` with injection, access logs, the Starfleet, the `shuttle` client, `tls-backend`, and the bridge behind the gateway over HTTP |
 | `bootstrap/manifests/` | The YAML `deploy.sh` applies |
 | `examples/` | The module's numbered YAML (`01-…`, `02-…`, `03-…`) |
 | `examples/cases/` | The YAML for each mistake case in the overview |

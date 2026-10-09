@@ -2,7 +2,7 @@
 
 > Declared in [`../config.yaml`](../config.yaml) under `metadata.docs.guide`.
 
-This is a **playground**, not a lab: your training solar system, astronaut. It
+This is a **playground**, not a lab. It
 starts a fresh cluster, installs Istio and the shuttle, and then waits. There
 is no task, no `astrona submit` and no pass or fail. Explore, break things,
 `astrona destroy`, start over.
@@ -11,17 +11,18 @@ is no task, no `astrona submit` and no pass or fail. Explore, break things,
 
 - A single-node `kind` Kubernetes cluster. `kubectl` is already pointed at it.
 - **Istio 1.30.5**, installed with Helm (`istio-base` and `istiod` only, no
-  gateways). `istiod` is mission control: it sends every proxy its orders.
-- The mesh at its **`ALLOW_ANY`** default, so ships may signal any outside
-  planet. This module is about **who seals** the signal, not about whether it
-  may leave.
-- Mesh-wide **access logs**, so every proxy writes one line per signal. This
-  is the ship's flight log, and you read it with
+  gateways). `istiod` is Istio's control plane: it sends configuration to
+  every proxy.
+- The mesh at its **`ALLOW_ANY`** default, so pods may send requests to any
+  outside host. This module is about **who starts TLS** for the request, not
+  about whether it may leave.
+- Mesh-wide **access logs**, so every proxy writes one line per request. You
+  read the `shuttle` pod's access log with
   `kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1`.
-- Namespace **`starfleet`** (the planet you work on), labelled
+- Namespace **`starfleet`** (the namespace you work in), labelled
   `istio-injection=enabled`, with **`shuttle`**, your client pod inside the
-  mesh. You send every test signal from it with the `curl` command. It shows
-  `2/2`: the app plus its `istio-proxy` sidecar, the communications officer.
+  mesh. You send every test request from it with the `curl` command. It shows
+  `2/2`: the app plus its `istio-proxy` sidecar proxy (Envoy).
 - **No `ServiceEntry`, `DestinationRule` or `VirtualService`.** Writing them
   is the module.
 
@@ -34,8 +35,8 @@ plain `curl https://httpbin.org/get` on your own machine first.
 ## Helpers
 
 Paste these once in each new terminal. The first prints the status code and
-the time of one signal from the shuttle. The second prints the last line of
-the shuttle's flight log.
+the time of one request from the `shuttle` pod. The second prints the last
+line of the `shuttle` pod's access log.
 
 ```sh
 status_and_time() { kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "$@"; }
@@ -59,7 +60,7 @@ repository.
 - Add the `DestinationRule` with `tls.mode: SIMPLE` on port `80`. The same
   call now reports `"url": "https://httpbin.org/get"`.
 - Put a wrong name in `subjectAltNames` and read the `503`,
-  `URX,UF` and `CERTIFICATE_VERIFY_FAILED` in the flight log.
+  `URX,UF` and `CERTIFICATE_VERIFY_FAILED` in the access log.
 - Remove `targetPort` from the `ServiceEntry` and read
   `WRONG_VERSION_NUMBER`.
 - Add a `VirtualService` with `timeout: 2s` and call

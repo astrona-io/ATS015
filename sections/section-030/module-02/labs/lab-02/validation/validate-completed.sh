@@ -3,7 +3,7 @@
 #   /headers          public (no token needed)
 #   GET /get          any valid token
 #   /anything/admin   only a token whose groups claim contains group1
-# Checks the objects first, then sends live signals from the shuttle.
+# Checks the objects first, then sends live requests from the shuttle pod.
 set -u
 
 NS="starfleet"
@@ -39,7 +39,7 @@ if grep -q '^request.auth.claims\[group\]=' <<<"$keys"; then
   fail "probe-access still compares request.auth.claims[group]. No token has a claim with that name"
 fi
 
-# --- 2. live signals ------------------------------------------------------------
+# --- 2. live requests -----------------------------------------------------------
 TOKEN=$(curl -s --max-time 20 "$SAMPLES_URL/demo.jwt")
 GROUPS_TOKEN=$(curl -s --max-time 20 "$SAMPLES_URL/groups-scope.jwt")
 [[ -n "$TOKEN" && -n "$GROUPS_TOKEN" ]] || fail "could not fetch the sample tokens - this lab needs outbound internet access"

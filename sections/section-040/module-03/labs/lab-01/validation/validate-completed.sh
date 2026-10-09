@@ -3,7 +3,7 @@
 # Confirms the Gateway passthrough-gateway and the VirtualService passthrough
 # exist in passthrough-demo (the former validation.checks), that the listener
 # is TLS + PASSTHROUGH with no credential, that the route matches sniHosts,
-# and - the part that matters - that a real signal through the gateway gets
+# and - the part that matters - that a real request through the gateway gets
 # 200 with the backend's own certificate and no HTTP route for the host.
 set -uo pipefail
 

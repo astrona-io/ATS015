@@ -1,12 +1,12 @@
 # Solution Walkthrough
 
-Read the badge first, then require the handshake, then write the guest list. The last step proves the two callers get different answers for the reason you intended: a `403` from the guard, not a broken connection.
+Read the identity first, then require STRICT mTLS, then write the `AuthorizationPolicy`. The last step proves the two callers get different responses for the reason you intended: a `403` from the authorization check, not a broken connection.
 
 ---
 
 ## Step 1: Find out who runs as what
 
-Every badge (identity) is printed from a service account, the workload's registration papers. List them:
+Every workload identity is built from a service account, the Kubernetes object that names who a pod runs as. List them:
 
 ```sh
 kubectl get pods -n identity-demo \
@@ -20,7 +20,7 @@ notification-service-v1-54dd46d4b6-9glj2   default
 tester-69699fd775-276jw                    default
 ```
 
-`tester` runs as `default`, so a rule that names `default` would let the debugging pod straight in. The badge that sets the intended caller apart is `booking-sa`.
+`tester` runs as `default`, so a rule that names `default` would let the debugging pod straight in. The identity that sets the intended caller apart is `booking-sa`.
 
 Check the starting behaviour too. Both callers get through:
 
@@ -36,7 +36,7 @@ tester:  200
 
 ---
 
-## Step 2: Read the badge off the certificate
+## Step 2: Read the identity from the certificate
 
 Do not build the name from memory. Take the certificate out of the booking proxy and read its SAN (Subject Alternative Name), the field that holds the identity:
 
@@ -60,9 +60,9 @@ cluster.local/ns/identity-demo/sa/booking-sa
 
 ---
 
-## Step 3: Require the handshake for the whole planet
+## Step 3: Require STRICT mTLS for the whole namespace
 
-`STRICT` mTLS means every caller must show its badge before it may talk to any workload in the namespace. A `PeerAuthentication` named `default` without a `selector` covers the whole namespace.
+`STRICT` mTLS means every caller must present a certificate before it may connect to any workload in the namespace. A `PeerAuthentication` named `default` without a `selector` covers the whole namespace.
 
 Save this as `peerauthentication-default.yaml`:
 
@@ -89,9 +89,9 @@ peerauthentication.security.istio.io/default created
 
 ---
 
-## Step 4: Write the guest list
+## Step 4: Write the AuthorizationPolicy
 
-An `ALLOW` policy that selects `notification-service` shuts out everyone it does not list. One rule with one principal is the only way in.
+An `ALLOW` policy that selects `notification-service` denies every request that matches none of its rules. One rule with one principal is the only way to be allowed.
 
 Save this as `authorizationpolicy-notification-by-identity.yaml`:
 
@@ -139,7 +139,7 @@ booking: 200
 tester:  403
 ```
 
-Same request, same planet, same path. The only difference is the badge each caller showed during the handshake. The `notification-service` proxy turned `tester` away; the body of its answer is `RBAC: access denied`.
+Same request, same namespace, same path. The only difference is the identity each caller presented during the TLS handshake. The `notification-service` sidecar proxy denied the `tester` request; the body of its response is `RBAC: access denied`.
 
 ---
 
@@ -161,6 +161,6 @@ PROCTOR: PASS
 ## If it does not pass
 
 - **`a principals value still carries the spiffe:// scheme`.** Remove `spiffe://` from the principal. Kubernetes accepts it, but the proxy then looks for `spiffe://spiffe://...`, and both callers get `403`.
-- **Both callers get `200`.** The `selector` matches no pod, so no guard stands at the airlock. Check the label with `kubectl get pods -n identity-demo --show-labels`.
-- **Both callers get `000`.** That is a broken connection, not the guard. Look at the `PeerAuthentication`, not the guest list.
+- **Both callers get `200`.** The `selector` matches no pod, so the policy protects nothing. Check the label with `kubectl get pods -n identity-demo --show-labels`.
+- **Both callers get `000`.** That is a broken connection, not an authorization denial. Look at the `PeerAuthentication`, not the `AuthorizationPolicy`.
 - **`no PeerAuthentication ... STRICT for the whole namespace`.** The `PeerAuthentication` has a `selector`, or its mode is not `STRICT`.

@@ -1,5 +1,5 @@
-# The starting guest list for the probe: every ship on the planet starfleet
-# may send any signal (any method, any path). It is part of the lab's starting
+# The starting ALLOW policy for the probe: every workload in the namespace
+# starfleet may send any request (any method, any path). It is part of the lab's starting
 # state and must stay unchanged. The task adds a DENY next to it.
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy

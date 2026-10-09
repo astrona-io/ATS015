@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The lab's starting state: the planet starfleet requires mTLS (namespace-wide
+# The lab's starting state: the namespace starfleet requires mTLS (namespace-wide
 # STRICT), and the probe's DestinationRule was copied from another service with
 # its whole trafficPolicy - including tls.mode: DISABLE. Callers in the mesh now
 # send plain text to a server that only accepts mTLS, and get 503 UC.

@@ -3,7 +3,7 @@
 #   - migrate-demo (injected): booking-service-v1, notification-service-v1
 #     (container port 8084) and a tester client
 #   - outside (NOT injected): outside-client, which calls notification-service
-#     with plain signals
+#     with plain-text requests
 # No PeerAuthentication is created: migrate-demo starts in the default
 # PERMISSIVE mode, and moving it to STRICT is the task.
 # astrona runs this script with KUBECONFIG pointed at the lab cluster.

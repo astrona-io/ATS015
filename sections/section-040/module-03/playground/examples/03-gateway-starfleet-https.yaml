@@ -1,5 +1,5 @@
-# The bridge's gate, now with a second server: HTTPS on port 443 that the gate
-# ENDS itself (SIMPLE), with its own certificate from the Secret
+# The bridge's Gateway, now with a second server: HTTPS on port 443 that the
+# gateway ENDS itself (SIMPLE), with its own certificate from the Secret
 # starfleet-credential in namespace istio-ingress.
 # Create that Secret first:
 #   openssl req -x509 -newkey rsa:2048 -nodes -days 365 \

@@ -2,11 +2,11 @@
 estimated_duration: 3m
 ---
 
-# Fix The Broken Handshake
+# Fix A DestinationRule That Breaks mTLS
 
-Welcome to a repair mission, astronaut. On the planet `starfleet`, every ship requires the secret handshake (mTLS). Since a teammate added docking instructions for the probe, the shuttle gets `503` from it. Both ships are in the mesh, and both are healthy.
+This is a troubleshooting lab. In the namespace `starfleet`, every workload requires mTLS (mutual TLS, where both sides present a certificate). Since a teammate added a `DestinationRule` for the probe, the shuttle gets `503` from it. Both workloads are in the mesh, and both are healthy.
 
-Your job is to find out which side of the handshake is wrong, fix it on that side, and prove that the shuttle's signals reach the probe with the shuttle's identity again.
+Your job is to find out which side of the connection is misconfigured, fix it on that side, and prove that the shuttle's requests reach the probe with the shuttle's identity again.
 
 ## Launching the Lab
 

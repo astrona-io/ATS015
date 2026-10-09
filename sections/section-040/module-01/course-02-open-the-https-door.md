@@ -1,14 +1,14 @@
-# Open The HTTPS Door
+# Configure An HTTPS Gateway Server
 
-Astronaut, the certificate waits in its Secret on the planet `istio-ingress`. In this part you write the `Gateway` server that asks for it, link a flight plan to the bridge, and send your first sealed signal through the gate. Then you prove which certificate the gate really showed, from both sides of the handshake.
+A certificate on its own serves nothing. Your server certificate for `starfleet.example.com` waits in the TLS Secret `starfleet-credential`, in the namespace `istio-ingress`, where the ingress gateway pod runs. The ingress gateway is the Envoy proxy at the edge of the mesh, and it will not use that Secret until a `Gateway` server asks for it by name.
+
+This chapter writes that server, links a `VirtualService` to `bridge`, and sends the first HTTPS request through the gateway. A working request is not the end, though. You also prove which certificate the gateway really showed, from both sides of the handshake.
 
 ## The TLS server
 
-A `Gateway` opens ports on the ingress gateway. Each entry in its `servers` list is one door: a port, the host names it serves, and how it handles TLS. Here you write a door on port `443` that terminates TLS.
+A `Gateway` opens ports on the ingress gateway. Each entry in its `servers` list is one server: a port, the host names it serves, and how it handles TLS. The server you need listens on port `443` and terminates TLS, which means the gateway decrypts the connection itself.
 
 <!-- astrona:playground:renew -->
-
-### Write the `Gateway`
 
 Save this as `gateway-starfleet.yaml`:
 
@@ -43,22 +43,20 @@ kubectl apply -f gateway-starfleet.yaml
 gateway.networking.istio.io/starfleet-gateway created
 ```
 
-### What each field does
+The object is short, but each field has a job:
 
 - **`selector: istio: ingress`** picks the gateway pods that get this configuration, by pod label. The Helm gateway chart in this playground labels its pods `istio=ingress`. (An `istioctl install` gateway uses `istio=ingressgateway` instead.)
-- **`protocol: HTTPS`** tells the gateway to end TLS on this port and then read the signal inside as HTTP. That is what lets a `VirtualService` route on paths.
-- **`name: https`** is only a label for the port. By habit it repeats the protocol, but `protocol` decides how the gate treats the port: a door named `secure-door` works just the same.
-- **`hosts`** lists the host names this door serves. The gateway compares it with the name the client asks for in the handshake.
-- **`tls.mode: SIMPLE`** is ordinary one-way TLS: the gate shows a certificate, and the client shows none.
+- **`protocol: HTTPS`** tells the gateway to end TLS on this port and then read the request inside as HTTP. That is what lets a `VirtualService` route on paths.
+- **`name: https`** is only a label for the port. By habit it repeats the protocol, but `protocol` decides how the gateway treats the port: a port named `secure-port` works just the same.
+- **`hosts`** lists the host names this server serves. The gateway compares it with the name the client asks for in the handshake.
+- **`tls.mode: SIMPLE`** is ordinary one-way TLS: the gateway shows a certificate, and the client shows none.
 - **`credentialName`** is the Secret's name, looked up in the gateway pod's namespace.
 
-Notice that the `Gateway` lives in `starfleet`, next to the bridge, while its Secret lives in `istio-ingress`. That split is correct.
+Notice that the `Gateway` lives in `starfleet`, next to `bridge`, while its Secret lives in `istio-ingress`. That split is correct, because the Secret lookup always uses the gateway pod's namespace.
 
-## Link the flight plan
+## Link the VirtualService
 
-A `Gateway` only opens a door. A `VirtualService` that names the gateway in `gateways:` says where the signals that come through it fly next. Once the gateway has opened the seal, the signal is plain HTTP, so this flight plan looks the same as it would for an HTTP door.
-
-### Write the `VirtualService`
+A `Gateway` only opens a port. It does not say where the requests go. For that you need a `VirtualService`, the Istio object that holds routing rules, and it must name the gateway in its `gateways:` field. Once the gateway has decrypted a request, the request is plain HTTP, so this `VirtualService` looks the same as it would for an HTTP server.
 
 Save this as `virtualservice-bridge.yaml`:
 
@@ -102,11 +100,9 @@ kubectl apply -f virtualservice-bridge.yaml
 virtualservice.networking.istio.io/bridge created
 ```
 
-## Send a sealed signal
+## Send an HTTPS request
 
-Now the whole path exists: Secret, door and flight plan. Send a signal through it with the `https_status` helper from the landing page, and then see why the helper needs `--resolve`.
-
-### The first HTTPS signal
+The whole path now exists: the Secret, the `Gateway` server and the `VirtualService`. Send a request through it with the `https_status` helper. It calls `https://starfleet.example.com:8443/productpage` through the port forward, trusts your test CA, and prints the status code and curl's exit code:
 
 ```sh
 https_status
@@ -116,9 +112,9 @@ https_status
 200 exit=0
 ```
 
-`200` is the bridge's answer, and `exit=0` means curl was happy with the handshake: it trusted the certificate and the name matched. Mission control needs a few seconds to send the gate its new orders, so if the first try fails right after the apply, wait ten seconds and run it again. If you keep getting `000 exit=7`, check the port forward with `astrona port-forward list`.
+The `200` is the response from `bridge`, and `exit=0` means curl was happy with the handshake: it trusted the certificate, and the name matched. `istiod` needs a few seconds to send the gateway its new configuration, so if the first try fails right after the apply, wait ten seconds and run it again. If you keep getting `000 exit=7`, check the port forward with `astrona port-forward list`.
 
-### What happened on the way
+A lot happened behind that one line of output. The diagram follows the request from curl to `bridge` and back:
 
 ```mermaid
 sequenceDiagram
@@ -127,32 +123,28 @@ sequenceDiagram
     participant B as bridge
     C->>G: hello, SNI starfleet.example.com
     G-->>C: certificate from starfleet-credential
-    C->>G: HTTPS request, sealed
+    C->>G: HTTPS request, encrypted
     G->>B: request over Istio mTLS
     B-->>G: response
     G-->>C: HTTPS response
 ```
 
-The gateway Envoy in `istio-ingress` picks the certificate, opens the seal and sends the signal to the bridge, sealed again with the mesh's own mTLS.
+The gateway Envoy in `istio-ingress` picks the certificate, decrypts the request, and sends it to `bridge`, encrypted again with the mesh's own mTLS.
 
-### Why `--resolve` matters
-
-In its very first message, the client writes the host name it wants on the outside of the envelope. That name is the **SNI** (server name indication). The gateway reads it to choose which server, and which certificate, answers. Only after the seal is open can it read the HTTP `Host` header and pick a route:
+The first message in that diagram explains why the helper uses `--resolve`. In its very first handshake message, the client sends the host name it wants in plain text. That name is the **SNI** (Server Name Indication). The gateway reads it to choose which server, and so which certificate, answers. Only after it decrypts the connection can the gateway read the HTTP `Host` header and pick a route:
 
 | What the gateway reads | When | If it does not match |
 | --- | --- | --- |
-| SNI, from the handshake | before the seal is open | the handshake fails, no HTTP status |
-| `Host` header, from the request | after the seal is open | `404`, but the connection is fine |
+| SNI, from the handshake | before decryption | the handshake fails, no HTTP status |
+| `Host` header, from the request | after decryption | `404`, but the connection is fine |
 
-`--resolve starfleet.example.com:8443:127.0.0.1` tells curl to connect to your port forward while still using `starfleet.example.com` as the name. So both the SNI and the `Host` header are right. A plain `https://127.0.0.1:8443` sends no usable name, and the handshake fails with curl exit code `35`.
+The option `--resolve starfleet.example.com:8443:127.0.0.1` tells curl to connect to your port forward while it still uses `starfleet.example.com` as the name. So both the SNI and the `Host` header are right. A plain `https://127.0.0.1:8443` sends no usable name, and the handshake fails with curl exit code `35`.
 
 ## Prove which certificate answered
 
-A `200` proves the path works. It does not prove *which* certificate the gate showed, and that matters as soon as a gate serves more than one host. You can ask both sides: the client, and the gateway itself.
+A `200` proves that the path works. It does not prove *which* certificate the gateway showed, and that matters as soon as one gateway serves more than one host. You can ask both sides of the handshake: the client, and the gateway itself.
 
-### From the client's side
-
-`curl -v` prints the certificate the gateway showed during the handshake:
+On the client side, `curl -v` prints the certificate the gateway showed during the handshake:
 
 ```sh
 https_status -v 2>&1 | grep -E "subject:|issuer:"
@@ -163,13 +155,9 @@ https_status -v 2>&1 | grep -E "subject:|issuer:"
 *  issuer: O=Starfleet Command; CN=starfleet-ca
 ```
 
-The exact layout of these lines depends on your curl version.
+The exact layout of these lines depends on your curl version. The subject is the name you gave the server certificate, and the issuer is your CA. So the gateway showed exactly the certificate from `starfleet-credential`.
 
-The subject is the name you gave the server certificate, and the issuer is your CA. So the gate showed exactly the certificate from `starfleet-credential`.
-
-### Without trust, no signal
-
-Now send the same signal without `--cacert`, so curl falls back to the public CAs it knows:
+Trust is the client's half of the deal. Send the same request without `--cacert`, so that curl falls back to the public CAs it knows:
 
 ```sh
 curl -s -o /dev/null --resolve starfleet.example.com:8443:127.0.0.1 \
@@ -180,11 +168,9 @@ curl -s -o /dev/null --resolve starfleet.example.com:8443:127.0.0.1 \
 exit=60
 ```
 
-Exit code `60` means "the certificate is not trusted". The gateway did nothing wrong: curl did not know your CA. A real browser behaves the same way with a certificate from an unknown CA. That is why a public site uses a certificate from a public CA.
+Exit code `60` means "the certificate is not trusted". The gateway did nothing wrong here; curl simply did not know your CA. A real browser behaves the same way with a certificate from an unknown CA, which is why a public site uses a certificate from a public CA.
 
-### From the gateway's side
-
-`istioctl proxy-config secret` lists the certificates the gateway's Envoy really holds:
+On the gateway side, `istioctl proxy-config secret` lists the certificates the gateway's Envoy really holds:
 
 ```sh
 istioctl proxy-config secret deploy/istio-ingress -n istio-ingress
@@ -197,10 +183,12 @@ default                               Cert Chain     ACTIVE     true           c
 ROOTCA                                CA             ACTIVE     true           b6675b08fb0a7611a0824cb0029d824d     2036-10-06T09:25:12Z     2026-10-09T09:25:12Z
 ```
 
-The row `kubernetes://starfleet-credential` with state `ACTIVE` means `istiod` delivered the Secret and the gate is using it. Its serial number is `1`, the `-set_serial 1` you gave `openssl`. The other rows are the gateway's own mesh identity, which it uses for mTLS towards the bridge.
+The row `kubernetes://starfleet-credential` with the state `ACTIVE` means that `istiod` delivered the Secret and the gateway is using it. Its serial number is `1`, the `-set_serial 1` you gave `openssl`. The other two rows are the gateway's own mesh identity, which it uses for mTLS towards `bridge`.
 
 > [!TIP]
 > When an HTTPS task fails, run `istioctl proxy-config secret` on the gateway first. If your Secret is missing there, or not `ACTIVE`, the problem is the Secret, not the `Gateway` or the `VirtualService`.
+
+You now serve HTTPS for `starfleet.example.com`, and you can prove which certificate answered, from curl and from the gateway. The SNI picks the server and its certificate before decryption, and the `Host` header picks the route after it. Two questions are still open: what happens to clients that call the plain HTTP port, and how you replace this certificate when it expires.
 
 ## Common pitfalls
 
@@ -208,6 +196,4 @@ The row `kubernetes://starfleet-credential` with state `ACTIVE` means `istiod` d
 > - **Testing with an IP address.** `https://127.0.0.1:8443` sends no usable SNI, so no server matches and the handshake fails. Use `--resolve` with the real host name.
 > - **Mixing up the two checks.** A failed handshake is about the SNI or the certificate. A `404` on a working connection is about the `VirtualService`.
 > - **Using `-k` to "fix" a trust error.** `-k` skips the check you want to pass. Give curl the CA with `--cacert` instead.
-> - **Forgetting `gateways:` in the `VirtualService`.** Without it the flight plan applies only inside the mesh, and the gate answers `404`.
-
-> *SNI picks the door and its certificate before the seal is open; the `Host` header picks the route after.*
+> - **Forgetting `gateways:` in the `VirtualService`.** Without it the `VirtualService` applies only inside the mesh, and the gateway answers `404`.

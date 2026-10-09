@@ -2,7 +2,7 @@
 
 > Declared in [`../config.yaml`](../config.yaml) under `metadata.docs.guide`.
 
-This is a **playground**, not a lab: your training solar system, astronaut. It
+This is a **playground**, not a lab. It
 starts a fresh cluster, installs Istio and the Starfleet, and then waits.
 There is no task, no `astrona submit` and no pass or fail. Explore, break
 things, `astrona destroy`, start over.
@@ -11,29 +11,29 @@ things, `astrona destroy`, start over.
 
 - A single-node `kind` Kubernetes cluster. `kubectl` is already pointed at it.
 - **Istio 1.30.5**, installed with Helm (`istio-base` and `istiod` only, no
-  gateways). `istiod` is mission control: it sends every proxy its orders, and
-  it also signs the certificate (the ID badge) of every ship in the mesh.
-- Mesh-wide **access logs**, so every proxy writes one line per request. This
-  is the ship's flight log, and you read it with
+  gateways). `istiod` is Istio's control plane: it sends configuration to every
+  proxy, and it also signs the certificate of every workload in the mesh.
+- Mesh-wide **access logs**, so every proxy writes one line per request. You
+  read the access log with
   `kubectl logs -n starfleet deploy/shuttle -c istio-proxy`.
-- Namespace **`starfleet`** (the planet you work on), labelled
+- Namespace **`starfleet`** (the namespace you work in), labelled
   `istio-injection=enabled`, with:
   - **The Starfleet** (the Istio docs' Bookinfo sample with space names):
     `bridge`, `cargo`, `navcom` and `scout` v1, v2 and v3, all on port `9080`.
-  - **`shuttle`**, your client pod inside the mesh. Its signals carry its
+  - **`shuttle`**, your client pod inside the mesh. Its requests carry its
     identity, `spiffe://cluster.local/ns/starfleet/sa/shuttle`.
   - **`probe`** v1 and v2 behind one Service. The Service port is `8000`; the
     pods listen on container port `8080`. Its `/headers` answer shows the
-    `X-Forwarded-Client-Cert` header when a signal arrived over mTLS.
-- Namespace **`outpost`**, with **no** sidecar injection. Its one ship, the
-  **`drifter`**, has no communications officer (`1/1`), so everything it
+    `X-Forwarded-Client-Cert` header when a request arrived over mTLS.
+- Namespace **`outpost`**, with **no** sidecar injection. Its one pod, the
+  **`drifter`**, has no sidecar proxy (`1/1`), so everything it
   sends is plain text.
 - **No `PeerAuthentication` and no `DestinationRule`.** The default mode,
   `PERMISSIVE`, is in force, so both the shuttle and the drifter get answers.
 
 ## Helpers
 
-Paste this once in each new terminal. `from_shuttle` sends one signal from
+Paste this once in each new terminal. `from_shuttle` sends one request from
 inside the mesh. `from_drifter` sends one from outside the mesh and also prints
 `curl`'s exit code: `56` means the connection was reset.
 
@@ -68,10 +68,10 @@ copies from there. The table is a map of what the examples cover:
 
 Each idea below is a small change to the files you made while reading the
 module. Edit your saved file, apply it with `kubectl apply -f`, and predict the
-result before you send a signal.
+result before you send a request.
 
-- Before you change anything, call the probe from both ships and look at
-  `/headers`. Only the shuttle's signal carries `X-Forwarded-Client-Cert`.
+- Before you change anything, call the probe from both clients and look at
+  `/headers`. Only the shuttle's request carries `X-Forwarded-Client-Cert`.
 - Apply `STRICT` to the `starfleet` namespace. Then put the same YAML in
   `outpost` instead and work out from behaviour alone what it became.
 - Add a `selector` to a namespace-wide policy and see how much stops being

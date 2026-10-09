@@ -3,7 +3,7 @@
 #   - namespace starfleet (sidecar injection) + mesh-wide access logs
 #   - the Starfleet: bridge, cargo, scout v1-v3, navcom (Bookinfo with space names)
 #   - shuttle (test client in the mesh) + probe v1/v2 (echo service: its
-#     /headers answer shows the caller's identity when a signal used mTLS)
+#     /headers answer shows the caller's identity when a request used mTLS)
 #   - namespace outpost WITHOUT injection, with the drifter: a client with no
 #     sidecar, so everything it sends is plain text
 # No PeerAuthentication and no DestinationRule are created: the default mode

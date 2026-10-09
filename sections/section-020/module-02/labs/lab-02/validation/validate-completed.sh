@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Grading for ats-015-lab-020-02-02 - make the probe read-only with one DENY.
-# Confirms the starting guest list probe-allow-fleet is unchanged, that
+# Confirms the starting ALLOW policy probe-allow-fleet is unchanged, that
 # probe-read-only is a DENY on the probe built on notMethods, and - the part
-# that matters - that live signals get the right answers:
+# that matters - that live requests get the right answers:
 #   shuttle GET /get -> 200      fortio GET /get       -> 200
 #   shuttle POST /post -> 403    fortio POST /post     -> 403
 #   shuttle DELETE /delete -> 403, shuttle PATCH /anything -> 403
@@ -22,7 +22,7 @@ done
 mode=$(kubectl -n "$NS" get peerauthentication default -o jsonpath='{.spec.mtls.mode}' 2>/dev/null)
 [[ "$mode" == "STRICT" ]] || fail "PeerAuthentication default in $NS has mode '$mode', expected STRICT - leave it unchanged"
 
-# --- 1. the starting guest list is unchanged ---------------------------------
+# --- 1. the starting ALLOW policy is unchanged -------------------------------
 kubectl -n "$NS" get authorizationpolicy probe-allow-fleet >/dev/null 2>&1 \
   || fail "AuthorizationPolicy probe-allow-fleet is gone. The task says to leave it in place"
 allow_action=$(kubectl -n "$NS" get authorizationpolicy probe-allow-fleet -o jsonpath='{.spec.action}' 2>/dev/null)
@@ -46,7 +46,7 @@ grep -q '"GET"' <<<"$not_methods" \
   || fail "probe-read-only does not use notMethods with GET (found '$not_methods'). One negative field covers every method except GET, including ones you did not think of"
 echo "OK: probe-read-only is a DENY on the probe with notMethods [GET]"
 
-# --- 3. live signals ---------------------------------------------------------
+# --- 3. live requests --------------------------------------------------------
 from_shuttle() {  # $@ = curl args; prints the HTTP status code
   kubectl -n "$NS" exec deploy/shuttle -- \
     curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$@" 2>/dev/null

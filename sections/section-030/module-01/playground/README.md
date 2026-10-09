@@ -4,9 +4,9 @@
 - **Author:** Paris Nakita Kejser
 - **Type:** Astrona playground — clean environment, no task, no grading
 
-A training solar system in the simulator: it starts a `kind` cluster with Istio
-and the Starfleet (the Istio docs' Bookinfo sample, renamed), then waits for
-you, astronaut. Use it alongside the module's parts. Nothing to submit.
+A clean environment: it starts a `kind` cluster with Istio and the Starfleet
+sample app (the Istio docs' Bookinfo sample, renamed), then waits for you.
+Use it alongside the module's parts. Nothing to submit.
 
 The cluster needs outbound internet. `istiod` downloads the sample signing keys
 from `raw.githubusercontent.com`, and you download the sample token from there

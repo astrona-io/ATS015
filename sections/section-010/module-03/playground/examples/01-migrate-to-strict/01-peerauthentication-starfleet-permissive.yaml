@@ -1,5 +1,5 @@
-# Step 1 of the migration: write down the mode the planet is already in.
-# PERMISSIVE accepts both mTLS and plain signals, so this changes nothing.
+# Step 1 of the migration: write down the mode the namespace is already in.
+# PERMISSIVE accepts both mTLS and plain text, so this changes nothing.
 # It makes the choice visible, and it is the file you apply to roll back.
 apiVersion: security.istio.io/v1
 kind: PeerAuthentication

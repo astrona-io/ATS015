@@ -6,9 +6,9 @@ estimated_duration: 20m
 
 Solve this question on: `terminal`
 
-Astronaut, the notification service is about to be opened to a partner. The partner's users log in with an identity provider you do not control. All you get is the issuer's name and the address of its public keys. Make sure nothing reaches the service without a token that this issuer signed, and that a rejected partner can tell from the status code whether their token or your rules said no.
+The notification service is about to be opened to a partner. The partner's users log in with an identity provider you do not control. All you get is the issuer's name and the address of its public keys. Make sure nothing reaches the service without a token that this issuer signed, and that a rejected partner can tell from the status code whether their token or your rules said no.
 
-The planet (namespace) `jwt-demo` holds:
+The namespace `jwt-demo` holds:
 
 * `notification-service-v1`: answers `POST /notify`, behind the Service `notification-service` on port `80`. Its pods carry the label `app: notification-service`.
 * `booking-service-v1`: the service next door, behind the Service `booking-service` on port `80`. It answers `POST /book`.

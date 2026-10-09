@@ -1,4 +1,4 @@
-# Route signals arriving at starfleet-gateway to the bridge.
+# Route requests arriving at starfleet-gateway to the bridge.
 # TLS is handled by the Gateway, so this VirtualService looks the same for
 # HTTP, SIMPLE TLS and MUTUAL TLS.
 apiVersion: networking.istio.io/v1

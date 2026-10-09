@@ -4,9 +4,9 @@ estimated_duration: 20m
 
 # Prove A Workload Identity And Authorize On It
 
-Welcome to your first security mission, astronaut. On the planet `identity-demo`, anything can call `notification-service`, including a debugging pod somebody left running. Only `booking-service` should get through.
+In the namespace `identity-demo`, any workload can call `notification-service`, including a debugging pod somebody left running. Only `booking-service` should be allowed.
 
-Your job is to read the ID badge `booking-service` really carries from its live certificate, require the secret handshake (mTLS) for the whole planet, and write a guest list that lets in exactly that badge. This mission runs its own small app, not the Starfleet.
+Your job is to read the identity `booking-service` really has from its live certificate, require STRICT mutual TLS (mTLS) for the whole namespace, and write an `AuthorizationPolicy` that allows exactly that identity. This lab runs its own small app, not the Starfleet.
 
 ## Launching the Lab
 

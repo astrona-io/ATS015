@@ -1,14 +1,14 @@
-# Name The Caller
+# Match The Caller By Identity
 
-Astronaut, a guard who lets "anyone from the planet" aboard is better than no guard, but not by much. This part narrows the guest list to the exact name on a ship's ID badge. It shows why that name only exists when the secret handshake works, and what happens when more than one guest list covers the same ship.
+A policy that lets in "any workload in the namespace" is better than no policy, but not by much. Any new workload in that namespace, including one you never meant to trust, gets the same access. To be precise, a rule has to name the one caller it means.
 
-The commands below need `allow-nothing` and `probe-allow-shuttle-get` (only the shuttle may `GET` the probe) applied in your playground, and the three helpers from the module's landing page.
+This chapter narrows an `ALLOW` rule to the exact identity in a workload's certificate. It shows where that identity comes from, why it only exists when mTLS works, and what happens when more than one `ALLOW` policy selects the same workload.
 
-## The name on the badge
+The commands below need `allow-nothing` and `probe-allow-shuttle-get` (only the `shuttle` may `GET` the `probe`) applied in your playground, and the three helper functions from the landing page.
 
-A `principals` rule names one caller by its workload identity. That identity is printed on the ship's ID badge (its certificate), and it comes from the ship's registration papers (its Kubernetes service account).
+## The identity in the certificate
 
-### The format
+A `principals` rule names one caller by its workload identity. That identity is the SPIFFE ID in the workload's certificate; SPIFFE (Secure Production Identity Framework For Everyone) is the open standard that defines this name format. `istiod` builds the name from the pod's namespace and its Kubernetes service account, and a `principals` value has three pieces:
 
 ```text
 cluster.local/ns/starfleet/sa/shuttle
@@ -16,19 +16,17 @@ cluster.local/ns/starfleet/sa/shuttle
 trust domain    namespace    service account
 ```
 
-The badge itself carries `spiffe://cluster.local/ns/starfleet/sa/shuttle`. In a `principals` rule you leave out the `spiffe://` part. A rule that keeps it matches nothing, and nothing warns you.
-
-### Find each ship's registration papers
+The certificate itself carries `spiffe://cluster.local/ns/starfleet/sa/shuttle`. In a `principals` rule you leave out the `spiffe://` part. A rule that keeps it matches nothing, and nothing warns you.
 
 <!-- astrona:playground:renew -->
 
-You never guess a principal. You read the service account off the pods. First, remove the `probe-allow-headers` policy if your planet still has it. It lets any caller read `/headers`, which would hide the effect of the steps below:
+You never guess a principal; you read the service account off the pods. Before you do, remove the `probe-allow-headers` policy if your namespace still has it. It lets any caller read `/headers`, which would hide the effect of the steps below:
 
 ```sh
 kubectl delete authorizationpolicy probe-allow-headers -n starfleet --ignore-not-found
 ```
 
-Then list every ship with its service account:
+Then list every pod with its service account:
 
 ```sh
 kubectl get pods -n starfleet -o custom-columns=POD:.metadata.name,SERVICEACCOUNT:.spec.serviceAccountName
@@ -48,27 +46,23 @@ scout-v3-668c6dfc68-6d5gm    starfleet-scout
 shuttle-7b5db664c-bn84s      shuttle
 ```
 
-The output shows two things worth remembering. fortio has no service account of its own, so it runs as `default`. And all three scout versions share `starfleet-scout`, so a `principals` rule cannot tell them apart.
+The output shows two things worth remembering. `fortio` has no service account of its own, so it runs as `default`. And all three `scout` versions share `starfleet-scout`, so a `principals` rule cannot tell them apart.
 
-A `principals` rule is about the registration papers, not the pod. Give another pod the same service account, and it gets the same badge and the same access.
+So a `principals` rule is about the service account, not the pod. Give another pod the same service account, and it gets the same identity and the same access.
 
-## Why the badge needs the handshake
+## Why the identity needs mTLS
 
-A `principals` rule compares a name that the handshake checked. If there is no handshake, there is no badge, and the rule has nothing to compare.
+A `principals` rule compares an identity that mTLS verified. If there is no mTLS, there is no certificate, and the rule has nothing to compare.
 
-### No badge, no match
+Take a pod with no sidecar, like the `drifter`. It sends plain text, so it never presents a certificate. In a namespace in `PERMISSIVE` mode, its request passes the mTLS check and reaches the authorization check with no identity at all. The RBAC (role-based access control) filter compares an empty identity against the rules, finds no match, and answers `403`. The denial has nothing to do with who the caller is.
 
-Think of a ship with no communications officer, like the drifter. It sends plain text, so it never shows a badge. On a planet in `PERMISSIVE` mode, its signal passes the handshake check and reaches the guard with no name at all. The guard compares an empty name against the list, finds no match, and answers `403`. The refusal has nothing to do with who the caller is.
+In your namespace, `PeerAuthentication` is `STRICT`, so the `drifter` is cut off one stage earlier with a reset connection. It never reaches the authorization check at all, which is why this playground switches on `STRICT` before anything else. So when "my `principals` rule denies everyone", check `PeerAuthentication` first, not the rule.
 
-On your planet the handshake is `STRICT`, so the drifter is cut off one stage earlier with a reset connection, and never reaches the guard at all. That is why this playground switches on `STRICT` before anything else.
+A caller with no sidecar can never match `principals` or `namespaces`. To allow it in a `PERMISSIVE` namespace, match its address with `ipBlocks`, or give it a sidecar so it gets an identity.
 
-So when "my `principals` rule refuses everyone", check `PeerAuthentication` first, not the rule.
+## A whole namespace at once
 
-## A whole planet at once
-
-Sometimes the right guest is "every ship on this planet", whatever its papers say. The `namespaces` field does that. It reads the planet name from the same badge, so it also needs mTLS.
-
-### Let every ship on starfleet in
+Sometimes the right caller really is "every workload in this namespace", whatever its service account. The `namespaces` field does that. It reads the namespace from the same certificate, so it also needs mTLS.
 
 Save this as `authorizationpolicy-probe-allow-starfleet-ns.yaml`:
 
@@ -110,61 +104,59 @@ drifter: 000
 command terminated with exit code 56
 ```
 
-fortio now gets in: its badge says planet `starfleet`, and the papers no longer matter. The shuttle's `POST` gets in too, because this new rule has no `to` part. The drifter is still cut off by the handshake.
+`fortio` now gets in, because its certificate says namespace `starfleet` and the service account no longer matters. The `shuttle`'s `POST` gets in too, because this new rule has no `to` part. The `drifter` is still cut off by mTLS.
 
-## Two lists on one ship
+## Two policies on one workload
 
-The probe is now covered by three `ALLOW` policies: `allow-nothing`, `probe-allow-shuttle-get` and `probe-allow-starfleet-ns`. The shuttle's `POST` was refused a moment ago, and now it gets in. Adding a policy let **more** signals in.
+That `POST` result deserves a second look. The `probe` is now selected by three `ALLOW` policies: `allow-nothing`, `probe-allow-shuttle-get` and `probe-allow-starfleet-ns`. The `shuttle`'s `POST` was denied before, and now it gets in, so adding a policy let **more** requests in.
 
-### The union rule
-
-The guard combines every `ALLOW` list that selects a ship. A signal gets in if it fits a rule on **any** of them:
+The reason is that the receiving proxy combines every `ALLOW` policy that selects its workload. A request gets in if it matches a rule in **any** of them:
 
 ```text
-   allow-nothing              rules: []                   --+
-   probe-allow-shuttle-get    rules: [shuttle, GET]         +-->  OR  -->  allowed if any fits
-   probe-allow-starfleet-ns   rules: [planet starfleet]   --+
+   allow-nothing              rules: []                      --+
+   probe-allow-shuttle-get    rules: [shuttle, GET]            +-->  OR  -->  allowed if any fits
+   probe-allow-starfleet-ns   rules: [namespace starfleet]   --+
 ```
 
-This is the opposite of most people's first guess. **Adding `ALLOW` policies can only ever let more in.** The narrowing happened once, when the first `ALLOW` list covered the ship. To take something away, you need a `DENY` policy, which the guard checks before any `ALLOW` list.
+This is the opposite of most people's first guess. **Adding `ALLOW` policies can only ever let more in.** The narrowing happened once, when the first `ALLOW` policy selected the workload. To take something away, you need a `DENY` policy, which the proxy checks before any `ALLOW` policy.
 
-Compare that with `PeerAuthentication`, where only one policy applies to a ship:
+`PeerAuthentication` works differently, because only one policy applies to a workload:
 
-| Object | Several policies on one ship |
+| Object | Several policies on one workload |
 | --- | --- |
-| `PeerAuthentication` | the closest scope wins; the others are ignored |
+| `PeerAuthentication` | the most specific scope wins; the others are ignored |
 | `AuthorizationPolicy` (`ALLOW`) | all of them count; their rules add up (a union) |
 
-Remove the planet-wide entry before you go on, so the probe is back to "only the shuttle may `GET`":
+Remove the namespace-wide policy before you go on, so that the `probe` is back to "only the `shuttle` may `GET`":
 
 ```sh
 kubectl delete -f authorizationpolicy-probe-allow-starfleet-ns.yaml
 ```
 
+You can now name a caller by the identity that mTLS verified, either one service account with `principals` or a whole namespace with `namespaces`. You also know that every `ALLOW` policy on a workload adds to a union that can only let more in. What is left is to use these tools on a whole application, not one test workload.
+
 ## Common pitfalls
 
 > [!WARNING]
-> - **Using `principals` or `namespaces` without mTLS.** No checked badge means no name, so the rule never matches. Check `PeerAuthentication` first.
+> - **Using `principals` or `namespaces` without mTLS.** No verified certificate means no identity, so the rule never matches. Check `PeerAuthentication` first.
 > - **Writing `spiffe://` in `principals`.** The field takes the name without the scheme. The wrong form is accepted and matches nothing.
-> - **Guessing the service account.** Read it from the pod. fortio runs as `default`, and the scouts share one account.
-> - **Expecting another `ALLOW` policy to restrict.** `ALLOW` lists add up. To take something away, you need `DENY`.
-> - **Using `namespaces` where one caller was meant.** Every ship on the planet gets in, including ones launched later.
-
-> *`principals` matches the name the handshake checked, so it needs mTLS. Every `ALLOW` list on a ship adds to a union that can only let more in.*
+> - **Guessing the service account.** Read it from the pod. `fortio` runs as `default`, and the `scout` pods share one account.
+> - **Expecting another `ALLOW` policy to restrict.** `ALLOW` policies add up. To take something away, you need `DENY`.
+> - **Using `namespaces` where one caller was meant.** Every workload in the namespace gets in, including ones deployed later.
 
 ## Your mission: Lock A Namespace Down With ALLOW Policies
 
-You can now close a namespace, open one door by namespace and another by exact identity, and limit each door to one method and path. Now prove it in a graded mission: lock down a small booking app and reopen exactly the two calls its design needs.
+You can now close a namespace, allow one call by namespace and another by exact identity, and limit each call to one method and path. The graded lab asks you to lock down a small booking app and reopen exactly the two calls its design needs.
 
-This mission runs on a small app of its own, not the Starfleet: `booking-service` (service account `booking-sa`), `notification-service` and a `tester` client, on the planet `authz-demo` with `STRICT` mTLS already on. The task in `question.md` describes it.
+This lab runs on a small app of its own, not the Starfleet: `booking-service` (service account `booking-sa`), `notification-service` and a `tester` client, in the namespace `authz-demo` with `STRICT` mTLS already on. The task in `question.md` describes it.
 
-The mission runs in its own training solar system, so first pause your playground. Nothing in it is lost:
+The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
 
 ```sh
 astrona stop ats-015-playground-020-01
 ```
 
-Then start the mission:
+Then start the lab:
 
 ```sh
 astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-020/module-01/labs/lab-01
@@ -176,7 +168,7 @@ Read the task in [`question.md`](./labs/lab-01/question.md) and solve it on your
 astrona submit -c sections/section-020/module-01/labs/lab-01
 ```
 
-When the mission is done, remove it and wake your playground up again:
+When the lab is done, remove it and start your playground again:
 
 ```sh
 astrona destroy ats-015-lab-020-01

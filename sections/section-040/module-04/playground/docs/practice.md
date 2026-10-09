@@ -1,12 +1,12 @@
 # Practice: Originate TLS For External Services
 
-One exam-style mission for this playground, astronaut. Start the playground
+One exam-style task for this playground. Start the playground
 first, and paste the helpers from [overview.md](./overview.md#helpers). The
 solution uses them.
 
 Try the task on your own first, then open the solution.
 
-## Task: seal the signal to Google
+## Task: originate TLS to Google
 
 > In namespace `starfleet`, the shuttle calls `http://www.google.com/`. Make
 > the shuttle's sidecar send it to Google over HTTPS on port `443`. The
@@ -14,9 +14,10 @@ Try the task on your own first, then open the solution.
 
 <details><summary>Solution</summary>
 
-Two objects do the work. The `ServiceEntry` adds `www.google.com` to the star
-chart and sends port `80` signals to port `443` on the real server. The
-`DestinationRule` tells the sidecar to seal port `80` signals with TLS.
+Two objects do the work. The `ServiceEntry` adds `www.google.com` to Istio's
+service registry and sends port `80` requests to port `443` on the real
+server. The `DestinationRule` tells the sidecar to start TLS for port `80`
+requests.
 
 Save this as `serviceentry-google.yaml`:
 

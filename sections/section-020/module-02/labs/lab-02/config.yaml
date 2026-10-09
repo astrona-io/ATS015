@@ -13,7 +13,7 @@ bootstrap:
       type: "file"
       source: "bootstrap/01-install-istio.sh"
     - name: "lab-020-02-02-workloads"
-      description: "Creates the starfleet namespace with access logs, probe v1/v2, the shuttle and fortio clients, STRICT mTLS and the starting guest list probe-allow-fleet. Creates no DENY policy."
+      description: "Creates the starfleet namespace with access logs, probe v1/v2, the shuttle and fortio clients, STRICT mTLS and the starting ALLOW policy probe-allow-fleet. Creates no DENY policy."
       type: "file"
       source: "bootstrap/02-seed-workloads.sh"
 

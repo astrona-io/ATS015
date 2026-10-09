@@ -78,7 +78,7 @@ send_signal() { kubectl -n "$NS" exec deploy/tester -- \
 
 # A new policy takes up to about a minute to reach live traffic: connections
 # that were already open keep the old rules until they close. Wait (up to
-# about 90 seconds) until the five signals give the expected answers, then
+# about 90 seconds) until the five requests give the expected answers, then
 # grade them one by one.
 settle_policy() {
   local attempt

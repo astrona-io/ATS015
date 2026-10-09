@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# The lab's starting state: a MUTUAL gate that trusts the wrong badge office.
+# The lab's starting state: a MUTUAL gateway that trusts the wrong CA.
 #
 # Makes, on this machine, in /tmp/ats-015-lab-040-02-02/:
-#   example.com.crt                          the fleet's CA (the RIGHT one)
-#   starfleet.example.com.crt / .key         the gate's server certificate (signed by example.com)
+#   example.com.crt                          the trusted CA (the RIGHT one)
+#   starfleet.example.com.crt / .key         the gateway's server certificate (signed by example.com)
 #   partner.crt / .key                       the trusted partner's client certificate (signed by example.com)
-#   other-ca.crt                             a stranger's CA
+#   other-ca.crt                             another CA, not trusted
 #   stranger.crt / .key                      a client certificate signed by other-ca
 # The CA private keys are deleted after signing.
 #
 # Then creates the secret starfleet-credential-mutual in istio-ingress with the
 # right server certificate but ca.crt = other-ca.crt, a MUTUAL Gateway that
 # uses it, and a correct VirtualService for the bridge. Result: the partner is
-# turned away in the handshake and the stranger gets 200.
+# refused in the handshake and the stranger gets 200.
 # Fixing the secret's ca.crt is the task - the Gateway and VirtualService are correct.
 # astrona runs this script with KUBECONFIG pointed at the lab cluster.
 set -euo pipefail
@@ -25,7 +25,7 @@ rm -rf "$CERT_DIR"
 mkdir -p "$CERT_DIR"
 cd "$CERT_DIR"
 
-# The fleet's CA, the gate's server certificate and the partner's client certificate.
+# The trusted CA, the gateway's server certificate and the partner's client certificate.
 openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 \
   -subj '/O=example Inc./CN=example.com' -keyout example.com.key -out example.com.crt 2>/dev/null
 openssl req -out starfleet.example.com.csr -newkey rsa:2048 -nodes -keyout starfleet.example.com.key \
@@ -38,7 +38,7 @@ openssl req -out partner.csr -newkey rsa:2048 -nodes -keyout partner.key \
 openssl x509 -req -sha256 -days 365 -CA example.com.crt -CAkey example.com.key -set_serial 1 \
   -in partner.csr -out partner.crt 2>/dev/null
 
-# A stranger's CA and a client certificate it signed.
+# Another CA (other-ca) and a client certificate it signed.
 openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 \
   -subj '/O=Other Inc./CN=other-ca' -keyout other-ca.key -out other-ca.crt 2>/dev/null
 openssl req -out stranger.csr -newkey rsa:2048 -nodes -keyout stranger.key \

@@ -4,29 +4,28 @@ You will trust a course more when you know how it is built. This page tells you 
 
 ## How the content is written
 
-- **One version.** Everything is built and checked on **Istio 1.30.5**. When a page says how Istio behaves, it means that version.
-- **Real sources.** Facts are checked against the official Istio documentation, in particular the security concepts page and the security API reference for each object. Each page explains everything you need on the page itself, so you never have to leave the course to look something up.
-- **Real output.** When a page shows command output, it comes from a real run. If the output is shortened, the page says so. If there was no real run to copy from, the page describes the result in words instead of making up output.
-- **Graders check behaviour.** Every graded lab sends real signals and reads the proxy's own configuration. A policy that exists but blocks nothing, or a certificate that is stored but never served, does not pass. Each lab also has a reference solution that is run against its own grader, so the grader is known to accept a correct answer.
-- **Plain English.** The pages are written for people who are not native English speakers and have no university degree. Words are written out in full, and each new term gets a short explanation the first time it appears.
-- **Written with AI help.** Large parts of this course are drafted and edited with the help of AI tools. A maintainer reviews every change before it is published, and the technical checks above apply to all content, however it was written.
+The course targets one version of Istio. Everything is built and checked on **Istio 1.30.5**, so when a page says how Istio behaves, it means that version.
 
-## Mission crew
+Facts come from real sources. They are checked against the official Istio documentation, in particular the security concepts page and the security API reference for each object. Each page then explains everything you need on the page itself, so you never have to leave the course to look something up.
 
-These are the people who build and look after the course.
+Command output is real, too. When a page shows output, it comes from a real run. If the output is shortened, the page says so. If there was no real run to copy from, the page describes the result in words instead of making up output.
 
-### Core maintainer
+The same care goes into the graded labs, because their graders check behaviour. Every graded lab sends real requests and reads the proxy's own configuration. A policy that exists but blocks nothing, or a certificate that is stored but never served, does not pass. Each lab also has a reference solution that is run against its own grader, so the grader is known to accept a correct answer.
 
-- **Paris Nakita Kejser** ([@parisnakitakejser](https://github.com/parisnakitakejser))
+The pages are written in plain English, for people who are not native English speakers and have no university degree. Words are written out in full, and each technical term gets a short, plain definition the first time it appears. The pages use the real technical terms, not metaphors, because those are the words you meet in the product, the logs and the exam.
 
-### Everyone who has helped
+Finally, large parts of this course are drafted and edited with the help of AI tools. A maintainer reviews every change before it is published, and the technical checks above apply to all content, however it was written.
 
-Every person who has changed the course is listed on the GitHub contributors page:
+## Maintainers
+
+A small group of people builds and looks after the course. The core maintainer is **Paris Nakita Kejser** ([@parisnakitakejser](https://github.com/parisnakitakejser)).
+
+Many others have helped along the way. Every person who has changed the course is listed on the GitHub contributors page:
 [github.com/astrona-io/ATS015/graphs/contributors](https://github.com/astrona-io/ATS015/graphs/contributors)
 
 ## Found a mistake? Report it
 
-If a command fails, a page says something wrong, or a lab grades a correct answer as wrong, please tell us. Every report makes the course better for the next astronaut.
+Even with these checks, mistakes slip through. If a command fails, a page says something wrong, or a lab grades a correct answer as wrong, please tell us. Every report makes the course better for the next learner. A good report takes four steps:
 
 1. Open a new issue on GitHub: [github.com/astrona-io/ATS015/issues](https://github.com/astrona-io/ATS015/issues).
 2. Say which page or lab it is (the file path is the easiest, for example `sections/section-010/module-01/labs/lab-01`).
@@ -37,4 +36,4 @@ Want to fix it yourself? Pull requests are welcome on the same repository.
 
 ## License
 
-The course is published under the [Apache License 2.0](https://github.com/astrona-io/ATS015/blob/main/LICENSE).
+The course is published under the [Apache License 2.0](https://github.com/astrona-io/ATS015/blob/main/LICENSE). You are welcome to use it, share it and build on it under the terms of that license.

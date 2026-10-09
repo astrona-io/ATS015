@@ -6,18 +6,18 @@ estimated_duration: 40m
 
 Solve this question on: `terminal`
 
-Astronaut, you are writing the access rules for a planet that has none. Two calls are allowed, and everything else is not. One door, the admin path on the notification service, must stay shut no matter what anyone adds to the rules later. A colleague says a future guest list could always reopen it. Your job is to prove them wrong.
+You are writing the access rules for a namespace that has none. Two calls are allowed, and everything else is not. One path, the admin path on the notification service, must stay blocked no matter what anyone adds to the rules later. A colleague says a future `ALLOW` policy could always reopen it. Your job is to prove them wrong.
 
 A few words before you start:
 
-* An **`AuthorizationPolicy`** is the guard's list at the airlock. Its action `ALLOW` is a guest list, and `DENY` is a banned list.
-* Once any `ALLOW` policy selects a workload, anyone not on a guest list stays outside the airlock. This is **default-deny**.
-* The guard always checks the banned list (`DENY`) before the guest list (`ALLOW`).
-* A **principal** is the name printed on a ship's ID badge, for example `cluster.local/ns/authz-demo/sa/booking-sa`.
+* An **`AuthorizationPolicy`** allows or denies requests to a workload. Its action `ALLOW` lists the requests that may pass, and `DENY` lists the requests that are blocked.
+* Once any `ALLOW` policy selects a workload, every request that no `ALLOW` rule matches is denied. This is **default-deny**.
+* The sidecar proxy always checks `DENY` policies before `ALLOW` policies.
+* A **principal** is the workload identity from the caller's certificate, without the `spiffe://` prefix, for example `cluster.local/ns/authz-demo/sa/booking-sa`.
 
 ## What is in the cluster
 
-The cluster runs Istio 1.30.5, installed with the `demo` profile. The planet `authz-demo` has sidecar injection on, and a `STRICT` `PeerAuthentication` already requires the secret handshake (mutual TLS) there. That is what makes ID badges trustworthy.
+The cluster runs Istio 1.30.5, installed with the `demo` profile. The namespace `authz-demo` has sidecar injection on, and a `STRICT` `PeerAuthentication` already requires mutual TLS (mTLS) there. With mTLS, both sides present a certificate, so the caller's identity can be trusted.
 
 | Workload | Service account | Serves |
 | --- | --- | --- |
@@ -27,7 +27,7 @@ The cluster runs Istio 1.30.5, installed with the `demo` profile. The planet `au
 
 No `AuthorizationPolicy` exists yet.
 
-`notification-service` has no `/admin` handler. So an `/admin` request that is **not** blocked comes back `404` from the app. That is how you tell "the guard refused it" (`403`) from "it reached the app" (`404`).
+`notification-service` has no `/admin` handler. So an `/admin` request that is **not** blocked comes back `404` from the app. That is how you tell "a policy denied it" (`403`) from "it reached the app" (`404`).
 
 ## Your task
 

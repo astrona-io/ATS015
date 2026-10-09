@@ -1,14 +1,14 @@
 # Require A Token
 
-Astronaut, the pass checker is on duty, but the probe is still open to anyone who simply shows no pass. This part closes that gap. The object that does it comes from authorization, not authentication: a guard's list. Then you make the two failure codes tell you which object to look at.
+The `RequestAuthentication` on the probe now validates tokens, but the probe is still open to any request that simply carries no token. On the exam, and in production, that gap is the difference between a protected service and an open one.
 
-## Put a guard's list on the probe
+This chapter closes the gap. The object that does it comes from authorization, not authentication: an `AuthorizationPolicy`, which allows or denies requests to a workload. Then you use the two failure codes, `401` and `403`, to tell which object to look at, and you learn the order that keeps users from being locked out.
 
-"Every signal must carry a valid token" is a rule about who may come aboard, not about how a pass is checked. So Istio puts it where such rules live: in an `AuthorizationPolicy`.
+## Add an AuthorizationPolicy to the probe
 
-### See it in your playground
+"Every request must carry a valid token" is a rule about which requests are allowed, not about how a token is validated. So Istio puts it where such rules live: in an `AuthorizationPolicy`.
 
-These steps need the `probe-jwt` `RequestAuthentication` applied. It checks tokens from `testing@secure.istio.io` on the probe, and the steps use the helpers you pasted at the start of the module.
+The steps below need the `probe-jwt` `RequestAuthentication` applied. It checks tokens from `testing@secure.istio.io` on the probe. The steps also use the helpers you pasted when you launched the playground.
 
 <!-- astrona:playground:renew -->
 
@@ -37,7 +37,7 @@ Apply it:
 kubectl apply -f authorizationpolicy-probe-require-jwt.yaml
 ```
 
-Wait about a minute, then send the same three kinds of signals again:
+Wait about a minute, then send the same three kinds of requests again: no token, a broken token, and the sample token.
 
 ```sh
 check_status $PROBE/headers
@@ -51,15 +51,13 @@ check_status -H "$AUTH $TOKEN" $PROBE/headers
 200 200 200 
 ```
 
-Now the signal without a token gets `403`. The broken token still gets `401`, and the valid token still gets `200`. Two different failures, from two different steps, sent by two different objects.
+Now the request without a token gets `403`. The broken token still gets `401`, and the valid token still gets `200`. Two different failures, from two different steps, sent by two different objects.
 
-## How the guard's list refuses a missing token
+## How the policy refuses a missing token
 
-No new feature was needed to require a token. The result comes from two facts you already know, working together.
+No new feature was needed to require a token. The result comes from two facts working together: what `requestPrincipals` matches, and how an `ALLOW` policy treats a request that matches nothing.
 
-### The request principal
-
-`requestPrincipals` matches the **request principal**: the person's name that `RequestAuthentication` attaches to a signal with a valid token. It is the token's `iss` claim, a slash, and its `sub` claim. The sample token has `testing@secure.istio.io` in both, so its request principal is:
+`requestPrincipals` matches the **request principal**: the end user's identity that `RequestAuthentication` attaches to a request with a valid token. It is the token's `iss` claim, a slash, and its `sub` claim. The sample token has `testing@secure.istio.io` in both, so its request principal is:
 
 ```text
 testing@secure.istio.io/testing@secure.istio.io
@@ -70,29 +68,23 @@ testing@secure.istio.io/testing@secure.istio.io
 | Value | Lets in |
 | --- | --- |
 | `["*"]` | any valid token |
-| `["testing@secure.istio.io/*"]` | any person with a token from this one issuer |
-| `["testing@secure.istio.io/testing@secure.istio.io"]` | exactly this one person |
+| `["testing@secure.istio.io/*"]` | any end user with a token from this one issuer |
+| `["testing@secure.istio.io/testing@secure.istio.io"]` | exactly this one end user |
 
-### Following one signal without a token
+Now follow one request without a token through the probe's proxy:
 
 ```mermaid
 flowchart TB
-    S["signal, no token"] -->|"nothing to check"| R["RequestAuthentication"]
-    R -->|"no name attached"| A["AuthorizationPolicy"]
-    A -->|"rule needs a name"| D["403"]
+    S["request, no token"] -->|"nothing to check"| R["RequestAuthentication"]
+    R -->|"no identity attached"| A["AuthorizationPolicy"]
+    A -->|"rule needs an identity"| D["403"]
 ```
 
-The probe's `RequestAuthentication` finds no token, so it attaches no name. The `AuthorizationPolicy` is an `ALLOW` policy on the probe, so only signals that match a rule may come aboard. The only rule needs a request principal, the signal has none, and the answer is `403`.
-
-The requirement is the result of two things: an `ALLOW` policy refuses whatever no rule allows, and only a valid token can match this rule.
+The diagram shows why the answer is `403`. The probe's `RequestAuthentication` finds no token, so it attaches no identity. The `AuthorizationPolicy` is an `ALLOW` policy on the probe, so only requests that match a rule are allowed. The only rule needs a request principal, and the request has none. So the requirement is really the result of two things: an `ALLOW` policy refuses whatever no rule allows, and only a valid token can match this rule.
 
 ## 401 and 403 point at different objects
 
-The two codes look alike, but each one points at a different object to fix. The response body names the step that refused the signal.
-
-### See it in your playground
-
-Send one signal without a token and one with a broken token, and read the answers:
+The two codes look alike, but each one points at a different object to fix. The response body names the step that refused the request. Send one request without a token and one with a broken token, and read the answers:
 
 ```sh
 kubectl exec -n starfleet deploy/shuttle -- curl -s $PROBE/headers; echo
@@ -104,35 +96,27 @@ RBAC: access denied
 Jwt is not in the form of Header.Payload.Signature with two dots and 3 sections
 ```
 
-`RBAC: access denied` comes from the guard's list. A message that starts with `Jwt` comes from the pass checker.
-
-### What each code tells you
+`RBAC: access denied` comes from the `AuthorizationPolicy`. RBAC stands for role-based access control, Envoy's name for its authorization filter. A message that starts with `Jwt` comes from the `RequestAuthentication` check. The table sums up what each answer tells you:
 
 | Code and body | Sent by | It means | Look at |
 | --- | --- | --- | --- |
-| `401` with `Jwt ...` | `RequestAuthentication` | a token was there, but it is not valid. The signal never reached the guard's list | the token, the `issuer` string, the keys |
+| `401` with `Jwt ...` | `RequestAuthentication` | a token was there, but it is not valid. The request never reached the `AuthorizationPolicy` | the token, the `issuer` string, the keys |
 | `403` with `RBAC: access denied` | `AuthorizationPolicy` | the token was fine, or missing, and the rule said no | the `requestPrincipals` value, the `selector`, the policy |
 
 Reading `403` as "the token must be wrong" is the classic wrong turn. It sends you editing `jwtRules` when the problem is in the policy.
 
-Neither code is a **connection reset**. A reset (curl exit code 56, or status `000`) happens before any HTTP is read, during the ship-to-ship handshake. That points at mTLS settings, and no token work will change it.
+There is also a third kind of failure, and it is neither code. A **connection reset** (curl exit code 56, or status `000`) happens before any HTTP is read, during the TLS handshake between the two proxies. That points at mTLS (mutual TLS) settings, and no token work will change it.
 
 ## Apply things in the right order
 
-Security mistakes do not show up as errors in a log. They lock people out. So add the two objects in an order that never refuses a signal you still need.
+Security mistakes do not show up as errors in a log. They lock users out. So add the two objects in an order that never refuses a request you still need:
 
-### Add the token check first
-
-1. **First the `RequestAuthentication`.** It changes nothing for signals without a token, and good tokens still get in.
+1. **First the `RequestAuthentication`.** It changes nothing for requests without a token, and good tokens still get in.
 2. **Then the `AuthorizationPolicy` that requires a token.**
 
-In the other order, the policy arrives first and no token is checked yet. No signal has a request principal, so **every** signal is refused with `403`, even ones with a perfectly good token.
+In the other order, the policy arrives first and no token is checked yet. No request has a request principal, so **every** request is refused with `403`, even ones with a perfectly good token. To remove them, go the other way round: delete the policy that requires a token first, then the `RequestAuthentication`.
 
-To remove them, go the other way round: delete the policy that requires a token first, then the `RequestAuthentication`.
-
-### Check your work
-
-`istioctl analyze` runs Istio's own checks over the objects in a namespace. It catches typos and selectors that point at nothing before a signal does:
+Once both objects are in place, check them. `istioctl analyze` runs Istio's own checks over the objects in a namespace. It catches typos and selectors that point at nothing before a request does:
 
 ```sh
 istioctl analyze -n starfleet
@@ -142,32 +126,32 @@ istioctl analyze -n starfleet
 ✔ No validation issues found when analyzing namespace: starfleet.
 ```
 
-A clean result means the objects are well formed and point at real ships. It does not prove that the right signals get in; only `check_status` proves that.
+A clean result means the objects are well formed and point at real workloads. It does not prove that the right requests get in; only `check_status` proves that.
+
+You can now require a token on a workload. Requiring a token is not a feature of `RequestAuthentication`: it is an `ALLOW` policy with a rule that only a valid token can match. A `401` sends you to the token check, a `403` sends you to the policy, and the safe order is token check first, policy second. One thing is still fixed: the proxy reads the token only from the `Authorization` header, and the requirement is written only as `ALLOW`.
 
 ## Common pitfalls
 
 > [!WARNING]
-> - **Believing `RequestAuthentication` protects a ship.** Without a policy that needs `requestPrincipals`, signals without a token get `200`.
-> - **Reading `403` as a token problem.** It is the opposite: the guard's list refused a signal that passed the token check, or had no token at all.
-> - **Applying the policy before the `RequestAuthentication`.** No token is checked yet, so every signal is refused, even good ones.
-> - **Mixing up `principals` and `requestPrincipals`.** One is the ship's certificate name, the other the person's token name. Both sit in `from.source`.
+> - **Believing `RequestAuthentication` protects a workload.** Without a policy that needs `requestPrincipals`, requests without a token get `200`.
+> - **Reading `403` as a token problem.** It is the opposite: the `AuthorizationPolicy` refused a request that passed the token check, or had no token at all.
+> - **Applying the policy before the `RequestAuthentication`.** No token is checked yet, so every request is refused, even ones with a valid token.
+> - **Mixing up `principals` and `requestPrincipals`.** One is the workload's identity from its certificate, the other the end user's identity from the token. Both sit in `from.source`.
 > - **Writing only the issuer in `requestPrincipals`.** The value is `<issuer>/<subject>`. `testing@secure.istio.io` on its own matches nobody; use `testing@secure.istio.io/*` for everyone from that issuer.
-
-> *Requiring a token is not a feature of `RequestAuthentication`. It is an `ALLOW` policy with a rule that only a valid token can match.*
 
 ## Your mission: Require A Valid End-User Token
 
-You can now check tokens on a ship, require one, and tell from `401` and `403` which object refused a signal. Now prove it in a graded mission: protect a notification service so that only signals with a valid token from the sample issuer get through, while the service next to it stays open.
+You can now validate tokens on a workload, require one, and tell from `401` and `403` which object refused a request. The graded lab asks you to protect a notification service so that only requests with a valid token from the sample issuer get through, while the service next to it stays open.
 
-This mission runs on its own small app (`notification-service`, `booking-service` and a `tester` client on the planet `jwt-demo`), not on the Starfleet. The objects you write are the same.
+This lab runs on its own small app (`notification-service`, `booking-service` and a `tester` client in the namespace `jwt-demo`), not on the Starfleet sample app. The objects you write are the same.
 
-The mission runs in its own training solar system, so first pause your playground. Nothing in it is lost:
+The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
 
 ```sh
 astrona stop ats-015-playground-030-01
 ```
 
-Then start the mission:
+Then start the lab:
 
 ```sh
 astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-030/module-01/labs/lab-01
@@ -179,7 +163,7 @@ Read the task in [`question.md`](./labs/lab-01/question.md) and solve it on your
 astrona submit -c sections/section-030/module-01/labs/lab-01
 ```
 
-When the mission is done, remove it and wake your playground up again:
+When the lab is done, remove it and start your playground again:
 
 ```sh
 astrona destroy ats-015-lab-030-01

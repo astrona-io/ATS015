@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Creates the planet `starfleet` (sidecar injection on), mesh-wide access logs,
+# Creates the namespace `starfleet` (sidecar injection on), mesh-wide access logs,
 # the probe v1/v2 (echo service), the shuttle and fortio clients (two callers
-# with two different ID badges), STRICT mTLS for starfleet, and the starting
-# guest list `probe-allow-fleet` (every starfleet ship may send anything).
+# with two different identities), STRICT mTLS for starfleet, and the starting
+# ALLOW policy `probe-allow-fleet` (every starfleet workload may send anything).
 # astrona runs this script with KUBECONFIG pointed at the lab cluster.
 # Creates no DENY policy: that is what the task asks for.
 set -euo pipefail

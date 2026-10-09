@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The lab's starting state: the whole mesh requires mTLS (mesh-wide STRICT in
 # the root namespace). The drifter, which has no sidecar, is refused by every
-# ship. Opening one port of the probe for it is the task.
+# workload. Opening one port of the probe for it is the task.
 set -euo pipefail
 
 kubectl apply -f - <<'YAML'

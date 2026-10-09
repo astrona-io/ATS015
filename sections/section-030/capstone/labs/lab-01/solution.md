@@ -1,10 +1,10 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. Three wishes, two objects. The pass checker (`RequestAuthentication`) checks passes. The guard's list (`AuthorizationPolicy`) demands a pass and decides what each crew group may do.
+Three requirements, two objects. The `RequestAuthentication` validates tokens. The `AuthorizationPolicy` requires a token and decides what each user group may do.
 
 ---
 
-## Step 1: Read both boarding passes
+## Step 1: Read both tokens
 
 Fetch both tokens and decode the middle part, the claims:
 
@@ -20,11 +20,11 @@ echo "$TOKEN_GROUP" | cut -d. -f2 | base64 -d 2>/dev/null; echo
 {"exp":3537391104,"groups":["group1","group2"],"iat":1537391104,"iss":"testing@secure.istio.io","scope":["scope1","scope2"],"sub":"testing@secure.istio.io"}
 ```
 
-Same `iss`, same `sub`. So `requestPrincipals` cannot tell these two passes apart. The `groups` claim can.
+Same `iss`, same `sub`. So `requestPrincipals` cannot tell these two tokens apart. The `groups` claim can.
 
 ---
 
-## Step 2: Set up the pass checker
+## Step 2: Set up token validation
 
 Save this as `requestauthentication-jwt-issuer.yaml`:
 
@@ -60,11 +60,11 @@ kubectl -n jwtclaims-demo exec deploy/tester -- \
 no token: 200
 ```
 
-The pass checker is on, and the service is no better protected. A caller who wants in simply shows no pass. This is `RequestAuthentication` working as designed: it checks a pass only if one is shown.
+Token validation is on, and the service is no better protected. A caller who wants in simply sends no token. This is `RequestAuthentication` working as designed: it validates a token only if the request carries one.
 
 ---
 
-## Step 3: Require a pass, and split by claim
+## Step 3: Require a token, and split by claim
 
 One policy, one rule per role.
 
@@ -82,7 +82,7 @@ spec:
       app: notification-service
   action: ALLOW
   rules:
-    # Any astronaut with a valid pass may notify.
+    # Any request with a valid token may notify.
     - from:
         - source:
             requestPrincipals: ["*"]
@@ -90,7 +90,7 @@ spec:
         - operation:
             methods: ["POST"]
             paths: ["/notify"]
-    # Only crew group1 may use the admin door.
+    # Only a token with group1 in its groups claim may call /admin.
     - from:
         - source:
             requestPrincipals: ["*"]
@@ -109,7 +109,7 @@ Apply it:
 kubectl apply -f authorizationpolicy-notification-access.yaml
 ```
 
-Both rules carry `requestPrincipals: ["*"]`, which means "any valid pass". That is what makes a pass required. A `when` block is only a condition: it is not the same as demanding a pass.
+Both rules carry `requestPrincipals: ["*"]`, which means "any valid token". That is what makes a token required. A `when` block is only a condition: it is not the same as requiring a token.
 
 The `groups` claim is a list. `values: ["group1"]` matches if any item in the list is `group1`. There is no special list syntax.
 
@@ -134,7 +134,7 @@ printf 'no token   GET  /admin:  '; send_signal http://notification-service/admi
 
 <!-- OUTPUT PENDING: expect 403, 401, 200, 403, 404, 403 in that order -->
 
-Two different failure codes come from two different objects. A `401` is the pass checker rejecting a pass it could not verify. A `403` is the guard refusing the signal. The `404` on the `group1` line is the app answering: the mesh let it through, and that is the pass condition.
+Two different failure codes come from two different objects. A `401` is the `RequestAuthentication` rejecting a token it could not verify. A `403` is the `AuthorizationPolicy` denying the request. The `404` on the `group1` line is the app answering: the mesh let it through, and that is the pass condition.
 
 Now submit:
 
@@ -147,7 +147,7 @@ astrona submit -c sections/section-030/capstone/labs/lab-01
 ## Common Mistakes
 
 - **Every request returns `401`.** The `issuer` does not match the token's `iss` exactly, or the cluster cannot reach the key set address.
-- **The request with no token returns `200`.** Only the `RequestAuthentication` exists. Nothing demands a pass yet.
+- **The request with no token returns `200`.** Only the `RequestAuthentication` exists. Nothing requires a token yet.
 - **The groups token is refused on `/admin`.** The claim name is wrong. Decode the token again and compare it with `request.auth.claims[groups]`.
-- **A rule with `when` but no `requestPrincipals`.** A request with no pass can reach a rule you thought was guarded.
-- **Selecting every workload.** If the policy has no `selector`, `booking-service` also demands a pass and the grader's `POST /book` check fails.
+- **A rule with `when` but no `requestPrincipals`.** A request with no token can reach a rule you thought was protected.
+- **Selecting every workload.** If the policy has no `selector`, `booking-service` also requires a token and the grader's `POST /book` check fails.

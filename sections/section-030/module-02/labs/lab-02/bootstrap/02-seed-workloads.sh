@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Creates the planet `starfleet` (sidecar injection on), mesh-wide access logs,
+# Creates the namespace `starfleet` (sidecar injection on), mesh-wide access logs,
 # the shuttle client and the probe v1/v2 echo service, then the
 # RequestAuthentication `probe-jwt` for Istio's sample issuer on the probe.
 # The RequestAuthentication is correct and is not part of the fault.

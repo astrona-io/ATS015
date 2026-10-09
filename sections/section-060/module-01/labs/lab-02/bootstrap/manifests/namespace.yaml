@@ -1,10 +1,10 @@
-# The planet for this playground: namespace "starfleet", in AMBIENT mode.
-# The istio.io/dataplane-mode=ambient label enrols every pod on the planet in
+# The namespace for this playground: namespace "starfleet", in AMBIENT mode.
+# The istio.io/dataplane-mode=ambient label enrols every pod in the namespace in
 # the mesh WITHOUT a sidecar: istio-cni sends each pod's traffic to the
 # ztunnel on its node, and ztunnel does the mutual TLS.
 # Unlike sidecar injection, this works for pods that are already running.
 # There is no istio-injection label here on purpose: ambient and sidecar
-# mode are not mixed on this planet.
+# mode are not mixed in this namespace.
 apiVersion: v1
 kind: Namespace
 metadata:

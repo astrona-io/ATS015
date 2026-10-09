@@ -6,7 +6,7 @@ set -euo pipefail
 
 WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
 
-# 1. Copy the certificate and key out of the Secret on the wrong planet, and
+# 1. Copy the certificate and key out of the Secret in the wrong namespace, and
 #    create the Secret where the gateway pod runs (istio-ingress).
 kubectl get secret starfleet-credential -n starfleet \
   -o jsonpath='{.data.tls\.crt}' | base64 -d > "$WORK/tls.crt"
@@ -16,7 +16,7 @@ kubectl create secret tls starfleet-credential -n istio-ingress \
   --cert="$WORK/tls.crt" --key="$WORK/tls.key" \
   --dry-run=client -o yaml | kubectl apply -f -
 
-# 2. Serve the right host name on the HTTPS door.
+# 2. Serve the right host name on the HTTPS server.
 kubectl apply -f - <<'YAML'
 apiVersion: networking.istio.io/v1
 kind: Gateway

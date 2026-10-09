@@ -1,16 +1,16 @@
-# Redirect And Rotate
+# Redirect HTTP And Rotate The Certificate
 
-Astronaut, your HTTPS door works. Two jobs follow every working TLS door. Callers who still knock on the plain HTTP door must be sent to the sealed one. And one day the certificate must be replaced, without closing the gate. In this part you do both.
+An HTTPS server on the ingress gateway is only the start. The `starfleet-gateway` `Gateway` in the namespace `starfleet` serves `starfleet.example.com` on port `443`, with the certificate from the TLS Secret `starfleet-credential` in `istio-ingress`. Two jobs follow every working TLS server like this one.
+
+First, clients that still call the plain HTTP port must be sent to HTTPS, and must never get the page in plain text. Second, one day the certificate expires and must be replaced, without taking the gateway down. This chapter does both, and neither job needs more than a few lines of YAML or one command.
 
 ## Send plain HTTP to HTTPS
 
-Serving HTTPS does not stop anyone from calling port `80`. You want those callers told "use the HTTPS address instead", and served nothing in plain text. A second server in the same `Gateway` does that.
+Serving HTTPS does not stop anyone from calling port `80`. You want those clients told "use the HTTPS address instead", and served nothing in plain text. Before you add anything, see what such a client gets today.
 
 <!-- astrona:playground:renew -->
 
-### Knock on the plain door first
-
-Send a plain HTTP signal to the gateway's port `80`, through the port forward on `8080`:
+Send a plain HTTP request to the gateway's port `80`, through the port forward on `8080`:
 
 ```sh
 curl -s -o /dev/null -w "%{http_code}\n" --resolve starfleet.example.com:8080:127.0.0.1 \
@@ -22,11 +22,9 @@ curl -s -o /dev/null -w "%{http_code}\n" --resolve starfleet.example.com:8080:12
 exit=52
 ```
 
-No answer at all: exit code `52` means curl got an empty reply. Your `Gateway` has no server on port `80`, so the gateway has nothing listening there, and the port forward closes the connection. The port forward then restarts on its own, which takes a few seconds.
+There is no response at all: exit code `52` means curl got an empty reply. Your `Gateway` has no server on port `80`, so the gateway has nothing listening there, and the port forward closes the connection. The port forward then restarts on its own, which takes a few seconds.
 
-### Add the redirect door
-
-Open `gateway-starfleet.yaml` and add a second server for port `80`. The whole file now looks like this:
+A second server in the same `Gateway` fixes this. Open `gateway-starfleet.yaml` and add a server for port `80`. The whole file now looks like this:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -67,9 +65,7 @@ kubectl apply -f gateway-starfleet.yaml
 gateway.networking.istio.io/starfleet-gateway configured
 ```
 
-### Then check the result
-
-Wait about ten seconds, so the gate gets its new orders and the port forward is back. Then knock on the plain door again, and print where the answer sends you:
+Then check the result. Wait about ten seconds, so the gateway gets its new configuration and the port forward is back. Then call the plain HTTP port again, and print where the response sends you:
 
 ```sh
 curl -s -o /dev/null -w "%{http_code} -> %{redirect_url}\n" --resolve starfleet.example.com:8080:127.0.0.1 \
@@ -82,19 +78,15 @@ curl -s -o /dev/null -w "%{http_code} -> %{redirect_url}\n" --resolve starfleet.
 
 The gateway answers `301` ("moved permanently") and points at the same address with `https://`. It keeps the port you used, here the local `8080`. Behind a real load balancer, clients call port `80`, and the redirect sends them to the normal HTTPS port.
 
-### Why a `tls` block on an HTTP port
+A `tls` block on port `80` looks wrong at first, because there is no TLS on that port. Read it as "how this server relates to TLS". With `httpsRedirect: true`, the answer is "always send clients to TLS". The gateway answers every request on that server with a redirect, and no request reaches `bridge`.
 
-A `tls` block on port `80` looks wrong at first: there is no TLS there. Read it as "how this door relates to TLS". With `httpsRedirect: true`, the answer is "always send callers to TLS". The gateway answers every request on that door with a redirect, and no request reaches the bridge.
-
-That is right for browsers, which follow redirects on their own. A machine client that does not follow redirects only sees a `301` with no page. So think twice before you put a redirect in front of an API that other programs call.
+That behaviour suits browsers, which follow redirects on their own. A program that does not follow redirects, however, only sees a `301` with no page. So think twice before you put a redirect in front of an API that other programs call.
 
 ## Replace a certificate without a restart
 
-Certificates expire. A public certificate often lives only 90 days, so you replace it often. Because the gate gets its certificate from `istiod` over SDS, replacing the Secret is all it takes. The gateway does not restart and keeps its open connections.
+The redirect protects clients that use the wrong port. The other job is about time: certificates expire. A public certificate often lives only 90 days, so you replace it often. Because the gateway gets its certificate from `istiod` over SDS (Secret Discovery Service), replacing the Secret is all it takes. The gateway does not restart, and it keeps its open connections.
 
-### Make a new certificate
-
-Make a second server certificate for the same host, with a different organisation name so you can tell the two apart:
+To see the change, make a second server certificate for the same host, with a different organisation name so you can tell the two apart:
 
 ```sh
 openssl req -newkey rsa:2048 -nodes -keyout certs/starfleet-v2.key \
@@ -110,9 +102,7 @@ Certificate request self-signature ok
 subject=O=Starfleet Fleet Two, CN=starfleet.example.com
 ```
 
-### Update the Secret in place
-
-`kubectl create secret` refuses a name that already exists. So let it write the new Secret as YAML, and hand that to `kubectl apply`, which updates the existing one:
+Now put the new certificate into the existing Secret. `kubectl create secret` refuses a name that already exists, so let it write the new Secret as YAML instead, and hand that to `kubectl apply`, which updates the existing one:
 
 ```sh
 kubectl create -n istio-ingress secret tls starfleet-credential \
@@ -125,11 +115,9 @@ Warning: resource secrets/starfleet-credential is missing the kubectl.kubernetes
 secret/starfleet-credential configured
 ```
 
-The warning is harmless. You first made this Secret with `kubectl create`, so it lacks a note that `kubectl apply` keeps on the objects it manages. `kubectl apply` adds the note and updates the Secret.
+The warning is harmless. You first made this Secret with `kubectl create`, so it lacks an annotation that `kubectl apply` keeps on the objects it manages. `kubectl apply` adds the annotation and updates the Secret.
 
-### Then check the result
-
-Ask the gate which certificate it shows now:
+Then check the result by asking the gateway which certificate it shows now:
 
 ```sh
 https_status -v 2>&1 | grep -E "subject:|exit="
@@ -145,27 +133,27 @@ The subject now names `Starfleet Fleet Two`. You changed one Secret, and `istiod
 > [!TIP]
 > In real clusters a tool such as `cert-manager` usually renews the Secret for you. The gateway picks up each renewal the same way, so your job is only to make sure the Secret has the right name and lives in the gateway's namespace.
 
+Your gateway now handles both jobs. A port `80` server with `httpsRedirect: true` sends every plain HTTP client to HTTPS, and an in-place update of the Secret rotates the certificate on a running gateway. So far, every step has worked. The open question is what you see when a step goes wrong, because a TLS mistake rarely comes with an error message.
+
 ## Common pitfalls
 
 > [!WARNING]
-> - **A redirect door with no `hosts`.** Every server needs `hosts`; the redirect door must list the same host names as the HTTPS door.
-> - **Putting `credentialName` on the port 80 door.** The redirect door needs no certificate. Only `httpsRedirect: true` belongs in its `tls` block.
+> - **A redirect server with no `hosts`.** Every server needs `hosts`; the redirect server must list the same host names as the HTTPS server.
+> - **Putting `credentialName` on the port 80 server.** The redirect server needs no certificate. Only `httpsRedirect: true` belongs in its `tls` block.
 > - **A redirect in front of API clients.** A program that does not follow redirects sees only a `301`.
-> - **Deleting the Secret to replace it.** Between delete and create, the gate has no certificate and new handshakes fail. Update it in place with `apply`.
-
-> *`httpsRedirect` turns port 80 into a signpost to HTTPS, and replacing the Secret rotates the certificate on a running gate.*
+> - **Deleting the Secret to replace it.** Between delete and create, the gateway has no certificate and new handshakes fail. Update it in place with `apply`.
 
 ## Your mission: Serve HTTPS At The Ingress Gateway
 
-You can now put a certificate where the gateway reads it, open an HTTPS door, and redirect plain HTTP. Now prove it in a graded mission: expose a booking service over HTTPS from certificate files you are handed, with plain HTTP redirected. This mission still runs an older small app (`booking-service` in the namespace `tls-demo`), with the gateway that `istioctl install` creates in `istio-system`, so its names differ from the Starfleet.
+You can now put a certificate where the gateway reads it, serve HTTPS, and redirect plain HTTP. The graded lab asks you to expose a booking service over HTTPS from certificate files you are given, with plain HTTP redirected. This lab still runs an older small app (`booking-service` in the namespace `tls-demo`), with the gateway that `istioctl install` creates in `istio-system`, so its names differ from the Starfleet.
 
-The mission runs in its own training solar system, so first pause your playground. Nothing in it is lost:
+The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
 
 ```sh
 astrona stop ats-015-playground-040-01
 ```
 
-Then start the mission:
+Then start the lab:
 
 ```sh
 astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-040/module-01/labs/lab-01
@@ -177,7 +165,7 @@ Read the task in [`question.md`](./labs/lab-01/question.md) and solve it on your
 astrona submit -c sections/section-040/module-01/labs/lab-01
 ```
 
-When the mission is done, remove it and wake your playground up again:
+When the lab is done, remove it and start your playground again:
 
 ```sh
 astrona destroy ats-015-lab-040-01

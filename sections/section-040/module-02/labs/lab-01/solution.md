@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. The gateway needed one secret with three keys, on its own planet, and a server that asks every visitor for a badge (a client certificate). Then you proved the check from the gateway's own proxy, not only from a request that worked.
+The gateway needed one secret with three keys, in the gateway pod's own namespace, and a server that asks every client for a client certificate. Then you proved the check from the gateway's own proxy, not only from a request that worked.
 
 ---
 
@@ -19,7 +19,7 @@ issuer=CN=ica-ca, O=ica
 
 This is the format of OpenSSL 3. Other versions space or order the fields slightly differently.
 
-The **subject** is the client. The **issuer** is the CA. The gateway will accept any certificate signed by `ica-ca`, and turn away every other one.
+The **subject** is the client. The **issuer** is the CA. The gateway will accept any certificate signed by `ica-ca`, and refuse every other one.
 
 ## Step 2: Build the three-key secret
 
@@ -88,7 +88,7 @@ kubectl apply -f gateway-booking.yaml
 gateway.networking.istio.io/booking-gateway created
 ```
 
-Then the flight plan behind the gate. Save this as `virtualservice-booking.yaml`:
+Then the `VirtualService` that routes requests from the gateway to the service. Save this as `virtualservice-booking.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -124,7 +124,7 @@ virtualservice.networking.istio.io/booking created
 
 ## Step 4: Prove the check is on
 
-Do this before you trust a request that works. Mission control (`istiod`) needs a moment to send the gateway its new orders, so wait about a minute after the apply. First, the certificates the gateway holds:
+Do this before you trust a request that works. `istiod`, Istio's control plane, needs a moment to send the new configuration to the gateway, so wait about a minute after the apply. First, the certificates the gateway holds:
 
 ```sh
 istioctl proxy-config secret deploy/istio-ingressgateway -n istio-system | grep booking-credential-mtls

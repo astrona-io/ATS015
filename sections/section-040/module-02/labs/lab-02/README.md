@@ -2,11 +2,11 @@
 estimated_duration: 20m
 ---
 
-# Fix The Gate's Trusted Badge Office
+# Fix The Trusted CA In A MUTUAL Gateway
 
-Welcome to a repair mission, astronaut. On the planet `starfleet`, the spaceport arrival gate checks every visitor's badge (client certificate). But the fleet's trusted partner is turned away, and a stranger with a badge from an unknown office walks straight in.
+This is a troubleshooting lab. The ingress gateway in front of the `starfleet` namespace checks every client certificate. But the trusted partner is refused, and an unknown client with a certificate from another certificate authority (CA) gets straight in.
 
-Your job is to find out which badge office the gate trusts, using the gateway's own proxy and the secret it reads, fix it, and prove that only the partner gets in.
+Your job is to find out which CA the gateway trusts, using the gateway's own proxy and the secret it reads, fix it, and prove that only the partner gets in.
 
 ## Launching the Lab
 

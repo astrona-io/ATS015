@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. mTLS proved who was calling, but no guard read the badges. You close the namespace with one empty guest list, then add two narrow entries: one for the whole planet, one for a single badge.
+mTLS proved who was calling, but no policy checked the identities. You close the namespace with one allow-nothing policy, then add two narrow `ALLOW` policies: one for the whole namespace, one for a single identity.
 
 ---
 
@@ -19,7 +19,7 @@ No resources found in authz-demo namespace.
 tester -> notify: 200
 ```
 
-No policy means everything that passes the handshake gets in. mTLS is on and `STRICT`, but it does not answer the question "may this caller do this?".
+No policy means every request that passes mTLS gets in. mTLS is on and `STRICT`, but it does not answer the question "may this caller do this?".
 
 ## Step 2: Close the namespace
 
@@ -40,7 +40,7 @@ Apply it:
 kubectl apply -f authorizationpolicy-allow-nothing.yaml
 ```
 
-Three fields are left out, and each one does part of the work. No `action` means `ALLOW`. No `selector` means every workload in the namespace. No `rules` means no call can match. So every workload here now has a guest list, and the list names nobody.
+Three fields are left out, and each one does part of the work. No `action` means `ALLOW`. No `selector` means every workload in the namespace. No `rules` means no call can match. So every workload here is now selected by an `ALLOW` policy, and the policy allows nothing.
 
 Wait up to about a minute, then check the result:
 
@@ -53,7 +53,7 @@ kubectl -n authz-demo exec deploy/tester -- \
 RBAC: access denied
 ```
 
-Look at the shape: a complete HTTP answer with a short body. That is the guard refusing the call, not the handshake cutting the connection.
+Look at the shape: a complete HTTP response with a short body. That is the receiving proxy's RBAC filter denying the call, not mTLS cutting the connection.
 
 ## Step 3: Reopen the booking call for the namespace
 
@@ -88,7 +88,7 @@ kubectl apply -f authorizationpolicy-booking-allow.yaml
 
 Read it as one sentence: *on the booking workloads, allow a caller from namespace `authz-demo` to `POST` `/book`*. Because `allow-nothing` is still there, nothing else gets in.
 
-This policy did not replace `allow-nothing`. Both select `booking-service`, and a call gets in when it fits a rule on either list.
+This policy did not replace `allow-nothing`. Both select `booking-service`, and a call gets in when it matches a rule in either policy.
 
 ## Step 4: Reopen the notification call, by identity
 

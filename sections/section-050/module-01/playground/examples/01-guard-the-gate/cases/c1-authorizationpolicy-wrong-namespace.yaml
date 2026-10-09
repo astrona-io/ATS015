@@ -1,4 +1,4 @@
-# MISTAKE: the same policy on the app's planet (starfleet).
+# MISTAKE: the same policy in the app's namespace (starfleet).
 # Accepted without an error, but the selector only looks at pods in starfleet,
 # and no pod there carries istio=ingress. Nothing is blocked.
 apiVersion: security.istio.io/v1

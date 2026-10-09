@@ -1,12 +1,12 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. The safe order is the whole answer: write down `PERMISSIVE`, bring the plain caller into the mesh, measure again, and only then switch to `STRICT`. Switch first, and `outside-client` is cut off until you fix it.
+The safe order is the whole answer: write down `PERMISSIVE`, add a sidecar to the plain-text client, measure again, and only then switch to `STRICT`. Switch first, and `outside-client` is cut off until you fix it.
 
 ---
 
-## Step 1: Count the plain signals
+## Step 1: Count the plain-text requests
 
-Send 10 signals from each caller, then read the counter on the **receiving** proxy, `notification-service-v1`. The pipeline adds up the signals for each value of `connection_security_policy`:
+Send 10 requests from each client, then read the counter on the **receiving** proxy, `notification-service-v1`. The pipeline adds up the requests for each value of `connection_security_policy`:
 
 ```sh
 for i in $(seq 1 10); do
@@ -28,7 +28,7 @@ none 10
 
 The first line is an information message from `pilot-agent`; ignore it. The two counter lines can come out in either order.
 
-`none` is there, so a switch to `STRICT` right now would break a caller. The `-c istio-proxy` matters: the counter lives in the sidecar, not in the app.
+`none` is there, so a switch to `STRICT` right now would break a client. The `-c istio-proxy` matters: the counter lives in the sidecar, not in the app.
 
 ## Step 2: Write down the mode you are in
 
@@ -53,7 +53,7 @@ kubectl apply -f peerauthentication-migrate-demo-permissive.yaml
 
 This changes no behaviour. It makes the current mode visible, and it is the file you apply again if the switch goes wrong.
 
-## Step 3: Bring outside-client into the mesh
+## Step 3: Inject a sidecar into outside-client
 
 Sidecar injection happens only when a pod is created, so the label alone does nothing to the running pod:
 
@@ -90,7 +90,7 @@ The new pod carries `istio-proxy` in the `INIT` column. Istio 1.30 adds it as a 
 
 ## Step 4: Measure again
 
-The old `none` signals stay in the counter. Send fresh signals from `outside-client` and run the counter pipeline from step 1 again:
+The old `none` requests stay in the counter. Send new requests from `outside-client` and run the counter pipeline from step 1 again:
 
 ```sh
 for i in $(seq 1 5); do
@@ -109,7 +109,7 @@ mutual_tls 15
 none 10
 ```
 
-`mutual_tls` went up by 5, and `none` stopped going up. No plain signals arrive any more, so the switch is safe.
+`mutual_tls` went up by 5, and `none` stopped going up. No plain-text requests arrive any more, so the switch is safe.
 
 ## Step 5: Switch to STRICT
 
@@ -134,7 +134,7 @@ kubectl apply -f peerauthentication-migrate-demo-strict.yaml
 
 ## Step 6: Prove it both ways
 
-New orders can take up to about a minute to reach connections that are already open. Wait a minute, then send real signals first:
+New configuration can take up to about a minute to reach connections that are already open. Wait a minute, then send real requests first:
 
 ```sh
 kubectl -n migrate-demo exec deploy/tester -- \
@@ -148,7 +148,7 @@ in-mesh:  200
 migrated: 200
 ```
 
-Then ask mission control what applies to the `notification-service` pod:
+Then ask `istiod`, Istio's control plane, which configuration applies to the `notification-service` pod:
 
 ```sh
 NOTIFY_POD=$(kubectl -n migrate-demo get pod -l app=notification-service -o jsonpath='{.items[0].metadata.name}')
@@ -181,7 +181,7 @@ astrona submit -c sections/section-010/module-03/labs/lab-01
 
 ## Common Mistakes
 
-- **`outside-client` gets `000` (curl exit code 56).** It still sends plain signals to a `STRICT` server. The namespace label was set, but the pod was never restarted.
+- **`outside-client` gets `000` (curl exit code 56).** It still sends plain text to a `STRICT` server. The namespace label was set, but the pod was never restarted.
 - **`outside-client` shows `1/1`.** Same cause: run `kubectl -n outside rollout restart deployment outside-client`. Istio 1.30 adds `istio-proxy` as a native sidecar, so look for it among the init containers (or at `2/2` in the `READY` column), not only among the containers.
 - **The `STRICT` check fails.** The policy has a `selector`, which makes it a workload policy, or it is not named `default`.
 - **Testing too fast.** Right after a restart, `kubectl exec deploy/outside-client` can still reach the old pod without a sidecar. Wait for `rollout status` to report success.

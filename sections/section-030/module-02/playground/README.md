@@ -4,10 +4,10 @@
 - **Author:** Paris Nakita Kejser
 - **Type:** Astrona playground — clean environment, no task, no grading
 
-A training solar system in the simulator: it starts a `kind` cluster with Istio
+This playground starts a `kind` cluster with Istio
 and the Starfleet (the Istio docs' Bookinfo sample, renamed), the `shuttle`
-client and the `probe` echo service. The probe already checks end-user tokens
-with a `RequestAuthentication`. Then it waits for you, astronaut. Use it
+client and the `probe` echo service. The probe already validates end-user tokens
+with a `RequestAuthentication`. Then it waits for you. Use it
 alongside the module's parts. Nothing to submit.
 
 The playground needs outbound internet: `istiod` downloads the sample

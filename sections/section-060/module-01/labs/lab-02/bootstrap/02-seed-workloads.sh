@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Creates the planet `starfleet` enrolled in AMBIENT mode (no sidecars), the
+# Creates the namespace `starfleet` enrolled in AMBIENT mode (no sidecars), the
 # Starfleet (bridge, cargo, scout v1-v3, navcom, each with its own service
 # account) and the shuttle client (service account "shuttle").
 # Creates NONE of the objects the task asks for: no AuthorizationPolicy.

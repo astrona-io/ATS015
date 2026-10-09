@@ -1,6 +1,6 @@
 # Practice: Authorize On JWT Claims
 
-Two exam-style missions for this playground, astronaut. Start the playground
+Two exam-style tasks for this playground. Start the playground
 first, and paste the helpers from [overview.md](./overview.md#helpers). The
 solutions use them.
 

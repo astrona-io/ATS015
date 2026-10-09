@@ -3,7 +3,7 @@
 #   - namespace starfleet, enrolled in AMBIENT mode (no sidecars) + access logs
 #     for the waypoint you create later
 #   - the Starfleet: bridge, cargo, scout v1-v3, navcom (Bookinfo with space
-#     names). Each ship runs as its own service account (starfleet-bridge,
+#     names). Each workload runs as its own service account (starfleet-bridge,
 #     starfleet-cargo, starfleet-scout, starfleet-navcom), which is its identity.
 #   - shuttle (test client, service account "shuttle") + probe v1/v2 (echo
 #     service: it accepts any method, so method rules are easy to test)

@@ -6,7 +6,7 @@ estimated_duration: 20m
 
 Solve this question on: `terminal`
 
-Astronaut, the booking API is being opened to three partner systems, and to nobody else. Your organisation runs a certificate authority (CA) and has given each partner a client certificate. Make the ingress gateway turn away anyone who cannot show one.
+The booking API is being opened to three partner systems, and to nobody else. Your organisation runs a certificate authority (CA) and has given each partner a client certificate. Make the ingress gateway refuse any client that cannot present one.
 
 The cluster runs Istio 1.30.5, installed with the `demo` profile. The ingress gateway is the Deployment and Service `istio-ingressgateway` in `istio-system`, and its pods carry the label `istio: ingressgateway`. The namespace `mtlsedge-demo` has sidecar injection on and runs:
 

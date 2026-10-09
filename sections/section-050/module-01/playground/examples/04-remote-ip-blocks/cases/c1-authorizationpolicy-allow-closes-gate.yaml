@@ -1,7 +1,7 @@
 # MISTAKE: a block-list written as ALLOW + notRemoteIpBlocks with no other
 # ALLOW on the gateway. It works for this host, but it is now the only ALLOW
 # policy on a shared gateway: change it later (add a path, a host) and every
-# signal that matches no ALLOW rule is refused, on every host. DENY is the
+# request that matches no ALLOW rule is denied, on every host. DENY is the
 # safer shape for a block-list.
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy

@@ -1,12 +1,12 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. The drifter calls the probe on port `8000`, but that is only the Service's call sign. The probe pods listen on `8080`, and the sidecar enforces the mode on the port the pod listens on. So the exception goes on `8080`.
+The drifter calls the probe on port `8000`, but that is only the Service port. The probe pods listen on `8080`, and the sidecar enforces the mode on the port the pod listens on. So the exception goes on `8080`.
 
 ---
 
 ## Step 1: Confirm the starting point
 
-Check the policies, then send the drifter's signal to the probe:
+Check the policies, then send the drifter's request to the probe:
 
 ```sh
 kubectl get peerauthentication -A
@@ -34,7 +34,7 @@ kubectl get service probe -n starfleet -o jsonpath='{.spec.ports[0].port} -> {.s
 8000 -> 8080
 ```
 
-Callers dial `8000`. The pod listens on `8080`. The key is `8080`.
+Callers use `8000`. The pod listens on `8080`. The key is `8080`.
 
 ## Step 3: Open one port
 
@@ -87,7 +87,7 @@ http://navcom.starfleet:9080/ratings/0 000
 
 A new policy can take up to a minute to reach every proxy. If the probe still answers `000`, wait and run the loop again.
 
-The shuttle still uses the handshake. Its identity arrives at the probe:
+The shuttle still uses mTLS. Its identity arrives at the probe:
 
 ```sh
 kubectl exec -n starfleet deploy/shuttle -- curl -s http://probe:8000/headers | grep -A2 -i client-cert
@@ -112,5 +112,5 @@ astrona submit -c sections/section-010/module-02/labs/lab-02
 - **Using `8000` as the key.** It is the Service port. The policy is accepted and does nothing, and the drifter is still refused.
 - **Leaving out the `selector`.** `portLevelMtls` only works in a workload policy. `kubectl apply` refuses it with `portLevelMtls requires selector`.
 - **Setting the whole probe to `PERMISSIVE`.** The drifter gets in, but so would plain text on every other port. The grader checks that only `8080` is open.
-- **A namespace-wide `PERMISSIVE` policy in `starfleet`.** It opens every ship on the planet, and the drifter reaches the scout too.
-- **Testing too fast.** `kubectl apply` returns before the probe's sidecar has the new orders. If the drifter still gets `000`, wait up to a minute and try again.
+- **A namespace-wide `PERMISSIVE` policy in `starfleet`.** It opens every workload in the namespace, and the drifter reaches the scout too.
+- **Testing too fast.** `kubectl apply` returns before the probe's sidecar has the new configuration. If the drifter still gets `000`, wait up to a minute and try again.

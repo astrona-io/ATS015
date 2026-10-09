@@ -1,20 +1,20 @@
-# One Path, One Network
+# Allow One Path From One Network Only
 
-Astronaut, a block-list keeps a few addresses out. The opposite request is just as common: "only the office may reach the admin pages". This part writes that rule without closing the rest of the gate, then shows how to read back everything that decides an address rule, and finally what an address is really worth as a control.
+A block-list keeps a few addresses out. The opposite need is just as common: "only the office may reach the administration pages". On a shared gateway, the obvious way to write that rule closes every other page too, for everyone.
 
-## Open one path to one network only
+This chapter writes the rule without closing the rest of the gateway. Then it shows how to read back everything that decides an address rule. Finally, it asks what an address is really worth as a security control.
 
-The bridge's API on `/api/v1/products` is the surface to protect here. Only the office network, `203.0.113.0/24`, may reach it. Everyone may still open `/productpage`.
+## Open one path to one network
 
-### Turn "only X" into a `DENY`
+Here the surface to protect is the `bridge` API on `/api/v1/products`. Only the office network, `203.0.113.0/24`, may reach it, and everyone may still open `/productpage`.
 
-"Only the office may reach this path" is the same as "refuse this path when the client is **not** the office". Written that way, it is a `DENY`, and a `DENY` leaves every signal it does not name alone.
+The first instinct is often an `ALLOW` policy with the path and the office range. It lets the office in, but it also denies `/productpage` for everyone. Once an `ALLOW` policy selects the gateway, every request that matches none of its rules is denied.
 
-The first instinct is often an `ALLOW` policy with the path and the office range. It lets the office in, but it also refuses `/productpage` for everyone: once an `ALLOW` policy selects the gateway, every signal that matches none of its rules is refused.
+The way out is to turn the sentence around. "Only the office may reach this path" is the same as "deny this path when the client is **not** the office". Written that way, it is a `DENY`, and a `DENY` leaves every request it does not name alone.
 
 <!-- astrona:playground:renew -->
 
-The rule needs the gateway to trust one relay, so `istioctl proxy-config listener deploy/istio-ingress -n istio-ingress -o json | grep xffNumTrustedHops` must print `"xffNumTrustedHops": 1`. Save this as `authorizationpolicy-gateway-api-office-only.yaml`:
+The rule reads the client address from `X-Forwarded-For`, so the gateway must trust one proxy. Check that `istioctl proxy-config listener deploy/istio-ingress -n istio-ingress -o json | grep xffNumTrustedHops` prints `"xffNumTrustedHops": 1`. Then save this as `authorizationpolicy-gateway-api-office-only.yaml`:
 
 ```yaml
 apiVersion: security.istio.io/v1
@@ -48,13 +48,11 @@ Warning: configured AuthorizationPolicy will deny all traffic to TCP ports under
 authorizationpolicy.security.istio.io/gateway-api-office-only created
 ```
 
-The warning is normal for a `DENY` rule with HTTP fields (a host and a path). On a plain TCP channel those fields cannot be read, so Istio would refuse everything there. The gate only speaks HTTP, so nothing extra is blocked.
+The warning is normal for a `DENY` rule with HTTP fields, such as a host and a path. On a plain TCP port those fields cannot be checked, so Istio would deny everything there. The gateway only serves HTTP, so nothing extra is blocked.
 
-Read the rule like this: `to` and `from` in the same rule must **both** match. The signal goes to the API on this host, **and** its client is outside the office range. Only then is it refused.
+Read the rule like this: `to` and `from` in the same rule must **both** match. The request goes to the API on this host, **and** its client is outside the office range. Only then is it denied.
 
-### Check every corner
-
-Wait about a minute, so the gate gets its new orders. Then check the result. Test the office and an outsider on the API, and an outsider on the page:
+Wait about a minute, so the gateway gets its new configuration. Then test every corner of the rule: the office and an outsider on the API, and an outsider on the page:
 
 ```sh
 gate_status /api/v1/products 203.0.113.7
@@ -68,13 +66,11 @@ gate_status /productpage 10.1.2.3
 200
 ```
 
-The office gets the API, the outsider does not, and the page stays open for everyone. Three signals, three corners of the rule. Testing only one of them would not tell a correct rule from one that closes everything.
+The office gets the API, the outsider does not, and the page stays open for everyone. Three requests cover three corners of the rule. Testing only one of them would not tell a correct rule from one that closes everything.
 
 ## Read back what is in force
 
-An address rule can be wrong in three places: the policy, the trusted relay setting, and your idea of which address arrives. Only the first one is visible in the YAML you wrote. Check all three.
-
-### Three questions, three places
+The rule works, but on a real cluster you will often meet a rule that does not. An address rule can be wrong in three places: the policy, the trusted proxy setting, and your idea of which address arrives. Only the first one is visible in the YAML you wrote, so check all three. Start with the policies and the mesh-wide setting:
 
 ```sh
 kubectl get authorizationpolicy -A
@@ -96,9 +92,9 @@ rootNamespace: istio-system
 trustDomain: cluster.local
 ```
 
-The first command lists every policy on every planet. On a shared gate, that includes policies someone else wrote, and a policy on the wrong planet shows up here too. The second shows the mesh-wide setting that `istiod` holds. It is only a setting: the proof that the gateway uses it is still `xffNumTrustedHops` in the gateway's listener.
+The first command lists every policy in every namespace. On a shared gateway, that includes policies someone else wrote, and a policy in the wrong namespace shows up here too. The second command shows the mesh-wide setting that `istiod` holds. It is only a setting: the proof that the gateway uses it is still `xffNumTrustedHops` in the gateway's listener.
 
-The third question is "which address did the gate see?", and only the flight log answers it:
+The third question is "which address did the gateway see?", and only the access log answers it:
 
 ```sh
 gate_log 3
@@ -110,41 +106,33 @@ gate_log 3
 [2026-10-09T11:12:59.550Z] "GET /productpage HTTP/1.1" 200 - via_upstream - "-" 0 15068 146 145 "10.1.2.3,10.244.0.18" "curl/8.7.1" "e1224188-0e01-4023-8bfb-9c6ca68a250d" "starfleet.example.com" "10.244.0.12:9080" outbound|9080||bridge.starfleet.svc.cluster.local 10.244.0.18:60878 127.0.0.1:80 10.1.2.3:0 - -
 ```
 
-Each line shows the decision and the client address together: `203.0.113.7:0` got the API, `10.1.2.3:0` did not, and `10.1.2.3:0` still got the page. Compare that address with your range, and most surprises explain themselves in one line.
+Each line shows the decision and the client address together. `203.0.113.7:0` got the API, `10.1.2.3:0` did not, and `10.1.2.3:0` still got the page. Compare that address with your range, and most surprises explain themselves in one line.
 
-### The order to check in
-
-When a gate rule does not do what you expect, go through it in this order:
+When a gateway rule does not do what you expect, go through it in this order:
 
 1. **Does the policy exist, and does it select the gateway?** `kubectl get authorizationpolicy -A`, then the gateway pod's labels and namespace.
-2. **Does the gate trust the right number of relays?** `xffNumTrustedHops` in the gateway's listener.
-3. **Which address did the gate see?** The last address on the flight log line.
+2. **Does the gateway trust the right number of proxies?** `xffNumTrustedHops` in the gateway's listener.
+3. **Which address did the gateway see?** The last address on the access log line.
 4. **Is that address inside the range you wrote?** Simple arithmetic on the CIDR.
 
-Steps 3 and 4 catch most mistakes. Step 1 catches the rest.
+Steps 3 and 4 catch most mistakes, and step 1 catches the rest.
 
 ## What an address is worth
 
-Addresses are a coarse control. Knowing their limits tells you where they belong in a design.
+You can now write and check address rules. The last question is where they belong in a design, because addresses are a coarse control.
 
-### Good at shrinking the crowd
+An address rule is good at **reducing who can even try**. Typical uses are an administration path only from the office, a known attacking network blocked, or a partner limited to the addresses they publish. It costs almost nothing per request, and it cuts down the traffic at the gateway.
 
-An address rule is good at **reducing who can even try**: an admin path only from the office, a known attacking network blocked, a partner limited to the addresses they publish. It costs almost nothing per signal, and it cuts the crowd at the gate.
-
-### Weak as an identity
-
-An address is not a person or a program. Many people share one address behind a home or office router. Cloud providers hand addresses to new owners. VPNs and proxies lend addresses to anyone. And `remoteIpBlocks` reads a header that is only trustworthy with the right `numTrustedProxies`. "This signal came from 203.0.113.7" means "it came from that network", never "it came from Alice".
+As an identity, though, an address is weak. Many people share one address behind a home or office router. Cloud providers hand addresses to new owners, and virtual private networks (VPNs) and proxies lend addresses to anyone. On top of that, `remoteIpBlocks` reads a header that is only trustworthy with the right `numTrustedProxies`. So "this request came from 203.0.113.7" means "it came from that network", never "it came from Alice". The table compares the address with the stronger controls:
 
 | Control | It proves | Strength | Where it works |
 | --- | --- | --- | --- |
-| Source address | the network the signal came from | weak, coarse | the gate |
-| Client certificate | the calling system | strong | the gate |
-| JSON Web Token (JWT) | the end user and their roles | strong, expires | the gate or the ship |
+| Source address | the network the request came from | weak, coarse | the gateway |
+| Client certificate | the calling system | strong | the gateway |
+| JSON Web Token (JWT) | the end user and their roles | strong, expires | the gateway or the workload |
 | Mesh identity | the calling workload | strong | inside the mesh |
 
-So use the address rule as the first, cheap layer, and put a real identity check behind it. For the admin path above, that means the right network **and** a valid token. Neither alone is enough; together they are a real barrier.
-
-### Clean up
+So use the address rule as the first, cheap layer, and put a real identity check behind it. For the administration path above, that means the right network **and** a valid token. Neither alone is enough; together they are a real barrier.
 
 Remove the policy:
 
@@ -152,28 +140,28 @@ Remove the policy:
 kubectl delete -f authorizationpolicy-gateway-api-office-only.yaml
 ```
 
+You now know that "only this network may reach this path" is a `DENY` on the path for everyone outside the network, with the path and the range in one rule. When a rule surprises you, you check the policy, the trusted proxies and the address in the access log, in that order. And you know that an address only narrows who can try; proving who is calling needs an identity check on top.
+
 ## Common pitfalls
 
 > [!WARNING]
-> - **"Only X" written as `ALLOW`.** An `ALLOW` on the gate refuses every signal that matches none of its rules, on every host. Write "only X may reach this path" as a `DENY` for the path with `notRemoteIpBlocks`.
-> - **`to` and `from` in separate rules.** Two rules are two separate reasons to refuse. Put the path and the range in the **same** rule so both must match.
+> - **"Only X" written as `ALLOW`.** An `ALLOW` on the gateway denies every request that matches none of its rules, on every host. Write "only X may reach this path" as a `DENY` for the path with `notRemoteIpBlocks`.
+> - **`to` and `from` in separate rules.** Two rules are two separate reasons to deny. Put the path and the range in the **same** rule so both must match.
 > - **Testing one corner.** Test the allowed network, an outsider on the protected path, and an outsider on an open path.
-> - **Trusting the YAML.** Read back the policies with `kubectl get authorizationpolicy -A`, the trusted relays with `xffNumTrustedHops`, and the address in the flight log.
+> - **Trusting the YAML.** Read back the policies with `kubectl get authorizationpolicy -A`, the trusted proxies with `xffNumTrustedHops`, and the address in the access log.
 > - **An address as the only lock.** Addresses are shared, reassigned and borrowed. Put a real identity check behind them.
-
-> *"Only this network may reach this path" is a `DENY` on the path for everyone outside the network, and the flight log is the only place where the address and the decision meet.*
 
 ## Your mission: Open One Path To One Network
 
-You can now open one path to one network at the arrival gate, keep the rest of the gate open, and read back every piece that decides the result. Now prove it in a graded mission: on the Starfleet's gate, only the office range may reach the bridge's API, and nobody may lose access to the page.
+You can now open one path to one network at the ingress gateway, keep the rest of the gateway open, and read back every piece that decides the result. Now prove it in a graded lab: on the `starfleet` gateway, only the office range may reach the `bridge` API, and nobody may lose access to the page.
 
-The mission runs in its own training solar system, so first pause your playground. Nothing in it is lost:
+The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
 
 ```sh
 astrona stop ats-015-playground-050-01
 ```
 
-Then start the mission:
+Then start the lab:
 
 ```sh
 astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-050/module-01/labs/lab-02
@@ -185,7 +173,7 @@ Read the task in [`question.md`](./labs/lab-02/question.md) and solve it on your
 astrona submit -c sections/section-050/module-01/labs/lab-02
 ```
 
-When the mission is done, remove it and wake your playground up again:
+When the lab is done, remove it and start your playground again:
 
 ```sh
 astrona destroy ats-015-lab-050-01-02

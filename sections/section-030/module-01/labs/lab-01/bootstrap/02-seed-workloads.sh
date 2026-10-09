@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Creates the planet `jwt-demo` (sidecar injection on) with booking-service-v1,
+# Creates the namespace `jwt-demo` (sidecar injection on) with booking-service-v1,
 # notification-service-v1 and the tester client pod.
 # Creates NONE of the objects the task asks for - those are what grading checks.
 # astrona runs this script with KUBECONFIG pointed at the lab cluster.

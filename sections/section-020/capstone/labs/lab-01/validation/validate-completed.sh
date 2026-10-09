@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Grading for CAP015-020 — deny-by-default, two narrow doors, one DENY backstop.
+# Grading for CAP015-020 — deny-by-default, two narrow ALLOW rules, one DENY backstop.
 set -uo pipefail
 
 NS="authz-demo"

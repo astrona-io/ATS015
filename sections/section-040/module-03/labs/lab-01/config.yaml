@@ -25,7 +25,7 @@ testing:
 validation:
   scripts:
     - name: "verify-passthrough"
-      description: "Confirms the Gateway passthrough-gateway and the VirtualService passthrough exist, the listener is TLS PASSTHROUGH with no credential, the route matches sniHosts, a real signal through the gateway gets 200, the certificate served is the backend's own, and the gateway has no HTTP route for the host"
+      description: "Confirms the Gateway passthrough-gateway and the VirtualService passthrough exist, the listener is TLS PASSTHROUGH with no credential, the route matches sniHosts, a real request through the gateway gets 200, the certificate served is the backend's own, and the gateway has no HTTP route for the host"
       type: "file"
       source: "validation/validate-completed.sh"
 

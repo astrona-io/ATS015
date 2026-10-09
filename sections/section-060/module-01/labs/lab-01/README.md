@@ -4,11 +4,11 @@ estimated_duration: 20m
 
 # Enforce L4 And L7 Policy In Ambient Mode
 
-Welcome to an ambient mission, astronaut. Namespace `ambient-authz` runs in ambient mode: no sidecars, only ztunnel. Someone ported an old method rule across, saw it listed by `kubectl get`, and closed the ticket. It was never enforced.
+Namespace `ambient-authz` runs in ambient mode: no sidecars, only ztunnel. Someone ported an old method rule across, saw it listed by `kubectl get`, and closed the ticket. It was never enforced.
 
 Your job is to do it properly: add a waypoint, send the traffic through it, and write one policy that allows one identity and one method, so you can prove which component enforces the rule.
 
-This mission uses its own small app (`notification-service` with two client pods), not the Starfleet.
+This lab uses its own small app (`notification-service` with two client pods), not the Starfleet.
 
 ## Launching the Lab
 

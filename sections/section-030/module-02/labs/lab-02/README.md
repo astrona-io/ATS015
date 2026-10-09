@@ -4,7 +4,7 @@ estimated_duration: 3m
 
 # Fix The Claim Rule
 
-Welcome to a repair mission, astronaut. On the planet `starfleet`, the echo probe has an access policy that looks right and is not. Administrators are refused at the admin path, and the public path asks everyone for a token.
+In the namespace `starfleet`, the `probe` echo service has an access policy that looks right and is not. Administrators are refused at the administrator path, and the public path asks everyone for a token.
 
 Your job is to find both faults with a decoded token and the probe's proxy configuration, fix the policy, and prove each path answers the right callers.
 

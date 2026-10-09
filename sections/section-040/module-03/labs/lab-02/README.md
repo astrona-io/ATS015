@@ -2,11 +2,11 @@
 estimated_duration: 20m
 ---
 
-# Fix The Gate That Routes Nothing
+# Fix A Passthrough Gateway That Routes Nothing
 
-Welcome to a repair mission, astronaut. The arrival gate should pass the vault's sealed signals through unopened, and every object applied without an error. Still, every visitor gets no answer at all. There is more than one fault.
+In this troubleshooting lab, the ingress gateway should pass the encrypted traffic of `tls-backend` through without decrypting it, and every object applied without an error. Still, every client gets no response at all. There is more than one fault.
 
-Your job is to find each fault with the gate's listener and route table, fix it, and prove that a visitor reaches the vault and gets the vault's own certificate.
+Your job is to find each fault with the gateway's listener and route table, fix it, and prove that a client reaches `tls-backend` and gets the certificate that `tls-backend` made itself.
 
 ## Launching the Lab
 

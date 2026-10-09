@@ -4,9 +4,9 @@
 - **Author:** Paris Nakita Kejser
 - **Type:** Astrona playground — clean environment, no task, no grading
 
-A training solar system in the simulator: it starts a `kind` cluster with Istio, an ingress gateway
-and the Starfleet (the Istio docs' Bookinfo sample, renamed), then waits for you, astronaut. Use it
-alongside the module's parts. Nothing to submit.
+It starts a `kind` cluster with Istio, an ingress gateway and the Starfleet (the Istio docs'
+Bookinfo sample, renamed), then waits for you. Use it alongside the module's parts. Nothing to
+submit.
 
 ## Run it
 

@@ -4,9 +4,9 @@ estimated_duration: 15m
 
 # Route An Encrypted Stream By SNI
 
-Welcome to a build mission, astronaut. A backend ship ends TLS itself with its own certificate, and nothing in the middle may open its signals. You put it behind the shared arrival gate in passthrough mode, route it on the address on the envelope (SNI), and prove that the certificate the visitor gets is the backend's own.
+In this build lab, a backend ends TLS (Transport Layer Security) itself with its own certificate, and nothing in the middle may decrypt its traffic. You put it behind the shared ingress gateway in passthrough mode, route it on the SNI (Server Name Indication) name, the host name the client sends in clear text, and prove that the certificate the client gets is the backend's own.
 
-This mission uses its own small app (`tls-backend` in `passthrough-demo`), not the Starfleet.
+This lab uses its own small app (`tls-backend` in `passthrough-demo`), not the Starfleet.
 
 ## Launching the Lab
 

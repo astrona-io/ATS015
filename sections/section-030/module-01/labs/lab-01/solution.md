@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. Protecting a service from requests without a token always takes two objects. A `RequestAuthentication` checks tokens, and an `AuthorizationPolicy` makes one required. With only the first, the service is as open as before.
+Protecting a service from requests without a token always takes two objects. A `RequestAuthentication` checks tokens, and an `AuthorizationPolicy` makes one required. With only the first, the service is as open as before.
 
 ---
 
@@ -76,7 +76,7 @@ The token check works: the `401` proves the proxy had the keys and checked a sig
 
 ## Step 3: Require a token
 
-Requiring a token is a rule about who may come in, so it is an `AuthorizationPolicy`.
+Requiring a token is a rule about which requests are allowed, so it is an `AuthorizationPolicy`.
 
 Save this as `authorizationpolicy-require-jwt.yaml`:
 
@@ -150,7 +150,7 @@ istioctl proxy-config listener deploy/notification-service-v1 -n jwt-demo -o jso
    4 "localJwks"
 ```
 
-The proxy has the token filter, the exact issuer string, and `localJwks`: the public keys that `istiod` downloaded and put into the proxy's orders. The counts depend on how the proxy's listeners are built, so do not worry about them. What matters is that all three lines are there.
+The proxy has the token filter, the exact issuer string, and `localJwks`: the public keys that `istiod` downloaded and put into the proxy's configuration. The counts depend on how the proxy's listeners are built, so do not worry about them. What matters is that all three lines are there.
 
 Now submit:
 

@@ -6,20 +6,20 @@ estimated_duration: 45m
 
 Solve this question on: `terminal`
 
-Astronaut, two orders reached you on the same day. Security wants the secret handshake required across the whole fleet, with no exceptions. The booking team wants their notification service closed to every ship but one. There is a catch: one caller still flies outside the mesh, and if you turn on the first order before you deal with it, it loses contact.
+Two requests reached you on the same day. The security team wants mutual TLS required across the whole mesh, with no exceptions. The booking team wants their notification service closed to every caller but one. There is a catch: one caller still runs outside the mesh. If you require mutual TLS before you deal with it, its requests fail.
 
 A few words before you start:
 
-* **Mutual TLS (mTLS)** is a secret handshake. Both ships show their ID badges (certificates) before they talk.
-* A **`PeerAuthentication`** is the rule on a ship's airlock. Its mode `STRICT` means "the handshake is required".
-* An **`AuthorizationPolicy`** is the guard's list at the airlock. It says who may come aboard.
-* A **principal** is the name printed on a ship's ID badge, for example `cluster.local/ns/identity-demo/sa/booking-sa`.
+* **Mutual TLS (mTLS)** means both sides of a connection present a certificate. The connection is encrypted, and both identities are verified.
+* A **`PeerAuthentication`** sets whether a workload accepts plain text, mTLS or both on inbound connections. Its mode `STRICT` means "mTLS is required".
+* An **`AuthorizationPolicy`** allows or denies requests to a workload, based on the caller, the operation and other conditions.
+* A **principal** is the workload identity from the caller's certificate, without the `spiffe://` prefix, for example `cluster.local/ns/identity-demo/sa/booking-sa`.
 
 ## What is in the cluster
 
-The cluster runs Istio 1.30.5, installed with the `demo` profile. It has two planets (namespaces).
+The cluster runs Istio 1.30.5, installed with the `demo` profile. It has two namespaces.
 
-**`identity-demo`** (sidecar injection on, so every ship has a communications officer)
+**`identity-demo`** (sidecar injection on, so every pod gets a sidecar proxy (Envoy) that handles all its inbound and outbound traffic)
 
 * `booking-service-v1`: runs with the service account `booking-sa`. Its Service `booking-service` listens on port `80`. When it gets a request, it calls `POST /notify` on `notification-service` and answers `200`, even if that onward call is refused.
 * `notification-service-v1`: runs with the `default` service account. Its Service `notification-service` listens on port `80`.
@@ -27,7 +27,7 @@ The cluster runs Istio 1.30.5, installed with the `demo` profile. It has two pla
 
 **`outside`** (sidecar injection off)
 
-* `outside-client`: a `curl` pod with **no sidecar** and no ID badge. It calls `booking-service.identity-demo` in plain text.
+* `outside-client`: a `curl` pod with **no sidecar** and no certificate. It calls `booking-service.identity-demo` in plain text.
 
 No `PeerAuthentication` and no `AuthorizationPolicy` exist yet.
 

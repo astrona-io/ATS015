@@ -1,4 +1,4 @@
-# The probe: an echo test service (go-httpbin) in two versions, v1 and v2, behind one Service.
+# probe: an HTTP echo test service (go-httpbin) in two versions, v1 and v2, behind one Service.
 # The probe answers with whatever you ask for, which makes Istio behaviour easy
 # to see:
 #   /get            echo the request

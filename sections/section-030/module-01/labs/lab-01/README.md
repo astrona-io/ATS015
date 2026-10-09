@@ -4,11 +4,11 @@ estimated_duration: 3m
 
 # Require A Valid End-User Token
 
-Welcome to a build mission, astronaut. On the planet `jwt-demo`, the notification service answers anyone. It must only answer requests that carry a valid token from Istio's demo issuer, while the booking service next door stays open.
+This is a build lab. In the namespace `jwt-demo`, the notification service answers anyone. It must only answer requests that carry a valid token from Istio's demo issuer, while the booking service next door stays open.
 
 Your job is to check tokens with a `RequestAuthentication`, make one required with an `AuthorizationPolicy`, and prove that a missing token gets `403`, a bad token `401` and the demo token `200`.
 
-This mission uses its own small app (`notification-service`, `booking-service` and a `tester` client), not the Starfleet. The cluster needs outbound internet.
+This lab uses its own small app (`notification-service`, `booking-service` and a `tester` client), not the Starfleet. The cluster needs outbound internet.
 
 ## Launching the Lab
 

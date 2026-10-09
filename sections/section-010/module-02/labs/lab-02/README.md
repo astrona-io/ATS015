@@ -2,11 +2,11 @@
 estimated_duration: 3m
 ---
 
-# Open One Port For The Drifter
+# Open One Port With portLevelMtls
 
-Welcome to a build mission, astronaut. The whole mesh requires the secret handshake (mTLS). The drifter, an old ship on the planet `outpost` with no communications officer, can no longer reach anyone. One ship, the probe, must accept it again, but only on the one radio channel the drifter uses.
+This is a build lab. The whole mesh requires mTLS (mutual TLS, where both sides present a certificate). The drifter, a client pod in the namespace `outpost` with no sidecar proxy, can no longer reach any workload. One workload, the probe, must accept it again, but only on the one port the drifter uses.
 
-Your job is to open exactly one port of the probe with `portLevelMtls`, and prove that every other ship still refuses the drifter.
+Your job is to open exactly one port of the probe with `portLevelMtls`, and prove that every other workload still refuses the drifter.
 
 ## Launching the Lab
 

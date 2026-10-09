@@ -6,7 +6,7 @@ estimated_duration: 20m
 
 Solve this question on: `terminal`
 
-Astronaut, an auditor has a complaint about the planet `authz-demo`. mTLS is on, so every caller's identity is checked. But nothing stops anyone: a debugging pod can call the notification service directly and skip the booking flow. You have been asked to close the namespace and reopen only the two calls the design needs.
+An auditor has a complaint about the namespace `authz-demo`. mTLS is on, so every caller's identity is checked. But nothing stops anyone: a debugging pod can call the notification service directly and skip the booking flow. You have been asked to close the namespace and reopen only the two calls the design needs.
 
 Istio 1.30.5 is installed (`demo` profile). The namespace `authz-demo` has sidecar injection on, a `PeerAuthentication` in **`STRICT`** mode, and these workloads:
 

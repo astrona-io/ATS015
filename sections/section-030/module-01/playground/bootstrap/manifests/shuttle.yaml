@@ -1,5 +1,5 @@
 # The shuttle: your test client inside the mesh.
-# Send every test signal from it with:
+# Send every test request from it with:
 #   kubectl exec -n starfleet deploy/shuttle -- curl -s http://<service>:<port>/...
 # It has a sidecar, so VirtualService and DestinationRule rules apply to its
 # outgoing requests, exactly like for a real app.

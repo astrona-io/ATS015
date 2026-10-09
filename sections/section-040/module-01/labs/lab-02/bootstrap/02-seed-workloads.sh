@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Creates the planet `starfleet` (sidecar injection on), mesh-wide access logs,
+# Creates the namespace `starfleet` (sidecar injection on), mesh-wide access logs,
 # the Starfleet (bridge, cargo, scout v1-v3, navcom) and the shuttle client.
 # astrona runs this script with KUBECONFIG pointed at the lab cluster.
 set -euo pipefail

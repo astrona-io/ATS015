@@ -67,7 +67,7 @@ call() {  # $1 = namespace, $2 = deployment, $3 = URL; prints the HTTP code (000
   code=$(kubectl -n "$1" exec "deploy/$2" -- curl -s -o /dev/null -w '%{http_code}' --max-time 8 -X POST "$3" 2>/dev/null)
   echo "${code:-000}"
 }
-expect() {  # $1 = wanted code, rest = call args; retries while the new orders reach the proxies
+expect() {  # $1 = wanted code, rest = call args; retries while the new configuration reaches the proxies
   local want=$1 got i; shift
   for i in $(seq 1 45); do
     got=$(call "$@")

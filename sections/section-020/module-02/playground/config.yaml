@@ -18,7 +18,7 @@ bootstrap:
       type: "file"
       source: "bootstrap/install-istio.sh"
     - name: "deploy"
-      description: "Namespace starfleet with access logs, the Starfleet (bridge, cargo, scout v1-v3, navcom), shuttle, probe v1/v2, fortio, the drifter on the outpost planet (no sidecar), and STRICT mTLS for starfleet"
+      description: "Namespace starfleet with access logs, the Starfleet (bridge, cargo, scout v1-v3, navcom), shuttle, probe v1/v2, fortio, the drifter in the outpost namespace (no sidecar), and STRICT mTLS for starfleet"
       type: "file"
       source: "bootstrap/deploy.sh"
 

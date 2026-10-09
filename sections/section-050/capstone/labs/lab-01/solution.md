@@ -1,10 +1,10 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. Both wishes are banned lists. One bans a range of return addresses everywhere. The other bans the admin path for everyone outside the office range. A guest list would have closed every hostname on this shared gate.
+Both requirements are `DENY` policies. One blocks a range of client addresses on every path. The other blocks the admin path for every client outside the office range. An `ALLOW` policy would have blocked every hostname on this shared gateway.
 
 ---
 
-## Step 1: Confirm the gate trusts one relay station
+## Step 1: Confirm the gateway trusts one proxy hop
 
 Read the gateway's live listener configuration and look for the number of trusted hops:
 
@@ -47,9 +47,9 @@ Apply it:
 kubectl apply -f authorizationpolicy-gateway-block-list.yaml
 ```
 
-It is a `DENY`, because a block-list takes callers away. An `ALLOW` with nothing else on the gate would close every hostname this shared gateway serves.
+It is a `DENY`, because a block-list takes callers away. An `ALLOW` with nothing else on the gateway would close every hostname this shared gateway serves.
 
-It uses `remoteIpBlocks`, not `ipBlocks`. `ipBlocks` matches whoever opened the connection, and behind a relay station that is the relay station.
+It uses `remoteIpBlocks`, not `ipBlocks`. `ipBlocks` matches whoever opened the connection, and behind a proxy that is the proxy.
 
 ---
 
@@ -86,7 +86,7 @@ Apply it:
 kubectl apply -f authorizationpolicy-gateway-admin-office-only.yaml
 ```
 
-Read it aloud, starting with the action: *deny requests whose client is **not** in 203.0.113.0/24 **and** whose path is `/admin*`.* Both parts of the rule must match. The `to` block is what keeps the ban on the admin paths only. Without it, this rule would deny the whole internet.
+Read it aloud, starting with the action: *deny requests whose client is **not** in 203.0.113.0/24 **and** whose path is `/admin*`.* Both parts of the rule must match. The `to` block is what keeps the block on the admin paths only. Without it, this rule would deny the whole internet.
 
 The path is `/admin*`, not `/admin`, so `/admin/users` is covered too.
 
@@ -94,7 +94,7 @@ The path is `/admin*`, not `/admin`, so `/admin/users` is covered too.
 
 ## Step 4: Prove all five requests
 
-Open a port-forward to the gate. Then a small helper sends one request with a chosen return address in `X-Forwarded-For`:
+Open a port-forward to the gateway. Then a small helper sends one request with a chosen client address in `X-Forwarded-For`:
 
 ```sh
 kubectl -n istio-system port-forward svc/istio-ingressgateway 8080:80 >/dev/null 2>&1 &
@@ -116,7 +116,7 @@ send_signal 192.168.5.5 /admin
 192.168.5.5 /admin: 403
 ```
 
-The `404` is the pass: that request was let through, and the app has no such page. Look at the last line too. The two rules overlap there, and a request caught by either one is denied. Both are banned lists, and any match on a banned list ends the decision.
+The `404` is the pass: that request was let through, and the app has no such page. Look at the last line too. The two rules overlap there, and a request caught by either one is denied. Both are `DENY` policies, and any `DENY` match ends the decision.
 
 Stop the port-forward with `kill %1`.
 
@@ -134,4 +134,4 @@ astrona submit -c sections/section-050/capstone/labs/lab-01
 - **`/admin` is reachable from `10.1.2.3`.** The condition is not reversed: you wrote `remoteIpBlocks` where `notRemoteIpBlocks` was needed.
 - **Nothing is blocked at all.** The policies are in the wrong namespace, or the selector does not match the gateway pod.
 - **Using `ipBlocks`.** It matches the port-forward's address, never the address in `X-Forwarded-For`.
-- **Writing an `ALLOW` for the office range.** On a shared gate, that closes every other hostname and path to everyone else.
+- **Writing an `ALLOW` for the office range.** On a shared gateway, that closes every other hostname and path to everyone else.

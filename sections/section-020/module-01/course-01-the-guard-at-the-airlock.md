@@ -1,63 +1,50 @@
-# The Guard At The Airlock
+# Where Authorization Is Enforced
 
-Astronaut, before you write a single rule, find out where the guard stands and who gives the guard orders. Almost every confusing thing about `AuthorizationPolicy` follows from one fact. The check runs in the communications officer (the sidecar proxy) of the ship that **receives** the signal, and it runs only after the secret handshake has worked.
+Before you write a single rule, you need to know where the check runs and who sets it up. Almost every confusing thing about `AuthorizationPolicy` follows from one fact. The check runs in the sidecar proxy of the pod that **receives** the request, and it runs only after the mTLS handshake has worked.
 
-This part shows that path, proves that a ship with no policy lets everyone in, and shows where to look when the guard says no.
+A sidecar proxy (Envoy) is a proxy container that Istio adds to each pod; all inbound and outbound traffic of the pod passes through it. This chapter follows a request through that proxy. It shows that a workload with no policy lets every request in, and it tells you where to look when a request is denied.
 
-## The path a signal takes
+## The path a request takes
 
-A signal that arrives at a ship passes several checks, always in the same order. Each check belongs to a different Istio object. Knowing the order tells you which object to blame when something fails.
-
-### Four checks, in a fixed order
-
-Here is what happens inside the receiving ship's proxy:
+A request that arrives at a workload passes several checks, always in the same order. Each check belongs to a different Istio object. Once you know the order, you know which object to blame when something fails. Here is what happens inside the receiving pod's proxy:
 
 ```mermaid
 flowchart TB
-    S["caller"] -->|"signal"| H["handshake check"]
-    H -->|"no badge"| X["connection reset"]
-    H -->|"badge checked"| P["HTTP is read"]
-    P --> J["token check"]
+    S["caller"] -->|"request"| H["mTLS check"]
+    H -->|"no certificate"| X["connection reset"]
+    H -->|"certificate verified"| P["HTTP is read"]
+    P --> J["JWT check"]
     J -->|"bad token"| E1["401"]
-    J --> G["guard"]
-    G -->|"not on the list"| E2["403"]
+    J --> G["authorization check"]
+    G -->|"no rule matches"| E2["403"]
     G -->|"allowed"| A["the app"]
 ```
 
-The diagram shows four stages. The handshake check is `PeerAuthentication`, the token check is `RequestAuthentication`, and the guard is `AuthorizationPolicy`. A signal stopped at an early stage never reaches a later one.
+The diagram shows four stages in the receiving proxy. The mTLS check is `PeerAuthentication`, the JWT check is `RequestAuthentication`, and the authorization check is `AuthorizationPolicy`. A request stopped at an early stage never reaches a later one. For requests from outside the cluster, the ingress gateway's own proxy runs the same checks at the edge of the mesh.
 
-### What the order means for you
+That order has three results, and the exam tests all three. First, the authorization check only sees requests that mTLS already accepted. A `STRICT` rejection happens at the first stage, before any HTTP request exists, so the proxy reads no rule at all. A cut connection and a `403` therefore point at different objects.
 
-Three facts follow from that order, and the exam tests all three:
+Second, the caller's identity comes from mTLS. A `principals` rule compares the identity in the caller's certificate, and with no mTLS there is no certificate to compare. Third, token facts come from the JWT check. A JWT (JSON Web Token) is a signed token that carries facts about the end user, and rules on a JWT need a `RequestAuthentication` to run first.
 
-- **The guard only sees signals the handshake already accepted.** A `STRICT` rejection happens at the first stage. No rule is read, because there is no request yet. So a cut connection and a `403` point at different objects.
-- **The caller's identity comes from the handshake.** A `principals` rule compares the name on the caller's ID badge (its certificate). With no handshake there is no badge, and the rule has nothing to compare.
-- **Token facts come from the token check.** Rules on an end user's boarding pass (a JWT) need a `RequestAuthentication` to run first.
+## Who configures the check
 
-## Who gives the guard orders
+You never configure the check inside the proxy by hand. The control plane, `istiod`, does it for you. The way it does this explains how fast a change takes effect, and why a policy can exist without doing anything.
 
-You never configure the guard inside the proxy by hand. Mission control (`istiod`) does it for you, and the way it does it explains how fast a change works and why a policy can exist without doing anything.
+`istiod` reads every `AuthorizationPolicy` and works out which pods each one selects. It then turns the matching rules into configuration for those pods' proxies. Inside Envoy, the check is a filter called **RBAC**, short for role-based access control.
 
-### From policy to filter
+So the `selector` decides which pods get the policy. A policy whose selector matches no pod is still a valid object, and `kubectl get` shows it. But `istiod` never sends it to any proxy.
 
-`istiod` reads every `AuthorizationPolicy`, works out which pods each one selects, and turns the matching rules into orders for those pods' proxies. Inside Envoy (the program in the sidecar), the guard is a filter called **RBAC**, short for role-based access control. Think of it as the printed list the guard holds.
+The decision is also local. The proxy does not ask `istiod` about each request. It checks the request against the configuration it already holds, which is why a new policy works within seconds and adds no measurable time per request.
 
-Two facts follow:
+One limit comes with this design. HTTP fields like `methods` and `paths` only work on ports that the proxy reads as HTTP. On a plain TCP port, the proxy can only check connection facts such as identity, namespace, address and port.
 
-- **The `selector` decides which ships get the list.** A policy whose selector matches no pod is a valid object, and `kubectl get` shows it. But no proxy ever receives it.
-- **The decision is local.** The proxy does not ask `istiod` for each signal. It checks the signal against the list it already holds. That is why a new policy works within seconds and costs no measurable time per signal.
+## No policy means every request gets in
 
-HTTP fields like `methods` and `paths` only work on ports the proxy reads as HTTP. On a plain TCP port, only connection facts such as identity, namespace, address and port can be checked.
-
-## No policy means everyone gets in
-
-If no `AuthorizationPolicy` selects a ship, the guard has no list. Every signal that passes the handshake goes straight to the app. That is not a hole in the mesh: Istio stays out of the way until you ask. It is the same choice as `PERMISSIVE` being the default for mTLS.
-
-### See it in your playground
+If no `AuthorizationPolicy` selects a workload, its proxy has no RBAC rules. Every request that passes mTLS goes straight to the app. That is not a hole in the mesh: Istio stays out of the way until you ask it to act. It is the same choice as `PERMISSIVE` being the default for mTLS.
 
 <!-- astrona:playground:renew -->
 
-The commands below need the three helpers from the module's landing page. First check that no policy exists yet, anywhere:
+You can see this in your playground with the three helper functions from the landing page. First check that no policy exists yet, in any namespace:
 
 ```sh
 kubectl get authorizationpolicy -A
@@ -67,7 +54,7 @@ kubectl get authorizationpolicy -A
 No resources found
 ```
 
-Now send signals to the probe from both clients inside the mesh:
+Now send requests to the `probe` from both clients inside the mesh:
 
 ```sh
 from_shuttle http://probe:8000/get
@@ -79,11 +66,9 @@ from_fortio http://probe:8000/get
 Code 200
 ```
 
-Both get in. The shuttle and fortio carry different ID badges, and the handshake checked both. But no guard read either badge, because there is no list to read it against.
+Both get in. The `shuttle` and `fortio` pods have different identities, and mTLS verified both. But no RBAC filter checked either identity, because there is no policy to check it against.
 
-### A signal the guard never sees
-
-Now try the drifter. It has no communications officer and no ID badge:
+The `drifter` tells a different story. It runs in the `outpost` namespace with no sidecar, so it has no certificate to present:
 
 ```sh
 from_drifter http://probe.starfleet:8000/get
@@ -94,27 +79,23 @@ drifter: 000
 command terminated with exit code 56
 ```
 
-`000` means no HTTP answer came back at all. The `STRICT` `PeerAuthentication` cut the connection at the first stage. That is the handshake check at work, not the guard. Keep this picture in mind: a cut connection is never an `AuthorizationPolicy` problem.
+`000` means no HTTP response came back at all. The `STRICT` `PeerAuthentication` cut the connection at the first stage. That is the mTLS check at work, not authorization, so a cut connection is never an `AuthorizationPolicy` problem.
 
 ## Where a denial is visible
 
-Because the guard stands at the receiving ship, the caller learns almost nothing when it is turned away. It gets `403` and the body `RBAC: access denied`. It does not learn which policy refused it, or which rule it failed.
+Because the check runs at the receiving workload, the caller learns almost nothing when it is denied. It gets `403` and the body `RBAC: access denied`. It does not learn which policy denied it, or which rule it failed.
 
-The evidence lives with the ship that refused:
-
-- its **flight log** (the access log of its `istio-proxy`), which records the signal, the `403` and the policy that decided;
-- its **proxy's orders**, which hold the lists it really received;
-- `kubectl get authorizationpolicy -A`, which shows every policy that could select it.
+The evidence lives with the workload that denied the request, in three places. The **access log** of its `istio-proxy` container records the request, the `403` and the policy that decided. Its **proxy configuration** holds the RBAC rules it really received. And `kubectl get authorizationpolicy -A` lists every policy that could select it.
 
 > [!TIP]
-> Send the test signal from the caller, then look for the reason on the receiver. Searching the caller's log for an authorization problem is the most common way to lose twenty minutes on the exam.
+> Send the test request from the caller, then look for the reason on the receiver. Searching the caller's log for an authorization problem is the most common way to lose twenty minutes on the exam.
+
+You now know where authorization happens: in the receiving pod's proxy, after mTLS and after the proxy reads the HTTP request. That is why a cut connection and a `403` are failures of different objects, and why the reason is always on the receiver. What you have not done yet is write a policy and watch a workload go from open to closed.
 
 ## Common pitfalls
 
 > [!WARNING]
-> - **Debugging authorization when the problem is the handshake.** A cut connection (`000`, curl exit code `56`) never reached the guard. Check for a status code before you blame a policy.
-> - **Expecting a `principals` rule to work without mTLS.** The guard can only use the badge that the handshake checked.
+> - **Debugging authorization when the problem is mTLS.** A cut connection (`000`, curl exit code `56`) never reached the authorization check. Check for a status code before you blame a policy.
+> - **Expecting a `principals` rule to work without mTLS.** The RBAC filter can only use the identity that mTLS verified.
 > - **Assuming a policy applies because it exists.** It applies only to the pods its `selector` matches, checked by those pods' own proxies.
-> - **Looking at the caller for the reason.** The caller only sees `403`. The flight log of the receiving ship says why.
-
-> *The guard stands at the receiving ship's airlock, after the handshake and after HTTP is read. That is why a cut connection and a `403` are different objects' failures, and why the reason is always on the receiver.*
+> - **Looking at the caller for the reason.** The caller only sees `403`. The access log of the receiving workload says why.

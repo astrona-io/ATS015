@@ -1,12 +1,12 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. Both rules are about **who** is calling, and nothing else. ztunnel reads the caller's identity from the certificate on the HBONE tunnel, so it can enforce both rules with no waypoint. A label `selector` points each rule at the right pods.
+Both rules are about **who** is calling, and nothing else. ztunnel reads the caller's identity from the certificate on the HBONE tunnel, so it can enforce both rules with no waypoint. A label `selector` points each rule at the right pods.
 
 ---
 
 ## Step 1: Check the starting point
 
-Confirm that every ship is in the mesh through ztunnel, and that no waypoint exists:
+Confirm that every pod is in the mesh through ztunnel, and that no waypoint exists:
 
 ```sh
 istioctl ztunnel-config workload | grep -E "NAMESPACE|starfleet"
@@ -25,7 +25,7 @@ starfleet          shuttle-7b5db664c-v7b6x                                      
 No resources found in starfleet namespace.
 ```
 
-`PROTOCOL: HBONE` means ztunnel carries each ship's traffic and knows its identity. No waypoint means only L4 rules can work, which is exactly what the task asks for.
+`PROTOCOL: HBONE` means ztunnel carries each pod's traffic and knows its identity. No waypoint means only L4 rules can work, which is exactly what the task asks for.
 
 Find the service accounts, because the rules name them:
 
@@ -44,7 +44,7 @@ scout-v3    starfleet-scout
 shuttle     shuttle
 ```
 
-## Step 2: Lock the supply ship to the flagship
+## Step 2: Allow only `bridge` to reach `cargo`
 
 The identity of a workload is `cluster.local/ns/<namespace>/sa/<service-account>`, written without `spiffe://`.
 
@@ -74,7 +74,7 @@ Apply it:
 kubectl apply -f authorizationpolicy-cargo-l4.yaml
 ```
 
-Wait about a minute: a new rule takes that long to reach live traffic, because open connections keep the old rule. Then check the result, first from the shuttle and then through the bridge:
+Wait about a minute: a new rule takes that long to reach live traffic, because open connections keep the old rule. Then check the result, first from `shuttle` and then through `bridge`:
 
 ```sh
 kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" --max-time 5 http://cargo:9080/details/0
@@ -87,9 +87,9 @@ command terminated with exit code 56
 200
 ```
 
-The shuttle gets `000`: ztunnel closed the connection, because the shuttle's identity is not `starfleet-bridge`. There is no `403`, because ztunnel does not speak HTTP. The bridge still gets `200`, because it signals `cargo` with its own identity.
+The `shuttle` pod gets `000`: ztunnel closed the connection, because the identity of `shuttle` is not `starfleet-bridge`. There is no `403`, because ztunnel does not speak HTTP. The `bridge` API still gives `200`, because `bridge` calls `cargo` with its own identity.
 
-## Step 3: Lock the navigation computer to the scouts
+## Step 3: Allow only `scout` to reach `navcom`
 
 All three scout versions run as the same service account, `starfleet-scout`, so one principal covers them all.
 
@@ -119,7 +119,7 @@ Apply it:
 kubectl apply -f authorizationpolicy-navcom-l4.yaml
 ```
 
-Wait about a minute again, then check the result. The shuttle should be refused, and the scouts should still get their ratings:
+Wait about a minute again, then check the result. The `shuttle` pod should be refused, and the `scout` pods should still get their ratings:
 
 ```sh
 kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" --max-time 5 http://navcom:9080/ratings/0
@@ -136,7 +136,7 @@ command terminated with exit code 56
 "stars": 5
 ```
 
-The shuttle gets `000`. The v2 and v3 scouts still show stars, because they signal `navcom` as `starfleet-scout`. The v1 scout never asks for ratings, so its answers print nothing: that is why six signals gave three star lines here. Your count can differ, because the scout beacon picks a ship class at random.
+The `shuttle` pod gets `000`. The `scout` v2 and v3 pods still show stars, because they call `navcom` as `starfleet-scout`. The `scout` v1 pod never asks for ratings, so its answers print nothing: that is why six requests gave three star lines here. Your count can differ, because the `scout` Service sends each request to a random version.
 
 ## Step 4: Ask ztunnel what it enforces
 
@@ -154,7 +154,7 @@ starfleet navcom-l4   Allow  WorkloadSelector
 2026-10-09T11:55:01.094336Z	error	access	connection complete	src.addr=10.244.0.14:46992 src.workload="shuttle-7b5db664c-v7b6x" src.namespace="starfleet" src.identity="spiffe://cluster.local/ns/starfleet/sa/shuttle" dst.addr=10.244.0.9:15008 dst.hbone_addr=10.244.0.9:9080 dst.service="navcom.starfleet.svc.cluster.local" dst.workload="navcom-v1-7467bbc689-bj5jz" dst.namespace="starfleet" dst.identity="spiffe://cluster.local/ns/starfleet/sa/starfleet-navcom" direction="inbound" bytes_sent=0 bytes_recv=0 duration="0ms" error="connection closed due to policy rejection: allow policies exist, but none allowed"
 ```
 
-Both rules sit in ztunnel. The log line is the shuttle's refused connection to `navcom`: `src.identity` names the caller, and "allow policies exist, but none allowed" is the reason. No waypoint was needed.
+Both rules sit in ztunnel. The log line is the refused connection from `shuttle` to `navcom`: `src.identity` names the caller, and "allow policies exist, but none allowed" is the reason. No waypoint was needed.
 
 ## Step 5: Submit
 
@@ -164,7 +164,7 @@ astrona submit -c sections/section-060/module-01/labs/lab-02
 
 ## If it does not pass
 
-- **The bridge's API no longer gives `200`.** The `cargo-l4` principal is wrong. Check the spelling of `starfleet-bridge`, and leave out `spiffe://`.
+- **The `bridge` API no longer gives `200`.** The `cargo-l4` principal is wrong. Check the spelling of `starfleet-bridge`, and leave out `spiffe://`.
 - **A scout answer says "Ratings service is currently unavailable".** The `navcom-l4` principal is wrong, or it names a scout version instead of the service account.
-- **The bridge and the scouts are locked out too.** One of the rules contains a method or a path. ztunnel cannot read those, so it fails safe and the `ALLOW` matches nobody. Keep the rules to identity only.
-- **The shuttle still reaches `cargo`.** The `selector` does not match the pods: it must be `app: cargo`.
+- **`bridge` and `scout` are refused too.** One of the rules contains a method or a path. ztunnel cannot read those, so it fails safe and the `ALLOW` matches nobody. Keep the rules to identity only.
+- **`shuttle` still reaches `cargo`.** The `selector` does not match the pods: it must be `app: cargo`.

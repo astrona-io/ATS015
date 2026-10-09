@@ -4,10 +4,10 @@
 - **Author:** Paris Nakita Kejser
 - **Type:** Astrona playground — clean environment, no task, no grading
 
-A training solar system in the simulator: it starts a `kind` cluster with Istio
-in **ambient mode** (no sidecars) and the Starfleet (the Istio docs' Bookinfo
-sample, renamed), then waits for you, astronaut. Use it alongside the module's
-parts. Nothing to submit.
+A clean sandbox: it starts a `kind` cluster with Istio in **ambient mode** (no
+sidecars) and the Starfleet example workloads (the Istio docs' Bookinfo sample,
+renamed), then keeps running. Use it alongside the module's parts. Nothing to
+submit.
 
 ## Run it
 

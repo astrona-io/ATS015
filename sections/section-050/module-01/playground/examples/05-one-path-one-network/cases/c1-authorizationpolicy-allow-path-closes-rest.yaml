@@ -1,5 +1,5 @@
 # MISTAKE: the same intent written as ALLOW. Once an ALLOW policy selects the
-# gateway, every signal that matches none of its rules is refused. The office
+# gateway, every request that matches none of its rules is denied. The office
 # reaches the API, and NOBODY reaches /productpage any more.
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy

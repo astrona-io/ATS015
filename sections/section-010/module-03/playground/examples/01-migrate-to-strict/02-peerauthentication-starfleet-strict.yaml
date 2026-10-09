@@ -1,6 +1,6 @@
-# The last step: every ship on starfleet accepts mTLS only.
-# Apply it only after no caller sends plain signals any more (the drifter on
-# outpost must be in the fleet first). A plain caller gets a connection reset.
+# The last step: every workload in starfleet accepts mTLS only.
+# Apply it only after no client sends plain text any more (the drifter in
+# outpost must have a sidecar first). A plain-text client gets a connection reset.
 apiVersion: security.istio.io/v1
 kind: PeerAuthentication
 metadata:

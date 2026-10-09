@@ -1,4 +1,4 @@
-# Case 2: "rules: [{}]" = one empty rule = matches EVERY signal.
+# Case 2: "rules: [{}]" = one empty rule = matches EVERY request.
 # Together with allow-nothing, everything is allowed again.
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy

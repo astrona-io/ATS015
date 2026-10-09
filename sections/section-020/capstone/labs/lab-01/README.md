@@ -2,9 +2,9 @@
 estimated_duration: 40m
 ---
 
-# Capstone: Close A Namespace And Reopen Two Doors
+# Capstone: Deny By Default And Allow Two Calls
 
-Astronaut, this is your Section 020 capstone mission. You close a whole planet to everyone, then open exactly two doors: one for any ship on the planet, and one for a single named ship. Last, you put an admin door on the banned list, so that no later guest list can ever open it again.
+This is the Section 020 capstone lab. You deny all requests in a whole namespace, then allow exactly two calls: one from any workload in the namespace, and one from a single service account. Last, you block an admin path with a `DENY` policy, so that no later `ALLOW` policy can ever open it again.
 
 There is no walkthrough until you have tried it. Work from the task.
 

@@ -2,7 +2,7 @@
 # Deploy what the 030-01 playground needs (runs after install-istio.sh):
 #   - namespace starfleet (sidecar injection) + mesh-wide access logs
 #   - the Starfleet: bridge, cargo, scout v1-v3, navcom (Bookinfo with space names)
-#   - shuttle (test client) + probe v1/v2 (echo service: the ship you protect
+#   - shuttle (test client) + probe v1/v2 (echo service: the workload you protect
 #     with a token; /headers shows what reached it)
 # No RequestAuthentication and no AuthorizationPolicy are created: writing
 # them is the module.

@@ -1,6 +1,6 @@
-# Namespace-wide STRICT mTLS for the planet starfleet.
-# Every ship in starfleet only ACCEPTS mutual TLS. Plain-text signals (from
-# ships without a sidecar, like the drifter) are refused at the connection level.
+# Namespace-wide STRICT mTLS for the namespace starfleet.
+# Every workload in starfleet only ACCEPTS mutual TLS. Plain-text requests (from
+# pods without a sidecar, like the drifter) are refused at the connection level.
 # PeerAuthentication = what the SERVER accepts.
 apiVersion: security.istio.io/v1
 kind: PeerAuthentication

@@ -4,9 +4,9 @@ estimated_duration: 3m
 
 # Authorize On A JWT Claim
 
-Welcome to your claims mission, astronaut. On the planet `jwtclaims-demo`, every logged-in crew member can reach the notification service, and that includes its admin path. "Logged in" is not the same as "administrator".
+In the namespace `jwtclaims-demo`, every logged-in user can reach the notification service, and that includes its `/admin` path. "Logged in" is not the same as "administrator".
 
-Your job is to keep the ordinary path open to any valid token, open the admin path only to tokens whose `groups` claim contains `group1`, and refuse every request that carries no token.
+Your job is to keep the ordinary path open to any valid token, open the `/admin` path only to tokens whose `groups` claim contains `group1`, and refuse every request that carries no token.
 
 This lab uses its own small app (`notification-service` and a `tester` client), not the Starfleet.
 

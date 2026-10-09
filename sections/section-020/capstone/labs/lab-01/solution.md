@@ -1,10 +1,10 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. You close the planet first, then open two narrow doors, and finally put the admin door on the banned list. The banned list is checked before any guest list, so nothing you add later can open that door.
+You deny everything in the namespace first, then allow two narrow calls, and finally block the admin path with a `DENY` policy. `DENY` policies are checked before any `ALLOW` policy, so nothing you add later can open that path.
 
 ---
 
-## Step 1: Close the planet
+## Step 1: Deny everything in the namespace
 
 Save this as `authorizationpolicy-allow-nothing.yaml`:
 
@@ -32,13 +32,13 @@ kubectl -n authz-demo exec deploy/tester -- \
 
 <!-- OUTPUT PENDING: expect "tester POST /book: 403" -->
 
-An empty `spec` reads like this. No `action` means `ALLOW`. No `selector` means every workload in the namespace. No `rules` means nothing matches. So every ship is on a guest list with no names, and every signal is turned away.
+An empty `spec` reads like this. No `action` means `ALLOW`. No `selector` means every workload in the namespace. No `rules` means nothing matches. So every workload is selected by an `ALLOW` policy that matches no request, and every request is denied.
 
 Keep this object for good. It is what makes a service deployed next week start closed instead of open.
 
 ---
 
-## Step 2: Reopen the booking door
+## Step 2: Allow the booking call
 
 Save this as `authorizationpolicy-booking-allow.yaml`:
 
@@ -73,7 +73,7 @@ The caller (`from`) and the method and path (`to`) sit in the same rule, so a re
 
 ---
 
-## Step 3: Reopen the notification door, by identity
+## Step 3: Allow the notification call, by identity
 
 Save this as `authorizationpolicy-notification-allow.yaml`:
 
@@ -105,13 +105,13 @@ Apply it:
 kubectl apply -f authorizationpolicy-notification-allow.yaml
 ```
 
-A `namespaces` match would not work here. `tester` lives in `authz-demo` too, so only the name on the ID badge tells the two callers apart.
+A `namespaces` match would not work here. `tester` lives in `authz-demo` too, so only the principal from the certificate tells the two callers apart.
 
 ---
 
 ## Step 4: The backstop, and the proof
 
-Two objects go in one file: the banned list, and your colleague's careless future guest list, written today.
+Two objects go in one file: the `DENY` policy, and the careless future `ALLOW` policy your colleague might write, created today.
 
 Save this as `authorizationpolicy-admin.yaml`:
 
@@ -153,7 +153,7 @@ Apply it:
 kubectl apply -f authorizationpolicy-admin.yaml
 ```
 
-For each request, the communications officer checks `CUSTOM`, then `DENY`, then `ALLOW`. A match on the banned list ends the decision, so the guest list for `/admin` is never read.
+For each request, the sidecar proxy checks `CUSTOM`, then `DENY`, then `ALLOW` policies. A `DENY` match ends the decision, so the `ALLOW` policy for `/admin` is never evaluated.
 
 The path is `/admin*`, not `/admin`. An exact path would leave `/admin/users` open, and a test of `/admin` alone would still look like a success.
 
@@ -181,7 +181,7 @@ tester GET  /admin/users:  403
 booking POST /notify:      200
 ```
 
-Every `403` here comes from the guard at the airlock. A `404` on an `/admin` line would mean the request got past every rule and reached the app.
+Every `403` here comes from an `AuthorizationPolicy` in the sidecar proxy. A `404` on an `/admin` line would mean the request got past every rule and reached the app.
 
 Now submit:
 
@@ -195,6 +195,6 @@ astrona submit -c sections/section-020/capstone/labs/lab-01
 
 - **`/admin` returns `404`.** Nothing blocked it, so the request reached the app. The `DENY` policy is missing, or its selector matches no pod.
 - **`/admin/users` returns `404` while `/admin` returns `403`.** The path has no `*`, so it matches only the exact path.
-- **Making the backstop an `ALLOW` policy.** More guest lists never take anyone off. Only a `DENY` policy can be a backstop.
+- **Making the backstop an `ALLOW` policy.** More `ALLOW` policies never block a request that another `ALLOW` policy allows. Only a `DENY` policy can be a backstop.
 - **Deleting `allow-admin-attempt` to make things pass.** The grader checks that it is still there.
 - **booking-service gets `403` on `/notify`.** The principal is wrong. Check the namespace and service account, and drop any `spiffe://` prefix.

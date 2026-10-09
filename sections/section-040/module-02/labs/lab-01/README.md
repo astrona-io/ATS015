@@ -4,9 +4,9 @@ estimated_duration: 20m
 
 # Require Client Certificates At The Edge
 
-Welcome to a build mission, astronaut. A booking service is being opened to a few partner systems, and to nobody else. These are machines calling machines, and the list of callers is short and known.
+This is a build lab. A booking service is being opened to a few partner systems, and to nobody else. These are machines calling machines, and the list of callers is short and known.
 
-Your job is to build a secret with three keys and a `MUTUAL` gateway, so that only clients with a certificate from the given CA reach the service, and to prove that the gateway really checks. This mission uses its own small app (`booking-service` in `mtlsedge-demo`) and the gateway of an `istioctl` demo install (`istio-ingressgateway` in `istio-system`).
+Your job is to build a secret with three keys and a `MUTUAL` gateway, so that only clients with a certificate from the given CA reach the service, and to prove that the gateway really checks. This lab uses its own small app (`booking-service` in `mtlsedge-demo`) and the gateway of an `istioctl` demo install (`istio-ingressgateway` in `istio-system`).
 
 ## Launching the Lab
 

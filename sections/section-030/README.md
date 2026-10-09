@@ -1,6 +1,6 @@
 # End-User Authentication With JWT
 
-A request usually carries two identities: the workload making the call, and the end user on whose behalf it is made. The first is the ship's ID badge, a certificate that mutual TLS (mTLS) proves on every connection. This section covers the second, which arrives as a JSON Web Token in a header rather than as a certificate.
+A request usually carries two identities: the workload making the call, and the end user on whose behalf it is made. The first is the workload identity in a certificate, which mutual TLS (mTLS) verifies on every connection. This section covers the second, which arrives as a JSON Web Token in a header rather than as a certificate.
 
 Two modules, and the first exists mainly to correct an expectation. Module 1 shows that `RequestAuthentication` validates a token *if one is present* and requires nothing — so protecting a service always takes two objects. Module 2 goes past "a valid token exists" to what the token actually says, matching on claims such as `groups` and `scope`.
 

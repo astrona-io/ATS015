@@ -2,11 +2,11 @@
 estimated_duration: 15m
 ---
 
-# Allow Only Known Ships At L4
+# Allow Callers By Identity With L4 Policy
 
-Welcome to a lockdown mission, astronaut. The planet `starfleet` runs in ambient mode: no sidecars, only ztunnel on every node. Two ships carry sensitive data, and right now any ship can signal them.
+The `starfleet` namespace runs in ambient mode: no sidecars, only ztunnel on every node. Two backends hold sensitive data, and right now any workload can reach them.
 
-Your job is to lock the supply ship `cargo` to the flagship, and the navigation computer `navcom` to the scouts, with identity rules that ztunnel enforces on its own. No waypoint.
+Your job is to allow only `bridge` to reach `cargo`, and only `scout` to reach `navcom`, with identity rules that ztunnel enforces on its own. No waypoint.
 
 ## Launching the Lab
 

@@ -1,5 +1,5 @@
 # Case 2: the same "token required" rule written as DENY:
-# deny every signal that does NOT have a valid request principal.
+# deny every request that does NOT have a valid request principal.
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:

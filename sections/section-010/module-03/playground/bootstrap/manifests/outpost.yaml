@@ -1,8 +1,8 @@
-# The outpost: a planet WITHOUT sidecar injection, on purpose.
-# The drifter is an old ship with no communications officer on board (1/1).
-# In this module the drifter is the caller that still sends plain signals:
-# it would break the moment starfleet switches to STRICT mTLS. Bringing it
-# into the fleet (label the planet, then restart it) is part of the module.
+# The outpost: a namespace WITHOUT sidecar injection, on purpose.
+# The drifter is a client pod with no sidecar proxy (1/1).
+# In this module the drifter is the client that still sends plain-text requests:
+# it would break the moment starfleet switches to STRICT mTLS. Adding it
+# to the mesh (label the namespace, then restart it) is part of the module.
 apiVersion: v1
 kind: Namespace
 metadata:

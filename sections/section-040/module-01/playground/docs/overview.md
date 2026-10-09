@@ -2,28 +2,29 @@
 
 > Declared in [`../config.yaml`](../config.yaml) under `metadata.docs.guide`.
 
-This is a **playground**, not a lab: your training solar system, astronaut. It
+This is a **playground**, not a lab. It
 starts a fresh cluster, installs Istio, an ingress gateway and the Starfleet,
 and then waits. There is no task, no `astrona submit` and no pass or fail.
 Explore, break things, `astrona destroy`, start over.
 
-Here you put the spaceport arrival gate behind HTTPS. Outside signals arrive
-sealed with TLS, the gate opens them with a certificate you made, and the
-signal flies on to the bridge inside the mesh.
+Here you put the ingress gateway behind HTTPS. Requests from outside the
+cluster arrive encrypted with TLS (Transport Layer Security). The gateway
+decrypts them with a certificate you made, and sends each request on to
+`bridge` inside the mesh.
 
 ## What's in the box
 
 - A single-node `kind` Kubernetes cluster. `kubectl` is already pointed at it.
-- **Istio 1.30.5**, installed with Helm. `istio-base` and `istiod` (mission
-  control) live in `istio-system`.
-- The **ingress gateway** on the planet `istio-ingress`. Its Deployment and
+- **Istio 1.30.5**, installed with Helm. `istio-base` and `istiod` (the control
+  plane) live in `istio-system`.
+- The **ingress gateway** in the namespace `istio-ingress`. Its Deployment and
   its Service are both called `istio-ingress`, and its pods carry the label
   **`istio=ingress`**. It reads TLS Secrets from **`istio-ingress`**, its own
   namespace.
-- Mesh-wide **access logs**. Read the gate's flight log with
+- Mesh-wide **access logs**. Read the gateway's access log with
   `kubectl logs -n istio-ingress deploy/istio-ingress --tail=1`.
-- Namespace **`starfleet`** (the planet you work on), labelled for injection, with:
-  - **The Starfleet**: `bridge` (the flagship page, on `/productpage`),
+- Namespace **`starfleet`** (the namespace you work in), labelled for sidecar injection, with:
+  - **The Starfleet**: `bridge` (the web frontend, on `/productpage`),
     `cargo`, `navcom` and `scout` v1/v2/v3, all on port `9080`.
   - **`shuttle`**, a client pod inside the mesh.
 - **No certificates, no TLS Secret, no `Gateway` and no `VirtualService`.**
@@ -69,7 +70,7 @@ openssl x509 -req -sha256 -days 365 -CA certs/starfleet-ca.crt -CAkey certs/star
 ## Helper
 
 Paste this into each new terminal, in the same folder. It sends one HTTPS
-signal to the bridge through the gateway, trusts your test CA, and prints the
+request to `bridge` through the gateway, trusts your test CA, and prints the
 status code and curl's exit code:
 
 ```sh
@@ -84,7 +85,7 @@ so read the exit code instead:
 | --- | --- |
 | `0` | ok |
 | `7` | curl cannot connect at all (check the port forward; after a failed handshake it restarts for a few seconds) |
-| `35` | the gate cut the TLS handshake: no certificate for this host, or a wrong host name (`istioctl proxy-config secret` tells them apart) |
+| `35` | the gateway closed the TLS handshake: no certificate for this host, or a wrong host name (`istioctl proxy-config secret` tells them apart) |
 | `60` | the certificate is not trusted |
 
 ## Things to try

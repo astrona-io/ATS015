@@ -5,7 +5,7 @@
 #   - shuttle (test client) + probe v1/v2 (echo service, Service port 8000,
 #     container port 8080)
 #   - namespace outpost WITHOUT injection, with the drifter client (1/1):
-#     the caller that still sends plain signals
+#     the client that still sends plain-text requests
 # No PeerAuthentication is created: starfleet starts in the default
 # PERMISSIVE mode, and moving it to STRICT is the module.
 set -euo pipefail

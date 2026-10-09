@@ -4,7 +4,7 @@
 #   - the Starfleet: bridge, cargo, scout v1-v3, navcom (Bookinfo with space names)
 #   - shuttle (test client) + probe v1/v2 (echo service: shows the headers that arrive)
 #   - prerequisite: manifests/gateway-starfleet.yaml (Gateway + VirtualService
-#     for starfleet.example.com, so the arrival gate already answers)
+#     for starfleet.example.com, so the ingress gateway already answers)
 # No AuthorizationPolicy is created and numTrustedProxies stays unset:
 # writing and setting them is the module.
 set -euo pipefail

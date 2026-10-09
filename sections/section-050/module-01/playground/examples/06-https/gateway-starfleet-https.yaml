@@ -1,4 +1,4 @@
-# Adds an HTTPS server to the arrival gate. The secret starfleet-credential must
+# Adds an HTTPS server to the ingress gateway. The secret starfleet-credential must
 # live in the gateway pod's namespace (istio-ingress). Create it first:
 #   openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 #     -keyout starfleet.key -out starfleet.crt \

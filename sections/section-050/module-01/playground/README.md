@@ -4,11 +4,11 @@
 - **Author:** Paris Nakita Kejser
 - **Type:** Astrona playground — clean environment, no task, no grading
 
-A training solar system in the simulator: it starts a `kind` cluster with
-Istio, an ingress gateway (the spaceport arrival gate) and the Starfleet (the
-Istio docs' Bookinfo sample, renamed). The gate already answers for
-`starfleet.example.com`. Use it alongside the module's parts, astronaut.
-Nothing to submit.
+It starts a `kind` cluster with Istio, an ingress gateway (the Envoy proxy
+that accepts traffic from outside the cluster) and the Starfleet sample app
+(the Istio docs' Bookinfo sample, renamed). The gateway already answers for
+`starfleet.example.com`. Use it alongside the module's parts. Nothing to
+submit.
 
 ## Run it
 
@@ -33,6 +33,6 @@ path. `astrona submit` and `astrona test` do not apply: there is no grading.
 | `examples/03-trusted-proxies/` | Helm values that set `numTrustedProxies`, mesh-wide or for one gateway |
 | `examples/04-remote-ip-blocks/` | Block a client range with `remoteIpBlocks` |
 | `examples/05-one-path-one-network/` | One path open to one network only, and the `ALLOW` mistake |
-| `examples/06-https/` | An HTTPS server on the gate, to see that a gateway policy covers it too |
+| `examples/06-https/` | An HTTPS server on the gateway, to see that a gateway policy covers it too |
 | `docs/overview.md` | What is in the box, helpers, things to try |
 | `docs/practice.md` | Exam-style tasks with solutions |

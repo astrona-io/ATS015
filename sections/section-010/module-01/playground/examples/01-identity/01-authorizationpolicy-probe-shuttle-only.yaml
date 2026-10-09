@@ -1,6 +1,6 @@
-# Guest list for the probe: only the shuttle's badge may come aboard.
+# AuthorizationPolicy for the probe: only the shuttle identity is allowed.
 # principals = the SAN from the certificate WITHOUT spiffe:// (Istio adds it).
-# Expect: shuttle 200, fortio 403 (sa/default), drifter 403 (no badge).
+# Expect: shuttle 200, fortio 403 (sa/default), drifter 403 (no certificate).
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:

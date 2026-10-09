@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Confirms TLS origination at the shuttle's sidecar for httpbin.org:
-#   - the ServiceEntry charts port 80 (HTTP, targetPort 443) and port 443 (HTTPS)
-#   - the DestinationRule seals ONLY port 80 with SIMPLE, sni and subjectAltNames
+#   - the ServiceEntry declares port 80 (HTTP, targetPort 443) and port 443 (HTTPS)
+#   - the DestinationRule sets TLS on ONLY port 80 with SIMPLE, sni and subjectAltNames
 #   - the shuttle's proxy holds a TLS transport socket on port 80, not on 443
-# and - the part that matters - that a plain http:// signal from the shuttle
+# and - the part that matters - that a plain http:// request from the shuttle
 # reaches httpbin.org over https on port 443, while the shuttle's own https://
-# signals still work. Needs outbound internet access.
+# requests still work. Needs outbound internet access.
 
 set -u
 
@@ -46,7 +46,7 @@ res=$(se_field '{.spec.resolution}')
 [[ "$loc" == "MESH_EXTERNAL" ]] || fail "location is '$loc', expected MESH_EXTERNAL"
 [[ "$res" == "DNS" ]]           || fail "resolution is '$res', expected DNS"
 
-# --- 2. the DestinationRule seals only port 80 ------------------------------
+# --- 2. the DestinationRule sets TLS on port 80 only -----------------------
 kubectl -n "$NS" get destinationrule "$NAME" >/dev/null 2>&1 \
   || fail "DestinationRule '$NAME' not found in $NS"
 
@@ -93,8 +93,8 @@ if grep -q 'envoy.transport_sockets.tls' <<<"$c443"; then
   fail "the shuttle's port 443 cluster for $HOST also seals its connections. Only port 80 may carry the TLS transport socket"
 fi
 
-# --- 4. live signals ---------------------------------------------------------
-# A plain http:// signal must arrive at httpbin.org as https.
+# --- 4. live requests --------------------------------------------------------
+# A plain http:// request must arrive at httpbin.org as https.
 body=""
 for i in $(seq 1 30); do
   body=$(kubectl -n "$NS" exec deploy/shuttle -- curl -s --max-time 15 "http://$HOST/get" 2>/dev/null)
@@ -112,7 +112,7 @@ if ! grep -q "\"url\": \"https://$HOST/get\"" <<<"$body"; then
   esac
 fi
 
-# The shuttle's flight log must show the signal through the port 80 cluster,
+# The shuttle's access log must show the request through the port 80 cluster,
 # delivered to an address on port 443.
 sleep 2
 logline=$(kubectl -n "$NS" logs deploy/shuttle -c istio-proxy --tail=50 2>/dev/null \
@@ -120,7 +120,7 @@ logline=$(kubectl -n "$NS" logs deploy/shuttle -c istio-proxy --tail=50 2>/dev/n
 [[ -n "$logline" ]] \
   || fail "the shuttle's flight log has no '\"GET /get HTTP/1.1\" 200' line through outbound|80||$HOST to an address on :443. The sidecar must read the plain signal on port 80 and deliver it to port 443"
 
-# The shuttle's own https:// signals must still work (port 443 left alone).
+# The shuttle's own https:// requests must still work (port 443 left alone).
 code443=""
 for i in $(seq 1 5); do
   code443=$(kubectl -n "$NS" exec deploy/shuttle -- curl -s -o /dev/null -w '%{http_code}' --max-time 15 "https://$HOST/get" 2>/dev/null)

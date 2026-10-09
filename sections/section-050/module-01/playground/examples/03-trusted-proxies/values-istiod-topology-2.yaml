@@ -1,6 +1,6 @@
-# Two trusted relays (for example a CDN plus a load balancer). The gateway
+# Two trusted proxies (for example a CDN plus a load balancer). The gateway
 # skips one more entry from the right of X-Forwarded-For. Too high for a
-# setup with one relay: the client's own (forged) entry is then trusted.
+# setup with one proxy: the client's own (forged) entry is then trusted.
 meshConfig:
   defaultConfig:
     gatewayTopology:

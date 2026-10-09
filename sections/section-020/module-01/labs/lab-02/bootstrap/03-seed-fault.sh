@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# The lab's starting state: least-privilege guest lists for the Starfleet,
+# The lab's starting state: least-privilege AuthorizationPolicies for the Starfleet,
 # with two faults hidden in them.
 #   - scout-allow-bridge names the caller sa/bridge, but the bridge runs as
-#     sa/starfleet-bridge. The list reaches the scouts, but no rule fits, so
+#     sa/starfleet-bridge. The policy reaches the scout pods, but no rule matches, so
 #     the bridge page shows "product reviews are currently unavailable".
-#   - navcom-allow-scout selects app=navcomm, a label no pod has. The list
+#   - navcom-allow-scout selects app=navcomm, a label no pod has. The policy
 #     never reaches navcom, so navcom is covered only by allow-nothing and the
-#     scouts lose their star ratings.
+#     scout pods lose their star ratings.
 # allow-nothing, bridge-allow-get and cargo-allow-bridge are correct.
-# Fixing the two broken lists is the task.
+# Fixing the two broken policies is the task.
 set -euo pipefail
 
 kubectl apply -f - <<'YAML'
@@ -82,8 +82,8 @@ spec:
         methods: ["GET"]
 YAML
 
-# The empty guest list last, so the planet is only closed once the narrow
-# lists are in place.
+# The allow-nothing policy last, so the namespace is only closed once the narrow
+# policies are in place.
 kubectl apply -f - <<'YAML'
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy

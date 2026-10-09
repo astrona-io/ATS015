@@ -2,9 +2,9 @@
 estimated_duration: 30m
 ---
 
-# Capstone: Block A Range And Fence The Admin Path
+# Capstone: Block Client IP Ranges At The Ingress Gateway
 
-Astronaut, this is your Section 050 capstone mission. At the spaceport arrival gate, you ban one range of return addresses everywhere, and you fence the admin path so that only the office range can reach it. The gate is shared, so nothing else may close.
+This is the Section 050 capstone lab. At the ingress gateway, you block one range of client IP addresses on every path, and you restrict the admin path so that only the office range can reach it. The gateway is shared, so nothing else may be blocked.
 
 There is no walkthrough until you have tried it. Work from the task.
 

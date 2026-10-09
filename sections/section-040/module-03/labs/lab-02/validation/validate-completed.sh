@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Confirms the vault's passthrough setup in starfleet is repaired: the Gateway
+# Confirms the passthrough setup of tls-backend in starfleet is repaired: the Gateway
 # vault-gateway has a TLS PASSTHROUGH server on 443 for
 # vault.starfleet.example.com with no credential, the VirtualService
 # tls-backend routes with a tls block on sniHosts (no http block) to
-# tls-backend:8443, and - the part that matters - a real signal through the
-# gateway with that SNI name gets 200 with the vault's own certificate, while
+# tls-backend:8443, and - the part that matters - a real request through the
+# gateway with that SNI name gets 200 with tls-backend's own certificate, while
 # the gateway holds no HTTP route for the host.
 
 set -u
@@ -59,7 +59,7 @@ case "$dest" in
   *) fail "the tls rule sends to '$dest', expected tls-backend on port 8443 (the port where the vault ends TLS itself)" ;;
 esac
 
-# --- 3. live signals through the gateway -------------------------------------
+# --- 3. live requests through the gateway ------------------------------------
 # kubectl port-forward exits after a refused or failed handshake, so restart it
 # whenever it is gone.
 ensure_forward() {

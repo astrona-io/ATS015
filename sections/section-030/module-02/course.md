@@ -1,10 +1,14 @@
 # Authorize On JWT Claims
 
-Astronaut, a valid token is a low bar. Every logged-in crew member has one, including the ones who should never open the admin hatch. Real access control asks what the token **says**: which user, in which groups, with which permissions.
+A valid token is a low bar. Every logged-in user has one, including the users who should never reach an administrator path. Real access control asks what the token **says**: which user, in which groups, with which permissions.
 
-A JWT (JSON Web Token) is a signed boarding pass that an astronaut carries with every signal. The agency that printed it, the **issuer**, signs it, so nobody can change it. The lines printed on the pass are called **claims**: who you are, which crew you belong to, which clearance you have.
+A JWT (JSON Web Token) is a signed token that a client sends with each request, usually in the `Authorization` header. The system that creates it, the **issuer**, signs it, so nobody can change it without breaking the signature. The fields inside the token are called **claims**. They say who the user is, which groups the user belongs to and which permissions the user has.
 
-The `RequestAuthentication` is the pass checker: it checks any pass that is shown. Once it has checked a token, Istio hands the claims to the `AuthorizationPolicy`, the guard's list at the airlock. The guard can then say "only crew in `group1` may come aboard". That hand-off is the whole idea. The rest of this module is the syntax, and the few ways it fails without any error.
+Two Istio objects work together on these claims. A `RequestAuthentication` tells the sidecar proxy to validate any token a request carries. Once the proxy has validated a token, it passes the claims on to the `AuthorizationPolicy`, the object that allows or denies requests to a workload. The policy can then say "only users in `group1` may reach this path".
+
+That hand-off is the whole idea, and this module follows it in four parts. **Read What The Token Says** shows what a checked token hands to authorization, what each fact is called, and why you decode a real token first. **Require A Claim** writes the first `when` condition and explains how values and entries combine. **One Rule Per Role** builds a public path, a token path and a group path into one policy, and shows what a missing claim does under `ALLOW` and `DENY`. **Debug A Claim Rule** finds out why a correct-looking claim rule refuses everyone.
+
+On the exam you write claim rules by hand and prove them with real requests. Most mistakes compile cleanly and fail quietly: a claim name that no token has, a requirement put in a `DENY`, a public path that is not public. So this module trains three habits: read the token, write the rule, and check what the proxy really holds.
 
 ## Learning objectives
 
@@ -20,37 +24,29 @@ After this module you can:
 
 ## Before you start
 
-Every mission starts with a pre-flight check. Make sure you know the basics below, know what is waiting in your playground, and have the helpers ready in your terminal.
+You need the basics of an `AuthorizationPolicy`. A policy has a `selector`, an `action` (`ALLOW` or `DENY`) and `rules` with `from`, `to` and `when`. Rules in one policy are combined with OR, and the parts inside one rule are combined with AND.
 
-### What you should already know
+You also need the basics of a `RequestAuthentication`. It checks a token **if one is present**, and it answers `401` for a bad token. On its own it does not require a token. The setting `requestPrincipals: ["*"]` in an `AuthorizationPolicy` is what makes a token required, and a request it refuses gets `403`. Finally, you need Kubernetes basics: namespaces, Deployments, Services, pod labels and `kubectl exec`.
 
-- **`AuthorizationPolicy` basics.** A policy has a `selector`, an `action` (`ALLOW` or `DENY`) and `rules` with `from`, `to` and `when`. Rules in one policy are combined with OR. The parts inside one rule are combined with AND.
-- **`RequestAuthentication` basics.** It checks a token **if one is present**, and answers `401` for a bad token. On its own it does not require a token. `requestPrincipals: ["*"]` in an `AuthorizationPolicy` is what makes a token required, and a refused request gets `403`.
-- **Kubernetes basics.** Namespaces, Deployments, Services, pod labels and `kubectl exec`.
+Your playground is one `kind` cluster with **Istio 1.30.5** already installed. Everything you need is in one namespace, **`starfleet`**:
 
-### What is in your playground
-
-Your playground is a small training solar system: one `kind` cluster with **Istio 1.30.5** already installed. Everything you need is on one planet, the namespace **`starfleet`**.
-
-| Ship | Its role in this module |
+| Workload | Its role in this module |
 | --- | --- |
-| `probe` v1, v2 | The **echo probe**, behind one Service on port `8000`. It sends back what it receives. Every claim rule in this module protects it |
-| `shuttle` | **Your shuttle**. You send every test signal from here, with the `curl` command |
-| `bridge`, `cargo`, `scout`, `navcom` | The rest of the Starfleet. This module does not use them |
+| `probe` v1, v2 | An HTTP echo server, behind one Service on port `8000`. It sends back what it receives. Every claim rule in this module protects it |
+| `shuttle` | Your test client pod. You send every test request from here, with the `curl` command |
+| `bridge`, `cargo`, `scout`, `navcom` | The rest of the sample app. This module does not use them |
 
-Every pod shows `2/2`: the app plus its communications officer (the `istio-proxy` sidecar).
+Every pod shows `2/2`: the app plus its sidecar proxy, the `istio-proxy` container. The sidecar proxy is an Envoy proxy that Istio adds to each pod; all inbound and outbound traffic of the pod passes through it.
 
-One object is already in place: a `RequestAuthentication` named `probe-jwt`. It tells the probe's communications officer to check tokens from Istio's sample issuer, `testing@secure.istio.io`. It is a starting point, not the subject of this module. There is **no** `AuthorizationPolicy` yet, so tokens are checked but none is required.
+One object is already in place: a `RequestAuthentication` named `probe-jwt`. It tells the probe's sidecar proxy to validate tokens from Istio's sample issuer, `testing@secure.istio.io`. It is a starting point, not the subject of this module. There is **no** `AuthorizationPolicy` yet, so the proxy checks tokens but does not require one.
 
-The playground needs internet access. Mission control (`istiod`) downloads the issuer's public keys, and you download two sample tokens.
+The playground needs internet access for two reasons. `istiod`, Istio's control plane, downloads the issuer's public keys, and you download two sample tokens.
 
-Launch your playground now, and keep it running next to you while you read the parts:
+Start your playground now, and keep it running next to you while you read the parts:
 
 <!-- astrona:playground -->
 
-### Helpers to paste first
-
-Paste this into each new terminal before you start. It downloads Istio's two sample tokens and defines `check_status`, which sends 3 signals from the shuttle and prints each status code:
+Every part sends its test requests with the same few shell helpers. Paste them into each new terminal before you start. They download Istio's two sample tokens and define `check_status`, which sends 3 requests from the `shuttle` pod and prints each status code:
 
 ```sh
 SAMPLES_URL=https://raw.githubusercontent.com/istio/istio/release-1.30/security/tools/jwt/samples
@@ -63,16 +59,4 @@ check_status() { for i in 1 2 3; do
 done; echo; }
 ```
 
-Use it like this: `check_status -H "$AUTH $GROUPS_TOKEN" $PROBE/headers`. Any `curl` options you add are passed on.
-
-## The parts, in order
-
-1. [Read What The Token Says](./course-01-read-what-the-token-says.md): what a checked token hands to authorization, the attribute names, and why you decode a real token first.
-2. [Require A Claim](./course-02-require-a-claim.md): the `when` block, list claims, and how values and entries combine.
-3. [One Rule Per Role](./course-03-one-rule-per-role.md): a public path, a token path and a group path in one policy, and what a missing claim does under `ALLOW` and `DENY`. Ends with a graded mission.
-4. [Debug A Claim Rule](./course-04-debug-a-claim-rule.md): find out why a correct-looking claim rule refuses everyone. Ends with a graded mission.
-5. [Wrap-Up](./course-05-wrap-up.md): what you learned, your missions, and cleaning up.
-
-## Why this matters
-
-On the exam you write claim rules by hand and prove them with real requests. Most mistakes compile cleanly and fail quietly: a claim name that no token has, a requirement put in a `DENY`, a public path that is not public. This module trains you to read the token, write the rule, and check what the proxy really holds.
+You use it like this: `check_status -H "$AUTH $GROUPS_TOKEN" $PROBE/headers`. Any `curl` options you add are passed on.

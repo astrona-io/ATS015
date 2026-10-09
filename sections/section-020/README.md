@@ -2,7 +2,7 @@
 
 Mutual TLS proves a caller is *someone* in the mesh. It has no opinion about whether that someone should be calling this service, on this path, with this method. `AuthorizationPolicy` is where that question is answered, and it is the object the exam tests hardest.
 
-Two modules. Module 1 builds permissions up from nothing: the allow-nothing baseline, the `from` / `to` / `when` structure of a rule, and identity-based rules. Those rules only work when mutual TLS is on, because the ID badge they check is proved in the mTLS handshake. Module 2 is the other direction — `DENY`, the fixed evaluation order it sits in, and why an `ALLOW` can never rescue traffic a `DENY` matched.
+Two modules. Module 1 builds permissions up from nothing: the allow-nothing baseline, the `from` / `to` / `when` structure of a rule, and identity-based rules. Those rules only work when mutual TLS is on, because the workload identity they check is the one in the certificate that mTLS verifies. Module 2 is the other direction — `DENY`, the fixed evaluation order it sits in, and why an `ALLOW` can never rescue traffic a `DENY` matched.
 
 **Curriculum item covered:** Configuring Authorization
 

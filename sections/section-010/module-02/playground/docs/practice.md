@@ -1,6 +1,6 @@
 # Practice: Enforce mTLS With PeerAuthentication At Three Scopes
 
-Two exam-style missions for this playground, astronaut. Start the playground
+Two exam-style tasks for this playground. Start the playground
 first, and paste the helpers from [overview.md](./overview.md#helpers). The
 solutions use them.
 
@@ -8,7 +8,7 @@ Try each task on your own first, then open the solution. Start each task with
 no `PeerAuthentication` and no `DestinationRule` in the cluster
 (`kubectl get peerauthentication,destinationrule -A` lists nothing).
 
-## Task 1: one ship requires the handshake
+## Task 1: one workload requires mTLS
 
 > Make **only** the `navcom` workload in `starfleet` require mTLS. Every other
 > workload in `starfleet` keeps accepting plain text.
@@ -55,7 +55,7 @@ shuttle: 200
 ```
 
 The drifter is refused by `navcom` only. The shuttle still gets in, because
-its communications officer does the handshake for it.
+its sidecar proxy uses mTLS for it.
 
 </details>
 
@@ -103,7 +103,7 @@ kubectl apply -f peerauthentication-starfleet-strict.yaml -f destinationrule-pro
 
 `PeerAuthentication` only says what the server accepts. The `DestinationRule`
 says what the caller sends, and it tells the shuttle to send plain text. Read
-the shuttle's flight log first:
+the shuttle's access log first:
 
 ```bash
 from_shuttle $PROBE_URL

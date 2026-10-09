@@ -4,11 +4,11 @@ estimated_duration: 3m
 
 # Lock A Namespace Down With ALLOW Policies
 
-Welcome to a lockdown mission, astronaut. On the planet `authz-demo`, mTLS is `STRICT`, so every caller's ID badge is checked. But no guard stands at any airlock yet, so every call gets through, including a test pod calling the notification service directly.
+In the namespace `authz-demo`, mTLS is `STRICT`, so every caller's certificate is verified. But no `AuthorizationPolicy` exists yet, so every call gets through, including a test pod calling the notification service directly.
 
 Your job is to close the whole namespace with `AuthorizationPolicy` objects, then reopen exactly the two calls the app's design needs: one by namespace, one by exact identity.
 
-This mission runs on a small app of its own, not the Starfleet: `booking-service`, `notification-service` and a `tester` client.
+This lab runs on a small app of its own, not the Starfleet: `booking-service`, `notification-service` and a `tester` client.
 
 ## Launching the Lab
 

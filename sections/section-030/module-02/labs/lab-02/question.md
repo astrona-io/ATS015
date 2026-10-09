@@ -6,12 +6,12 @@ estimated_duration: 20m
 
 Solve this question on: `terminal`
 
-Astronaut, two reports reached mission control from the planet `starfleet`. Administrators in `group1` are refused at the probe's admin path. And the probe's public path, which anyone should be able to read, now asks for a token.
+Two problems were reported in the namespace `starfleet`. Administrators in `group1` are refused at the probe's administrator path. And the probe's public path, which anyone should be able to read, now asks for a token.
 
-The planet `starfleet` has sidecar injection on and runs:
+The namespace `starfleet` has sidecar injection on and runs:
 
-* `probe-v1` and `probe-v2`: the echo probe behind one `probe` Service on port `8000`. Pods carry the label `app: probe`. Every path below answers `200` when the mesh lets the request through.
-* `shuttle`: a client pod with `curl`. Send your test signals from here.
+* `probe-v1` and `probe-v2`: an HTTP echo server behind one `probe` Service on port `8000`. Pods carry the label `app: probe`. Every path below answers `200` when the mesh lets the request through.
+* `shuttle`: a client pod with `curl`. Send your test requests from here.
 
 Istio 1.30.5 is installed. Two security objects already exist:
 
@@ -26,7 +26,7 @@ Fix the problem so that:
 2.  A request **without** a token to `http://probe:8000/headers` gets `200`.
 3.  `GET http://probe:8000/get` gets `403` without a token and `200` with the `demo.jwt` token.
 4.  `http://probe:8000/anything/admin` gets `403` without a token, `403` with the `demo.jwt` token, and `200` with the `groups-scope.jwt` token.
-5.  The admin rule keeps a `when` condition on the token's group claim with the value `group1`.
+5.  The administrator rule keeps a `when` condition on the token's group claim with the value `group1`.
 6.  The `RequestAuthentication` named `probe-jwt` is **left unchanged**. Leave the Deployments and Services unchanged.
 
-The grader fetches both tokens and sends live signals from the `shuttle` pod, so the fix has to work, not merely exist.
+The grader fetches both tokens and sends live requests from the `shuttle` pod, so the fix has to work, not merely exist.

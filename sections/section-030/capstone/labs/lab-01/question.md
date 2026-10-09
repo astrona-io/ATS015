@@ -6,19 +6,19 @@ estimated_duration: 40m
 
 Solve this question on: `terminal`
 
-Astronaut, the notification service is opening to a partner's crew. Their identity provider issues the boarding passes and writes crew groups on them. You control none of that: you get only an issuer name and a key set address. Nobody may get in without a pass from that issuer, and only one crew group may use the admin door. A colleague set up the pass checker and called it done, and signals with no pass at all still flew straight through.
+The notification service is opening to a partner's users. Their identity provider issues the tokens and writes user groups into them. You control none of that: you get only an issuer name and a key set address. No request may get in without a token from that issuer, and only one user group may call the admin path. A colleague set up token validation and called it done, and requests with no token at all still got straight through.
 
 A few words before you start:
 
-* A **JWT** (JSON Web Token) is a signed boarding pass an astronaut carries with every signal, in the header `Authorization: Bearer <token>`.
-* A **`RequestAuthentication`** is the pass checker. It checks any pass that is shown, but it does not demand one.
-* The **JWKS** (JSON Web Key Set) is the list of official stamps the pass checker compares passes against.
-* **Claims** are the lines printed on the pass, for example `iss` (who issued it) or `groups` (which crew groups).
-* An **`AuthorizationPolicy`** is the guard's list at the airlock. `requestPrincipals` is the name on the boarding pass.
+* A **JWT** (JSON Web Token) is a signed token that carries claims about the end user. The client sends it with each request, in the header `Authorization: Bearer <token>`.
+* A **`RequestAuthentication`** validates a JWT if the request carries one. It does not require a token.
+* The **JWKS** (JSON Web Key Set) is the set of public keys used to verify the token's signature.
+* **Claims** are the fields inside the token, for example `iss` (who issued it) or `groups` (which user groups).
+* An **`AuthorizationPolicy`** allows or denies requests to a workload. Its `requestPrincipals` field matches the request principal from a valid token (`<iss>/<sub>`).
 
 ## What is in the cluster
 
-The cluster runs Istio 1.30.5, installed with the `demo` profile. The planet `jwtclaims-demo` has sidecar injection on and runs:
+The cluster runs Istio 1.30.5, installed with the `demo` profile. The namespace `jwtclaims-demo` has sidecar injection on and runs:
 
 * `booking-service-v1`: Service `booking-service` on port `80`, serves `POST /book`.
 * `notification-service-v1`: Service `notification-service` on port `80`, serves `POST /notify` and has **no `/admin` handler**. An `/admin` request that gets through comes back `404` from the app. Anything that is not `403` means the mesh let it through.

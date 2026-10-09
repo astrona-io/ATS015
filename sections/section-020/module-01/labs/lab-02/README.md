@@ -2,11 +2,11 @@
 estimated_duration: 3m
 ---
 
-# Repair The Fleet's Guest Lists
+# Repair Broken AuthorizationPolicies
 
-Welcome to a repair mission, astronaut. On the planet `starfleet`, every ship has its own least-privilege guest list, and the planet is closed by default. That part works: nobody can take a shortcut. But the bridge page is broken too, and the fleet needs it back.
+In the namespace `starfleet`, every workload has its own least-privilege `AuthorizationPolicy`, and the namespace is closed by default. That part works: nobody can take a shortcut. But the `bridge` page is broken too, and the crew needs it back.
 
-Your job is to find the faults with the flight logs, the proxy's own orders and `istioctl analyze`, fix them, and prove that the page works again while every shortcut stays closed.
+Your job is to find the faults with the access logs, the proxy configuration and `istioctl analyze`, fix them, and prove that the page works again while every shortcut stays closed.
 
 ## Launching the Lab
 

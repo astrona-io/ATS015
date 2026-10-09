@@ -4,9 +4,9 @@ estimated_duration: 15m
 
 # Make The Probe Read-Only
 
-Welcome to a lockdown mission, astronaut. On the planet `starfleet`, the echo probe has an open guest list: every ship on the planet may send it any signal. Mission control now wants the probe to be read-only, for every caller, without anyone touching that guest list.
+In the namespace `starfleet`, the `probe` echo service has an open `ALLOW` policy: every workload in the namespace may send it any request. The probe must now become read-only, for every caller, without anyone touching that `ALLOW` policy.
 
-Your job is to write one `DENY` policy with one negative field, and prove that reads still work while every other method is refused.
+In this lab you write one `DENY` policy with one negative field, and prove that reads still work while every other method is refused.
 
 ## Launching the Lab
 

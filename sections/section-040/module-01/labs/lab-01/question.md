@@ -6,9 +6,9 @@ estimated_duration: 20m
 
 Solve this question on: `terminal`
 
-Astronaut, the booking service is going public. You have been handed a certificate and a private key for `booking.ica.local`, and your mission is to put the service behind HTTPS at the ingress gateway, with plain HTTP callers redirected rather than served.
+The booking service is going public. You have been given a certificate and a private key for `booking.ica.local`. Put the service behind HTTPS at the ingress gateway, with plain HTTP requests redirected rather than served.
 
-This mission runs a small app of its own, not the Starfleet. The cluster has Istio 1.30.5 with the `demo` profile, which includes the ingress gateway Deployment `istio-ingressgateway` in the namespace `istio-system`. Its pods carry the label `istio: ingressgateway`. The namespace `tls-demo` has sidecar injection on and runs:
+This lab runs a small app of its own, not the Starfleet. The cluster has Istio 1.30.5 with the `demo` profile, which includes the ingress gateway Deployment `istio-ingressgateway` in the namespace `istio-system`. Its pods carry the label `istio: ingressgateway`. The namespace `tls-demo` has sidecar injection on and runs:
 
 * `booking-service-v1`: serves `/book`, behind the Service `booking-service` on port `80`.
 * `notification-service-v1`: behind the Service `notification-service` on port `80`.
@@ -39,7 +39,7 @@ kubectl -n istio-system port-forward svc/istio-ingressgateway 8443:443 8080:80
 
 When you are done, this is what you should see:
 
-| Signal | Expected |
+| Request | Expected |
 | --- | --- |
 | `https://booking.ica.local:8443/book` (through the port forward, with `--resolve` and `-k`) | `200`, with the `CN=booking.ica.local` certificate |
 | `http://127.0.0.1:8080/book` with the header `Host: booking.ica.local` | `301` |

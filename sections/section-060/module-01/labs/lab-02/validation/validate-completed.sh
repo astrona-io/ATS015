@@ -3,8 +3,8 @@
 # identity rules that ztunnel enforces on its own:
 #   - cargo-l4 and navcom-l4 are selector-based ALLOW policies with L4 fields
 #     only (no methods, paths, hosts, request principals, targetRefs)
-#   - the planet is still ambient, with no waypoint and no sidecars
-#   - live signals: the shuttle's connections to cargo and navcom are closed
+#   - the namespace is still ambient, with no waypoint and no sidecars
+#   - live requests: the shuttle's connections to cargo and navcom are closed
 #     (curl 000), the bridge still reaches cargo, the scouts still get ratings
 #     from navcom, and the shuttle still reaches scout (nothing over-locked)
 
@@ -55,14 +55,14 @@ check_policy() {  # check_policy <name> <app label> <principal>
 check_policy cargo-l4 cargo cluster.local/ns/starfleet/sa/starfleet-bridge
 check_policy navcom-l4 navcom cluster.local/ns/starfleet/sa/starfleet-scout
 
-# --- 2. live signals --------------------------------------------------------------
+# --- 2. live requests -------------------------------------------------------------
 status_from_shuttle() {  # status_from_shuttle <url> -> http code (000 = closed)
   kubectl -n "$NS" exec deploy/shuttle -- \
     curl -s -o /dev/null -w '%{http_code}' --max-time 5 "$1" 2>/dev/null
 }
 
 # Policy changes take up to about a minute to reach live traffic (open
-# connections keep the old rule). Retry the four signals for up to 90 s until
+# connections keep the old rule). Retry the four requests for up to 90 s until
 # they all match, then grade what the last round returned.
 cargo_code=""; navcom_code=""; bridge_code=""; scout_code=""
 for i in $(seq 1 30); do
