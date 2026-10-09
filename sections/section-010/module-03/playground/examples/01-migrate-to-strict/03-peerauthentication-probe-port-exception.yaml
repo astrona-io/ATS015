@@ -1,0 +1,17 @@
+# A port exception: the probe accepts mTLS only, except on port 8080.
+# portLevelMtls needs a selector, and the key is the CONTAINER port (8080),
+# not the Service port (8000).
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: probe
+  mtls:
+    mode: STRICT
+  portLevelMtls:
+    8080:
+      mode: PERMISSIVE

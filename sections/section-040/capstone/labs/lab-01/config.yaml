@@ -1,56 +1,33 @@
-# Edge TLS Capstone (CAP015-040)
-# Astrona hands-on lab. Schema: internal/config.LabConfig.
-# kind runtime (default): a single-node cluster with Istio 1.30.5.
-
 metadata:
   name: "ats-015-capstone-040"
   docs:
-    prerequisites: "docs/prerequisites.md"
-    examQuestion: "docs/exam-question.md"
-    caseStudy: "docs/case-study.md"
-    guide: "docs/step-by-step-guide.md"
+    solution: "solution.md"
+    question: "question.md"
 
 bootstrap:
   init:
-    - name: "setup"
-      description: "Installs Istio (demo profile) and the starting workloads. Creates nothing the task asks for."
+    - name: "install-istio"
+      description: "Installs istioctl 1.30.5 and a demo-profile control plane with its ingress gateway, plus openssl"
       type: "file"
-      source: "bootstrap/setup.sh"
-  manifests:
-    - name: "lab-start"
-      description: "Starting workloads: namespace, service accounts, Deployments, Services and a client pod."
+      source: "bootstrap/01-install-istio.sh"
+    - name: "capstone-040-setup"
+      description: "Creates tls-demo (booking-service, notification-service and tls-backend, which terminates TLS itself) and leaves /tmp/booking.crt and /tmp/booking.key for the terminated hostname"
       type: "file"
-      source: "manifests/lab-start.yaml"
-    - name: "tls-backend"
-      description: "A backend that terminates TLS itself, so the gateway has something to pass through."
-      type: "file"
-      source: "manifests/tls-backend.yaml"
+      source: "bootstrap/02-seed-workloads.sh"
 
 testing:
-  manifests:
+  init:
     - name: "solution"
-      description: "Reference end state applied by `astrona test` in CI."
-      type: "folder"
-      source: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
 
 validation:
-  checks:
-    - name: "terminating credential secret"
-      type: "resourceExists"
-      resource: "secret/booking-credential -n istio-system"
-    - name: "Gateway in tls-demo"
-      type: "resourceExists"
-      resource: "gateway/edge-gateway -n tls-demo"
-  script:
-    name: "verify-behaviour"
-    description: "Sends real traffic and asserts the outcomes the task specifies."
-    type: "file"
-    source: "validate.sh"
+  scripts:
+    - name: "verify-section-040-capstone"
+      description: "Confirms one Gateway edge-gateway with SIMPLE and PASSTHROUGH listeners, the booking-credential secret in istio-system, the right certificate served for each hostname with a 200, and a 301 redirect on port 80"
+      type: "file"
+      source: "validation/validate-completed.sh"
 
 teardown:
-  init:
-    - name: "dump-logs"
-      description: "Best-effort state capture before teardown."
-      type: "file"
-      source: "teardown/dump-logs.sh"
   keepCluster: false

@@ -1,43 +1,29 @@
-# Edge Authorization Capstone
+---
+estimated_duration: 30m
+---
 
-- **ID:** CAP015-050
-- **Slug:** ats-015-capstone-050
-- **Author:** Paris Nakita Kejser
-- **Type:** Astrona hands-on capstone lab — graded
+# Capstone: Block A Range And Fence The Admin Path
 
-Layer a path-scoped address allow-list over a global deny-list at the gateway, and get the precedence right.
+Astronaut, this is your Section 050 capstone mission. At the spaceport arrival gate, you ban one range of return addresses everywhere, and you fence the admin path so that only the office range can reach it. The gate is shared, so nothing else may close.
 
-## Run it
+There is no walkthrough until you have tried it. Work from the task.
 
-```sh
-astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-050/capstone/labs/lab-01
-astrona submit -c .
+## Launching the Lab
+
+Run this command to start the cluster:
+
+```bash
+astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-050/capstone/labs/lab-01
+```
+
+When you think you have finished, send it for grading:
+
+```bash
+astrona submit -c sections/section-050/capstone/labs/lab-01
+```
+
+When you are done, remove the lab:
+
+```bash
 astrona destroy ats-015-capstone-050
 ```
-
-`astrona destroy` takes the environment name (`metadata.name` = `ats-015-capstone-050`), not the
-config path.
-
-## Prove it (authors / CI)
-
-```sh
-astrona test -c . --junit-xml=report.xml
-```
-
-`astrona test` bootstraps the lab, applies `solution/`, submits it, and tears down —
-proving a learner who does everything right passes.
-
-## Layout
-
-| Path | Purpose |
-| --- | --- |
-| `config.yaml` | Lab definition (bootstrap / testing / validation / teardown) |
-| `docs/prerequisites.md` | What to know and have installed first |
-| `docs/exam-question.md` | The formal, self-contained task |
-| `docs/case-study.md` | The same task as a scenario, with hints instead of an answer |
-| `docs/step-by-step-guide.md` | Full walkthrough, including the answer |
-| `manifests/` | Starting state applied at bootstrap |
-| `bootstrap/setup.sh` | Istio install and pre-work — never the graded objects |
-| `solution/` | Reference end state (CI only; learners do not see it during a run) |
-| `validate.sh` | Behavioural grading |
-| `teardown/dump-logs.sh` | State capture before teardown |
