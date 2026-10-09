@@ -184,8 +184,8 @@ modules:
           - name: "PeerAuthentication reference"
             url: https://istio.io/latest/docs/reference/config/security/peer_authentication/
       - type: reading
-        title: "Wrap-Up"
-        path: sections/section-010/module-02/course-07-wrap-up.md
+        title: "Summary"
+        path: sections/section-010/module-02/course-07-summary.md
 
       - type: reading
         title: "Migrate A Namespace From PERMISSIVE To STRICT mTLS"
@@ -227,8 +227,8 @@ modules:
           - name: "Sidecar injection"
             url: https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/
       - type: reading
-        title: "Wrap-Up"
-        path: sections/section-010/module-03/course-05-wrap-up.md
+        title: "Summary"
+        path: sections/section-010/module-03/course-05-summary.md
 
       - type: reading
         title: Question
@@ -333,8 +333,8 @@ modules:
           - name: "Security problems"
             url: https://istio.io/latest/docs/ops/common-problems/security-issues/
       - type: reading
-        title: "Wrap-Up"
-        path: sections/section-020/module-01/course-07-wrap-up.md
+        title: "Summary"
+        path: sections/section-020/module-01/course-07-summary.md
 
       - type: reading
         title: "DENY Policies And Evaluation Order"
@@ -397,8 +397,8 @@ modules:
         title: "AUDIT, And Choosing ALLOW Or DENY"
         path: sections/section-020/module-02/course-06-audit-and-choosing-allow-or-deny.md
       - type: reading
-        title: "Wrap-Up"
-        path: sections/section-020/module-02/course-07-wrap-up.md
+        title: "Summary"
+        path: sections/section-020/module-02/course-07-summary.md
 
       - type: reading
         title: Question
@@ -478,8 +478,8 @@ modules:
           - name: "Authorization with JWT task"
             url: https://istio.io/latest/docs/tasks/security/authorization/authz-jwt/
       - type: reading
-        title: "Wrap-Up"
-        path: sections/section-030/module-01/course-05-wrap-up.md
+        title: "Summary"
+        path: sections/section-030/module-01/course-05-summary.md
 
       - type: reading
         title: "Authorize On JWT Claims"
@@ -542,8 +542,8 @@ modules:
           - name: "Debugging Envoy and istiod"
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
-        title: "Wrap-Up"
-        path: sections/section-030/module-02/course-05-wrap-up.md
+        title: "Summary"
+        path: sections/section-030/module-02/course-05-summary.md
 
       - type: reading
         title: Question
@@ -623,8 +623,8 @@ modules:
           - name: "Debugging Envoy and istiod"
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
-        title: "Wrap-Up: Terminate TLS At The Ingress Gateway"
-        path: sections/section-040/module-01/course-05-wrap-up.md
+        title: "Summary"
+        path: sections/section-040/module-01/course-05-summary.md
 
       - type: reading
         title: "Require Client Certificates At The Edge"
@@ -684,8 +684,8 @@ modules:
         title: "The Separate CA Secret And What A Client Certificate Proves"
         path: sections/section-040/module-02/course-04-two-secret-layouts-and-what-a-badge-proves.md
       - type: reading
-        title: "Wrap-Up: Client Certificates At The Edge"
-        path: sections/section-040/module-02/course-05-wrap-up.md
+        title: "Summary"
+        path: sections/section-040/module-02/course-05-summary.md
 
       - type: reading
         title: "TLS Passthrough Instead Of Termination"
@@ -750,8 +750,8 @@ modules:
         title: "Termination And Passthrough On One Gateway"
         path: sections/section-040/module-03/course-05-one-gate-two-modes.md
       - type: reading
-        title: "Wrap-Up: TLS Passthrough"
-        path: sections/section-040/module-03/course-06-wrap-up.md
+        title: "Summary"
+        path: sections/section-040/module-03/course-06-summary.md
 
       - type: reading
         title: "Originate TLS For External Services"
@@ -794,8 +794,8 @@ modules:
         title: "Add A Timeout And Mutual TLS To An External Service"
         path: sections/section-040/module-04/course-05-use-what-you-won.md
       - type: reading
-        title: "Wrap-Up"
-        path: sections/section-040/module-04/course-06-wrap-up.md
+        title: "Summary"
+        path: sections/section-040/module-04/course-06-summary.md
 
       - type: reading
         title: Question
@@ -878,8 +878,8 @@ modules:
           - name: "Configuring gateway network topology"
             url: https://istio.io/latest/docs/ops/configuration/traffic-management/network-topologies/
       - type: reading
-        title: "Wrap-Up"
-        path: sections/section-050/module-01/course-06-wrap-up.md
+        title: "Summary"
+        path: sections/section-050/module-01/course-06-summary.md
 
       - type: reading
         title: Question
@@ -960,8 +960,8 @@ modules:
         title: "Find Which Component Enforces A Rule"
         path: sections/section-060/module-01/course-05-ask-who-holds-the-rule.md
       - type: reading
-        title: "Wrap-Up"
-        path: sections/section-060/module-01/course-06-wrap-up.md
+        title: "Summary"
+        path: sections/section-060/module-01/course-06-summary.md
 
       - type: reading
         title: Question
