@@ -674,20 +674,67 @@ modules:
         title: "TLS Passthrough Instead Of Termination"
         path: sections/section-040/module-03/course.md
       - type: reading
-        title: "What a proxy can see in a TLS stream"
+        title: "What A Proxy Can See"
         path: sections/section-040/module-03/course-01-what-a-proxy-can-see.md
       - type: reading
-        title: "Configuring passthrough"
-        path: sections/section-040/module-03/course-02-configuring-passthrough.md
+        title: "Open A Gate That Does Not Decrypt"
+        path: sections/section-040/module-03/course-02-open-a-gate-that-does-not-decrypt.md
       - type: reading
-        title: "What passthrough costs"
-        path: sections/section-040/module-03/course-03-what-passthrough-costs.md
+        title: "Prove Who Opened The Envelope"
+        path: sections/section-040/module-03/course-03-prove-who-opened-the-envelope.md
       - type: reading
         title: Question
         path: sections/section-040/module-03/labs/lab-01/question.md
       - type: lab
         title: "Route An Encrypted Stream By SNI Lab"
         path: sections/section-040/module-03/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 15m
+        topic: edge-tls
+        task_kind: build
+        tags: [gateway, virtualservice, tls-passthrough, sni, ingress-gateway, proxy-config]
+        learning_goals:
+          - Expose a backend through the ingress gateway with a TLS PASSTHROUGH server and no credential
+          - Route an encrypted stream with a VirtualService tls block that matches sniHosts
+          - Prove from the served certificate and the gateway's routes that the backend ended TLS
+        resources:
+          - name: "Ingress gateway without TLS termination"
+            url: https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-sni-passthrough/
+          - name: "Gateway reference: ServerTLSSettings"
+            url: https://istio.io/latest/docs/reference/config/networking/gateway/#ServerTLSSettings
+          - name: "VirtualService reference: TLSRoute"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/#TLSRoute
+      - type: reading
+        title: "When The Stream Has Nowhere To Go"
+        path: sections/section-040/module-03/course-04-when-the-stream-has-nowhere-to-go.md
+      - type: reading
+        title: Question
+        path: sections/section-040/module-03/labs/lab-02/question.md
+      - type: lab
+        title: "Fix The Gate That Routes Nothing Lab"
+        path: sections/section-040/module-03/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: edge-tls
+        task_kind: troubleshooting
+        tags: [gateway, virtualservice, tls-passthrough, sni, connection-reset, proxy-config, openssl]
+        learning_goals:
+          - Find a passthrough setup that routes nothing from the gateway's listener instead of the status code
+          - Replace an http block with a tls block that matches sniHosts, and align the Gateway hosts with it
+          - Prove the repaired host returns 200 with the backend's own certificate
+        resources:
+          - name: "Ingress gateway without TLS termination"
+            url: https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-sni-passthrough/
+          - name: "Debugging Envoy and istiod (proxy-config)"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+          - name: "VirtualService reference: TLSRoute"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/#TLSRoute
+      - type: reading
+        title: "One Gate, Two Modes"
+        path: sections/section-040/module-03/course-05-one-gate-two-modes.md
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-040/module-03/course-06-wrap-up.md
 
       - type: reading
         title: Question

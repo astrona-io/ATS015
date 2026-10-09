@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
-# Grading for LAB015-040-03 — SNI passthrough at the ingress gateway.
+# Grading for ats-015-lab-040-03 - SNI passthrough at the ingress gateway.
+# Confirms the Gateway passthrough-gateway and the VirtualService passthrough
+# exist in passthrough-demo (the former validation.checks), that the listener
+# is TLS + PASSTHROUGH with no credential, that the route matches sniHosts,
+# and - the part that matters - that a real signal through the gateway gets
+# 200 with the backend's own certificate and no HTTP route for the host.
 set -uo pipefail
 
 FAIL=0
@@ -54,13 +59,28 @@ else
     || { say "FAIL: no sniHosts match. An http block cannot match an encrypted stream."; FAIL=1; }
 fi
 
-kubectl -n istio-system port-forward svc/istio-ingressgateway 18443:443 >/dev/null 2>&1 &
-PF_PIDS+=($!)
-sleep 4
+# kubectl port-forward exits after a refused or failed handshake, so restart it
+# whenever it is gone.
+PF_PID=""
+ensure_forward() {
+  if [ -n "$PF_PID" ] && kill -0 "$PF_PID" >/dev/null 2>&1; then return 0; fi
+  kubectl -n istio-system port-forward svc/istio-ingressgateway 18443:443 >/dev/null 2>&1 &
+  PF_PID=$!
+  PF_PIDS+=("$PF_PID")
+  sleep 3
+}
 
 say "--- check 3: the stream reaches the backend ---"
-CODE=$(curl -sk --resolve secure.ica.local:18443:127.0.0.1 --max-time 15 \
-  -o /dev/null -w '%{http_code}' https://secure.ica.local:18443/ 2>/dev/null)
+# Gateway changes can take up to about a minute to show in live traffic:
+# retry for up to about 90 s.
+CODE=""
+for i in $(seq 1 30); do
+  ensure_forward
+  CODE=$(curl -sk --resolve secure.ica.local:18443:127.0.0.1 --max-time 10 \
+    -o /dev/null -w '%{http_code}' https://secure.ica.local:18443/ 2>/dev/null)
+  [ "$CODE" = "200" ] && break
+  sleep 3
+done
 if [ "$CODE" = "200" ]; then
   say "OK: https://secure.ica.local/ -> 200"
 else
@@ -69,6 +89,7 @@ else
   FAIL=1
 fi
 
+ensure_forward
 say "--- check 4: the certificate served belongs to the backend ---"
 SUBJ=$(curl -sk -v --resolve secure.ica.local:18443:127.0.0.1 --max-time 15 \
   https://secure.ica.local:18443/ 2>&1 | grep -m1 'subject:')

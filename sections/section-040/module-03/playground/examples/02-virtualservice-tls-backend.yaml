@@ -1,0 +1,22 @@
+# Routes the sealed stream by the address on the envelope (SNI).
+# A tls block, not an http block: the gate cannot read a path or a header.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: tls-backend
+  namespace: starfleet
+spec:
+  hosts:
+  - vault.starfleet.example.com
+  gateways:
+  - vault-gateway
+  tls:
+  - match:
+    - port: 443
+      sniHosts:
+      - vault.starfleet.example.com
+    route:
+    - destination:
+        host: tls-backend
+        port:
+          number: 8443

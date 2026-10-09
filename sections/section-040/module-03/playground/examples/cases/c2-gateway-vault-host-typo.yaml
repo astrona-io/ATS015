@@ -1,0 +1,23 @@
+# MISTAKE: the Gateway listens for another host than the VirtualService's
+# sniHosts. The visitor sends SNI vault.starfleet.example.com; the gate's
+# server waits for "valt.starfleet.example.com", so the tls-backend
+# VirtualService no longer fits any host on vault-gateway and the stream has
+# nowhere to go: the gate has no port 443 listener any more. kubectl apply
+# accepts it; istioctl analyze -n starfleet reports IST0132.
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: vault-gateway
+  namespace: starfleet
+spec:
+  selector:
+    istio: ingress
+  servers:
+  - port:
+      number: 443
+      name: tls
+      protocol: TLS
+    hosts:
+    - valt.starfleet.example.com
+    tls:
+      mode: PASSTHROUGH

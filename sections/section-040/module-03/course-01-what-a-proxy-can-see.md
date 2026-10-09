@@ -1,91 +1,106 @@
-# Part 1 — What a proxy can see in a TLS stream
+# What A Proxy Can See
 
-> Prerequisite: [the module landing page](./course.md). Next: [Part 2 — Configuring passthrough](./course-02-configuring-passthrough.md).
+Astronaut, every passthrough setting in this module follows from one question. A proxy in the middle has no key. How much of a sealed signal can it still read? The answer is: only the first message, and only parts of it. This part shows what that first message holds, and then meets the ship that keeps its own lock and key.
 
-Everything about passthrough configuration follows from one question: with no key, how much of a TLS connection can a proxy in the middle actually read? The answer is "the first message, and only parts of it" — and that is what decides which fields the routing rules can use.
+## The handshake, seen from the middle
 
-## The handshake, from the middle
+A TLS connection starts with a short exchange called the **handshake**. The two ends agree on a secret key, and from then on everything is sealed. A proxy that sits in the middle without a key sees this exchange from the outside.
+
+### The first message is open
+
+The visitor speaks first. Its first message is called the **ClientHello**. It is sent before any key exists, so it cannot be sealed. Anyone on the path can read it.
+
+The ClientHello carries a few fields in the open:
+
+| Field | What it says | Readable without the key? |
+| --- | --- | --- |
+| TLS version and cipher list | which locks the visitor can use | yes |
+| SNI (Server Name Indication) | the host name the visitor wants, for example `vault.starfleet.example.com` | yes |
+| ALPN (Application-Layer Protocol Negotiation) | which protocol comes next, for example HTTP/2 or HTTP/1.1 | yes |
+| Everything after the handshake | the method, the path, the headers, the body, the reply | **no** |
+
+SNI is the address written on the outside of the sealed envelope. It is there for a simple reason. One server can host many sites, and it must pick the right certificate **before** it can show one. So the visitor names the host first, in the open.
+
+### Why SNI is all a passthrough gate has
+
+A gate with no key can read the address on the envelope, and nothing inside it. It sees no method, no path, no header and no status code.
 
 ```mermaid
-flowchart TD
-    C["client ClientHello:<br/>TLS version, cipher list, SNI, ALPN"] --> G["gateway with no key"]
-    G --> R["READABLE in the clear:<br/>server_name (SNI), ALPN, cipher preferences"]
-    R --> N["SNI is the ONLY routable field"]
-    G --> F["forwards the bytes unchanged"]
-    F --> B["backend presents its OWN certificate"]
-    B --> O["opaque from here on:<br/>key exchange, then application data"]
+flowchart TB
+    C["visitor"] -->|"ClientHello with SNI"| G["arrival gate, no key"]
+    G -->|"reads SNI only"| D["route choice"]
+    D -->|"sealed bytes"| V["tls-backend"]
+    V -->|"own certificate"| C
 ```
 
-A passthrough gateway is a router with one field to route on. Everything a normal gateway does with paths and headers is unavailable, because it never holds a key.
+The visitor's first message reaches the gate. The gate reads only the SNI name, picks a destination with it, and forwards the sealed bytes unchanged. The ship at the end, `tls-backend`, finishes the handshake with its own certificate, so the visitor and that ship share a key the gate never sees.
 
-The ClientHello is sent before any key material is agreed, so it is necessarily in the clear. Everything after the key exchange is not.
+This gives the rule for the rest of the module: **passthrough routing matches on SNI, because SNI is the only thing there is.** In Envoy, the part that peeks at the ClientHello is a small listener filter called the **TLS inspector**. It reads SNI and ALPN, and it never decrypts anything.
 
-**SNI** — Server Name Indication — is in that first message for a reason unrelated to proxies: a server hosting several sites needs to know which certificate to present *before* it can present one, and the certificate has to go out before the client can say anything encrypted. So the hostname is declared up front, in plaintext, by design.
+ALPN is readable too. Istio uses it to tell HTTP/2 from HTTP/1.1, but a `VirtualService` cannot match on it. A newer TLS extension, Encrypted ClientHello, can hide the SNI name as well. Where a visitor uses it, routing on SNI stops working.
 
-A proxy that cannot decrypt gets to use that, and nothing else. No method, no path, no headers, no body, no response code. Which gives the constraint the rest of the module elaborates: **passthrough routing matches on SNI, because SNI is the only thing there is.**
+## The vault owns its certificate
 
-Two things worth knowing about the edges of that statement:
+In this module the certificate is not yours. The vault, `tls-backend`, makes its own when its pod starts, and serves HTTPS itself on port `8443`. Look at it before any gate setting exists. Later, when the same certificate comes back through the gate, you know nothing in between replaced it.
 
-- **ALPN is readable too**, and is how a proxy can tell an HTTP/2 connection from HTTP/1.1 without decrypting. Istio does not expose it as a `VirtualService` match, but it explains how a passthrough listener can still make protocol-level decisions.
-- **Encrypted ClientHello (ECH)** is a TLS extension that hides SNI as well. Where it is in use, SNI-based routing stops working — worth knowing the direction the standards are moving, not something to plan around today.
+<!-- astrona:playground:renew -->
 
-## Terminate or forward: the whole difference
+### See the vault in your playground
 
-| | Terminated (`SIMPLE` / `MUTUAL`) | Passthrough |
-| --- | --- | --- |
-| Gateway holds a certificate | yes, via `credentialName` | **no** |
-| Who completes the handshake | the gateway | the **backend** |
-| `VirtualService` section | `http` | `tls` |
-| Matches on | `uri`, `headers`, `method`, … | `sniHosts`, `port` |
-| Gateway can see the request | yes | no |
-| L7 telemetry and policy at the edge | available | **not available** |
-| Client certificate reaches the backend | only as a forwarded header | as the real certificate |
+List the vault's pod and its Service:
 
-The last row is the one that usually decides the choice. A backend that authenticates its callers by client certificate needs the actual certificate, not a gateway's summary of one — and a gateway that terminated the connection cannot provide it.
+```sh
+kubectl get pods,svc -n starfleet -l app=tls-backend
+```
 
-## The backend owns the certificate
+```text
+NAME                               READY   STATUS    RESTARTS   AGE
+pod/tls-backend-6b5f6947bb-94smw   2/2     Running   0          51s
 
-In this module, the certificate is not yours and is not in `istio-system`. The playground's `tls-backend` generates its own at startup and serves HTTPS directly on port `8443`.
+NAME                  TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+service/tls-backend   ClusterIP   10.96.174.179   <none>        8443/TCP   51s
+```
 
-That is worth confirming before any gateway exists, because it makes the later result unambiguous: if the certificate you see through the gateway is the same one the backend serves directly, nothing in between re-created it.
+The pod shows `2/2`: the nginx crew plus its communications officer (the sidecar). The Service port is named `tls`, so every proxy treats this radio channel as a sealed stream, not as HTTP.
 
-> [!TIP]
-> **Try it — the backend serving its own TLS, with no gateway involved**
->
-> ```sh
-> kubectl -n passthrough-demo get pods,svc
-> kubectl -n passthrough-demo port-forward svc/tls-backend 9443:8443 >/dev/null 2>&1 &
-> sleep 2
-> curl -sk -v https://localhost:9443/ 2>&1 | grep -E 'subject:|issuer:|^\{|backend'
-> ```
->
-> Expect something like:
->
-> ```text
-> * subject: CN=secure.ica.local; O=backend
-> * issuer: CN=secure.ica.local; O=backend
-> backend terminated TLS
-> ```
->
-> Stop the port-forward with `kill %1`. `O=backend` is the organisation this nginx put in the certificate it generated for itself when the pod started — no Kubernetes Secret and no Istio object was involved in creating it. Note also that this works *through the pod's sidecar*: the sidecar forwards the TLS stream to the container without decrypting it, for exactly the same reason the gateway will.
+### Read the certificate on the vault's own disk
 
-Keep that subject line. [Part 3](./course-03-what-passthrough-costs.md) compares it against what a client sees through the gateway, and identical output is the proof that passthrough did what it claims.
+Copy the certificate file out of the pod and let `openssl` on your machine read it:
 
-> *The ClientHello is in the clear and everything after it is not, so a proxy without the key can route on SNI and on nothing else.*
+```sh
+kubectl exec -n starfleet deploy/tls-backend -c nginx -- cat /etc/nginx/certs/tls.crt \
+  | openssl x509 -noout -subject -fingerprint -sha256
+```
+
+```text
+subject=CN=vault.starfleet.example.com, O=vault
+sha256 Fingerprint=8D:AA:16:3B:52:67:DB:24:B8:5B:4E:2E:AA:B1:76:CB:C3:40:76:49:68:C5:F9:3C:ED:C7:33:B6:1B:95:05:B4
+```
+
+Your fingerprint is different: the vault makes a new certificate every time its pod starts.
+
+Write down the fingerprint. It is a checksum of this one certificate. A new certificate with the same name would still get a different fingerprint, so the fingerprint is the real proof of "same certificate".
+
+### Send a signal straight to the vault
+
+Now send one signal from the shuttle directly to the vault, with no gate on the path. The `-k` option tells `curl` not to check the certificate, because it is self-signed:
+
+```sh
+kubectl exec -n starfleet deploy/shuttle -- curl -sk https://tls-backend:8443/
+```
+
+```text
+vault ended TLS itself
+```
+
+The reply comes from nginx, inside the vault. The shuttle's sidecar did not open the signal on the way: the channel is named `tls`, so it forwarded the sealed stream as it was.
 
 ## Common pitfalls
 
 > [!WARNING]
-> **Expecting path or header routing in passthrough.** The proxy never decrypts, so SNI is the only thing it can route on.
->
-> **Assuming the gateway's certificate is presented.** In passthrough the *backend's* certificate reaches the client.
->
-> **Reading passthrough as more secure by default.** It moves termination, and the responsibility, to the backend.
->
-> **Forgetting telemetry goes with it.** No HTTP is parsed, so there are no HTTP metrics or access-log fields for that traffic.
+> - **Expecting a passthrough gate to route on paths or headers.** It never decrypts, so the SNI name is the only thing it can read.
+> - **Expecting the gate's certificate.** In passthrough the visitor gets the ship's own certificate, here the vault's.
+> - **Comparing certificates by name only.** Two certificates can carry the same subject. Compare the fingerprint.
+> - **Calling passthrough "more secure".** It moves the work of ending TLS, and the duty to do it well, from the gate to the ship.
 
-## Reference
-
-- [RFC 6066 §3 — Server Name Indication](https://datatracker.ietf.org/doc/html/rfc6066#section-3) — why SNI is sent in the clear and what it contains.
-- [Envoy TLS inspector](https://www.envoyproxy.io/docs/envoy/latest/configuration/listeners/listener_filters/tls_inspector) — the listener filter that reads SNI and ALPN without terminating.
-- [Ingress gateway without TLS termination](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-sni-passthrough/) — Istio's own passthrough task, which this module follows.
+> *The ClientHello is open and everything after it is sealed, so a gate without the key can route on SNI and on nothing else.*

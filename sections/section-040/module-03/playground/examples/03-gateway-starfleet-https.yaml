@@ -1,0 +1,34 @@
+# The bridge's gate, now with a second server: HTTPS on port 443 that the gate
+# ENDS itself (SIMPLE), with its own certificate from the Secret
+# starfleet-credential in namespace istio-ingress.
+# Create that Secret first:
+#   openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
+#     -subj "/CN=starfleet.example.com/O=starfleet-gate" \
+#     -addext "subjectAltName=DNS:starfleet.example.com" \
+#     -keyout starfleet.key -out starfleet.crt
+#   kubectl create secret tls starfleet-credential -n istio-ingress \
+#     --cert=starfleet.crt --key=starfleet.key
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: starfleet-gateway
+  namespace: starfleet
+spec:
+  selector:
+    istio: ingress
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - starfleet.example.com
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    hosts:
+    - starfleet.example.com
+    tls:
+      mode: SIMPLE
+      credentialName: starfleet-credential

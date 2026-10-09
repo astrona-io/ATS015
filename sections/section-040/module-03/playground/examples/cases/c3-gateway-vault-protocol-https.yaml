@@ -1,0 +1,22 @@
+# MISLEADING: protocol HTTPS with mode PASSTHROUGH.
+# Checked on Istio 1.30.5: the mode decides. The gate still passes the stream
+# through (200, the vault's own certificate, no HTTP route) and istioctl
+# analyze stays quiet. But HTTPS reads as "end TLS here and read HTTP
+# inside", which is not what happens. Write protocol: TLS.
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: vault-gateway
+  namespace: starfleet
+spec:
+  selector:
+    istio: ingress
+  servers:
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    hosts:
+    - vault.starfleet.example.com
+    tls:
+      mode: PASSTHROUGH

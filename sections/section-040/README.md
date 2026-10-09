@@ -76,22 +76,32 @@ Three modules, one per `Gateway` TLS mode. Module 1 is `SIMPLE` — ordinary ser
 
 ### 3. TLS Passthrough Instead Of Termination
 *   **Module Reader:** **[Module 3: TLS Passthrough Instead Of Termination](./module-03/course.md)**
-    Deep-dive parts, in reading order:
-    1. [What a proxy can see in a TLS stream](./module-03/course-01-what-a-proxy-can-see.md)
-    2. [Configuring passthrough](./module-03/course-02-configuring-passthrough.md)
-    3. [What passthrough costs](./module-03/course-03-what-passthrough-costs.md)
-*   **Hands-on Playground:** `sections/section-040/module-03/playground` — namespace `passthrough-demo` with an nginx backend that generates its own certificate at startup and terminates TLS itself. No secret in `istio-system`, because this mode needs none.
+    Parts, in reading order:
+    1. [What A Proxy Can See](./module-03/course-01-what-a-proxy-can-see.md)
+    2. [Open A Gate That Does Not Decrypt](./module-03/course-02-open-a-gate-that-does-not-decrypt.md)
+    3. [Prove Who Opened The Envelope](./module-03/course-03-prove-who-opened-the-envelope.md)
+    4. [When The Stream Has Nowhere To Go](./module-03/course-04-when-the-stream-has-nowhere-to-go.md)
+    5. [One Gate, Two Modes](./module-03/course-05-one-gate-two-modes.md)
+    6. [Wrap-Up: Mission Debrief](./module-03/course-06-wrap-up.md)
+
+    You set up a gate that passes a sealed signal through unopened, route it on the SNI name alone, and prove from the certificate that the ship at the end opened it. Then you break the setup three ways and learn to read the gate's listener instead of the status code. Last, one gate ends TLS for one host and passes another through.
+*   **Hands-on Playground:** `sections/section-040/module-03/playground`: the Starfleet and the shuttle on the planet `starfleet`, plus the vault (`tls-backend`), an nginx that makes its own certificate and ends TLS itself on port `8443`. Istio 1.30.5 is installed with Helm, with the ingress gateway `istio-ingress` on its own planet `istio-ingress`. The bridge is already behind the gate over plain HTTP. `astrona run` keeps two port forwards open: `127.0.0.1:8080` to the gateway's port `80` and `127.0.0.1:8443` to its port `443`. No TLS secret: passthrough needs none.
     ```bash
     astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-040/module-03/playground
     ```
-*   **Graded lab:** **[Route An Encrypted Stream By SNI](./module-03/labs/lab-01/)** — read the
-    [exam question](./module-03/labs/lab-01/docs/exam-question.md), solve it, then
-    ```bash
-    astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-040/module-03/labs/lab-01
-    astrona submit -c .
-    ```
+*   **Graded labs:** two missions, each right after the part it tests.
+    *   **[Route An Encrypted Stream By SNI](./module-03/labs/lab-01/README.md)**: read the [task](./module-03/labs/lab-01/question.md), solve it, then
+        ```bash
+        astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-040/module-03/labs/lab-01
+        astrona submit -c sections/section-040/module-03/labs/lab-01
+        ```
+    *   **[Fix The Gate That Routes Nothing](./module-03/labs/lab-02/README.md)**: read the [task](./module-03/labs/lab-02/question.md), solve it, then
+        ```bash
+        astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-040/module-03/labs/lab-02
+        astrona submit -c sections/section-040/module-03/labs/lab-02
+        ```
 
-**No load balancer on `kind`.** In all three playgrounds the `istio-ingressgateway` Service stays at `EXTERNAL-IP: <pending>`; that is expected, not a fault. Reach the gateway with `kubectl -n istio-system port-forward svc/istio-ingressgateway 8443:443`.
+**No load balancer on `kind`.** A gateway Service never gets an outside address on `kind`; that is expected, not a fault. The playgrounds reach the gateway through the port forwards `astrona run` keeps open (`127.0.0.1:8080` and `127.0.0.1:8443`, see `astrona port-forward list`). The labs tell you which `kubectl port-forward` to start.
 
 Each playground is ungraded: it spins up, prepares the environment, and waits. There is no task and no `astrona submit`. Tear one down with `astrona destroy <name>` when you are finished — the name is printed in each module's playground callout.
 

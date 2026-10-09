@@ -1,0 +1,20 @@
+# A port 443 listener on the arrival gate that does NOT decrypt.
+# protocol TLS (not HTTPS), mode PASSTHROUGH, and no credentialName:
+# the gate has no badge of its own to show for this host.
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: vault-gateway
+  namespace: starfleet
+spec:
+  selector:
+    istio: ingress
+  servers:
+  - port:
+      number: 443
+      name: tls
+      protocol: TLS
+    hosts:
+    - vault.starfleet.example.com
+    tls:
+      mode: PASSTHROUGH

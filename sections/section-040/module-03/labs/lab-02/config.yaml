@@ -1,0 +1,37 @@
+metadata:
+  name: "ats-015-lab-040-03-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base, istiod, ingress gateway in istio-ingress) with Helm"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-040-03-02-workloads"
+      description: "Creates the starfleet namespace with access logs, the Starfleet, the shuttle client and the vault (tls-backend, its own certificate, TLS on 8443)"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+    - name: "lab-040-03-02-fault"
+      description: "Applies the starting state: a passthrough Gateway with a host typo and a VirtualService with an http block instead of a tls block"
+      type: "file"
+      source: "bootstrap/03-seed-fault.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-passthrough-repair"
+      description: "Confirms vault-gateway has a TLS PASSTHROUGH server on 443 for vault.starfleet.example.com with no credential, the tls-backend VirtualService routes with a tls block on sniHosts to tls-backend:8443, a real signal through the gateway gets 200 with the vault's own certificate, and the gateway holds no HTTP route for the host"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false
