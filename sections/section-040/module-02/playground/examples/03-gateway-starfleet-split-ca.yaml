@@ -1,0 +1,23 @@
+# The same MUTUAL gateway, with the CA in a SEPARATE secret.
+# credentialName names a normal TLS secret (tls.crt + tls.key). The gateway
+# then looks for the CA in a second secret with the same name plus the
+# suffix "-cacert" (here starfleet-credential-split-cacert, key ca.crt).
+# Both secrets live in istio-ingress.
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: starfleet-gateway
+  namespace: starfleet
+spec:
+  selector:
+    istio: ingress
+  servers:
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    hosts:
+    - starfleet.example.com
+    tls:
+      mode: MUTUAL
+      credentialName: starfleet-credential-split

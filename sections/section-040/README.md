@@ -15,7 +15,7 @@ Three modules, one per `Gateway` TLS mode. Module 1 is `SIMPLE` — ordinary ser
 - `kubectl create secret tls` for `SIMPLE`, and why `MUTUAL` needs `create secret generic` with `tls.crt`, `tls.key` **and** `ca.crt`.
 - `tls.httpsRedirect` on a port-80 listener, and why the `tls` block belongs there at all.
 - What a client rejected during a TLS handshake observes, and why it is never an HTTP status.
-- That a misconfigured `MUTUAL` gateway fails open, so `requireClientCertificate` must be read from the proxy rather than inferred from a successful request.
+- That a successful request does not prove a `MUTUAL` gateway checks client certificates: read the `-cacert` secret and `requireClientCertificate` from the gateway's proxy. A `MUTUAL` gateway with no CA turns everyone away.
 - `protocol: TLS` with `mode: PASSTHROUGH`, and routing with a `VirtualService` `tls` block matching `sniHosts`.
 - Everything passthrough gives up at the edge — path and header routing, rewrites, L7 telemetry, and every authorization rule that mentions methods, paths or hosts.
 - Proving which end terminated TLS by reading the certificate the handshake actually returned.
@@ -50,20 +50,29 @@ Three modules, one per `Gateway` TLS mode. Module 1 is `SIMPLE` — ordinary ser
 
 ### 2. Require Client Certificates At The Edge
 *   **Module Reader:** **[Module 2: Require Client Certificates At The Edge](./module-02/course.md)**
-    Deep-dive parts, in reading order:
-    1. [Building the PKI](./module-02/course-01-building-the-pki.md)
-    2. [The credential secret and the validation context](./module-02/course-02-secret-and-validation-context.md)
-    3. [Handshake failures, and what a certificate proves](./module-02/course-03-handshake-failures-and-identity.md)
-*   **Hands-on Playground:** `sections/section-040/module-02/playground` — namespace `mtlsedge-demo`. You build the CA, the server certificate and the client certificate yourself.
+    Parts, in reading order:
+    1. [Issue The Fleet's Badges](./module-02/course-01-issue-the-fleet-badges.md)
+    2. [Make The Gate Ask For A Badge](./module-02/course-02-make-the-gate-ask-for-a-badge.md)
+    3. [Turn Away Strangers And Prove It](./module-02/course-03-turn-away-strangers-and-prove-it.md)
+    4. [Two Secret Layouts And What A Badge Proves](./module-02/course-04-two-secret-layouts-and-what-a-badge-proves.md)
+    5. [Wrap-Up: Mission Debrief](./module-02/course-05-wrap-up.md)
+
+    You make your own certificate authority (CA) with `openssl`, give the gate a secret with `tls.crt`, `tls.key` and `ca.crt`, and switch it to `MUTUAL`. Then you watch a visitor with no client certificate, or one from another CA, get turned away in the handshake, and prove the check from the gateway's own proxy. The last part shows the second layout, with the CA in its own `-cacert` secret.
+*   **Hands-on Playground:** `sections/section-040/module-02/playground`: the Starfleet on the planet `starfleet`, Istio 1.30.5 installed with Helm, and the ingress gateway `istio-ingress` on its own planet `istio-ingress`. `astrona run` keeps two port forwards open: `127.0.0.1:8080` to the gateway's port `80` and `127.0.0.1:8443` to its port `443`. No certificate, secret, `Gateway` or `VirtualService` yet: you make them.
     ```bash
     astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-040/module-02/playground
     ```
-*   **Graded lab:** **[Require Client Certificates At The Edge](./module-02/labs/lab-01/)** — read the
-    [exam question](./module-02/labs/lab-01/docs/exam-question.md), solve it, then
-    ```bash
-    astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-040/module-02/labs/lab-01
-    astrona submit -c .
-    ```
+*   **Graded labs:** two missions, each right after the part it tests.
+    *   **[Require Client Certificates At The Edge](./module-02/labs/lab-01/README.md)**: read the [task](./module-02/labs/lab-01/question.md), solve it, then
+        ```bash
+        astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-040/module-02/labs/lab-01
+        astrona submit -c sections/section-040/module-02/labs/lab-01
+        ```
+    *   **[Fix The Gate's Trusted Badge Office](./module-02/labs/lab-02/README.md)**: read the [task](./module-02/labs/lab-02/question.md), solve it, then
+        ```bash
+        astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-040/module-02/labs/lab-02
+        astrona submit -c sections/section-040/module-02/labs/lab-02
+        ```
 
 ### 3. TLS Passthrough Instead Of Termination
 *   **Module Reader:** **[Module 3: TLS Passthrough Instead Of Termination](./module-03/course.md)**

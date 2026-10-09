@@ -1,0 +1,37 @@
+metadata:
+  name: "ats-015-lab-040-02-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base, istiod and the ingress gateway in istio-ingress) with Helm"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-040-02-02-workloads"
+      description: "Creates the starfleet namespace with the Starfleet (bridge, cargo, scout v1-v3, navcom), the shuttle client and mesh-wide access logs"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+    - name: "lab-040-02-02-fault"
+      description: "Makes the lab's certificates in /tmp/ats-015-lab-040-02-02 and applies the starting state: a MUTUAL Gateway whose secret holds the wrong CA as ca.crt, and a correct VirtualService for the bridge"
+      type: "file"
+      source: "bootstrap/03-seed-fault.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-trusted-badge-office"
+      description: "Confirms the gate's secret keeps its server certificate and holds only the fleet's CA as ca.crt, the Gateway and VirtualService are unchanged, the gateway proxy holds the CA and requires a client certificate, the partner gets 200 and both a client without a certificate and the stranger are refused in the handshake"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

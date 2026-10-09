@@ -1,0 +1,25 @@
+# Mutual TLS on the ingress gateway: clients must ALSO show a certificate
+# signed by our CA. Used for partner (machine-to-machine) APIs.
+# The secret needs tls.crt, tls.key AND ca.crt (the CA that signed the
+# client certificates). Create it in istio-ingress, where the gateway POD runs.
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: starfleet-gateway
+  namespace: starfleet
+spec:
+  # Gateway pods of the Helm "gateway" chart installed as istio-ingress.
+  selector:
+    istio: ingress
+  servers:
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    hosts:
+    - starfleet.example.com
+    tls:
+      # MUTUAL = the client must send a valid certificate too.
+      mode: MUTUAL
+      # Generic secret with tls.crt, tls.key AND ca.crt.
+      credentialName: starfleet-credential-mutual
