@@ -1,0 +1,32 @@
+# Adds an HTTPS server to the arrival gate. The secret starfleet-credential must
+# live in the gateway pod's namespace (istio-ingress). Create it first:
+#   openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+#     -keyout starfleet.key -out starfleet.crt \
+#     -subj "/CN=starfleet.example.com/O=starfleet"
+#   kubectl create secret tls starfleet-credential -n istio-ingress \
+#     --key=starfleet.key --cert=starfleet.crt
+# A policy that selects the gateway pod covers this listener too.
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: starfleet-gateway
+  namespace: starfleet
+spec:
+  selector:
+    istio: ingress
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - starfleet.example.com
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    tls:
+      mode: SIMPLE
+      credentialName: starfleet-credential
+    hosts:
+    - starfleet.example.com

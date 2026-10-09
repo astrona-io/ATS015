@@ -1,0 +1,17 @@
+# Block a client range at the arrival gate, by the ORIGINAL client address.
+# remoteIpBlocks reads the address the gateway took from X-Forwarded-For,
+# which needs numTrustedProxies to match the relays in front of the gate.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: gateway-ip-deny
+  namespace: istio-ingress
+spec:
+  selector:
+    matchLabels:
+      istio: ingress
+  action: DENY
+  rules:
+  - from:
+    - source:
+        remoteIpBlocks: ["192.168.0.0/16"]

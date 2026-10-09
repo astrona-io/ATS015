@@ -1,53 +1,33 @@
-# Block A Client Range At The Gateway (LAB015-050-01)
-# Astrona hands-on lab. Schema: internal/config.LabConfig.
-# kind runtime (default): a single-node cluster with Istio 1.30.5.
-
 metadata:
   name: "ats-015-lab-050-01"
   docs:
-    prerequisites: "docs/prerequisites.md"
-    examQuestion: "docs/exam-question.md"
-    caseStudy: "docs/case-study.md"
-    guide: "docs/step-by-step-guide.md"
+    solution: "solution.md"
+    question: "question.md"
 
 bootstrap:
   init:
-    - name: "setup"
-      description: "Installs Istio (demo profile) and the starting workloads. Creates nothing the task asks for."
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 with istioctl (demo profile) and gives the ingress gateway one trusted proxy hop (numTrustedProxies: 1, as a proxy.istio.io/config annotation)"
       type: "file"
-      source: "bootstrap/setup.sh"
-  manifests:
-    - name: "lab-start"
-      description: "Starting workloads: namespace, service accounts, Deployments, Services and a client pod."
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-050-01-workloads"
+      description: "Creates namespace gwauthz-demo with booking-service-v1, notification-service-v1, a tester pod, and a Gateway plus VirtualService for booking.ica.local. No AuthorizationPolicy"
       type: "file"
-      source: "manifests/lab-start.yaml"
-    - name: "gateway"
-      description: "Gateway plus VirtualService exposing the app at the edge — the target of the graded policy."
-      type: "file"
-      source: "manifests/gateway.yaml"
+      source: "bootstrap/02-seed-workloads.sh"
 
 testing:
-  manifests:
+  init:
     - name: "solution"
-      description: "Reference end state applied by `astrona test` in CI."
-      type: "folder"
-      source: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
 
 validation:
-  checks:
-    - name: "gateway-scoped AuthorizationPolicy"
-      type: "resourceExists"
-      resource: "authorizationpolicy -n istio-system"
-  script:
-    name: "verify-behaviour"
-    description: "Sends real traffic and asserts the outcomes the task specifies."
-    type: "file"
-    source: "validate.sh"
+  scripts:
+    - name: "verify-gateway-ip-deny"
+      description: "Confirms an AuthorizationPolicy in istio-system selects the ingress gateway and uses remoteIpBlocks, the gateway still trusts one proxy hop, and live signals through the gateway get 200 for X-Forwarded-For 10.1.2.3 and 403 for 192.168.5.5"
+      type: "file"
+      source: "validation/validate-completed.sh"
 
 teardown:
-  init:
-    - name: "dump-logs"
-      description: "Best-effort state capture before teardown."
-      type: "file"
-      source: "teardown/dump-logs.sh"
   keepCluster: false

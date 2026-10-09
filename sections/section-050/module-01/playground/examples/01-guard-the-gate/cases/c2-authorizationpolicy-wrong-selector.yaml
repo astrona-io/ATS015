@@ -1,0 +1,18 @@
+# MISTAKE: the label of an istioctl (demo/default profile) install.
+# On this Helm install the gateway pod is labelled istio=ingress, so this
+# selector matches no pod and nothing is blocked.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: gateway-deny-api
+  namespace: istio-ingress
+spec:
+  selector:
+    matchLabels:
+      istio: ingressgateway
+  action: DENY
+  rules:
+  - to:
+    - operation:
+        hosts: ["starfleet.example.com"]
+        paths: ["/api/v1/products*"]

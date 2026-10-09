@@ -1,0 +1,18 @@
+# MISTAKE: the same policy on the app's planet (starfleet).
+# Accepted without an error, but the selector only looks at pods in starfleet,
+# and no pod there carries istio=ingress. Nothing is blocked.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: gateway-deny-api
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      istio: ingress
+  action: DENY
+  rules:
+  - to:
+    - operation:
+        hosts: ["starfleet.example.com"]
+        paths: ["/api/v1/products*"]

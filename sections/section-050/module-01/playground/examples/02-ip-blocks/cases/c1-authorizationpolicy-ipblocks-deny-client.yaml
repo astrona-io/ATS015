@@ -1,0 +1,17 @@
+# MISTAKE: ipBlocks used to block a client that sits behind a relay.
+# ipBlocks reads the connection peer (the relay), never X-Forwarded-For,
+# so a signal with X-Forwarded-For: 192.168.5.5 is still served.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: gateway-ip-deny
+  namespace: istio-ingress
+spec:
+  selector:
+    matchLabels:
+      istio: ingress
+  action: DENY
+  rules:
+  - from:
+    - source:
+        ipBlocks: ["192.168.0.0/16"]

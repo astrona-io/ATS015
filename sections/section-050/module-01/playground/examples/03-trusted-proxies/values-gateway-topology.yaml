@@ -1,0 +1,9 @@
+# Per-gateway alternative: Helm values for the "gateway" chart (release
+# istio-ingress). The proxy.istio.io/config pod annotation overrides the
+# mesh-wide default for this one gateway only.
+#   helm upgrade istio-ingress gateway --repo https://istio-release.storage.googleapis.com/charts \
+#     --version 1.30.5 -n istio-ingress --reuse-values -f values-gateway-topology.yaml
+podAnnotations:
+  proxy.istio.io/config: |
+    gatewayTopology:
+      numTrustedProxies: 1

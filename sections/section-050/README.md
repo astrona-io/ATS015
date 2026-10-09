@@ -1,8 +1,8 @@
 # Section 050: Authorization At The Edge
 
-Section 020 authorized traffic already inside the mesh, matching on identities the mesh itself issued. At the edge those do not exist: the caller is on the internet, has no service account, and may present no certificate. What you often have instead is an address.
+Inside the mesh, a policy can match on the identity the mesh gave each workload. At the edge that identity does not exist: the caller is on the internet, has no service account, and may show no certificate. What you often have instead is an address.
 
-One module. It applies `AuthorizationPolicy` to the ingress gateway rather than to a workload, and spends its time on the distinction that decides whether such a rule is correct or merely decorative: `ipBlocks` matches the connection peer, `remoteIpBlocks` matches the client named in `X-Forwarded-For`, and behind a load balancer only one of them is ever right.
+One module. It applies `AuthorizationPolicy` to the ingress gateway rather than to a workload, and spends its time on the difference that decides whether such a rule works or only looks like it does: `ipBlocks` matches the connection peer, `remoteIpBlocks` matches the client named in `X-Forwarded-For`, and behind a load balancer only one of them is ever right.
 
 **Curriculum item covered:** Configuring Authorization
 
@@ -10,13 +10,14 @@ One module. It applies `AuthorizationPolicy` to the ingress gateway rather than 
 
 ## What You Will Master
 
-- Writing an `AuthorizationPolicy` that selects the ingress gateway, in the gateway's own namespace.
-- `ipBlocks` as the direct TCP peer — and why that is the load balancer, not the user, in most real topologies.
-- `remoteIpBlocks` as the originating client from `X-Forwarded-For`.
-- `meshConfig.gatewayTopology.numTrustedProxies`: what it pins, why the rule is spoofable without it, and what goes wrong when the number does not match reality.
-- That a gateway-scoped denial is an ordinary `403`, and that the request never reaches the application.
-- Why a `kubectl port-forward` makes source-IP rules behave unexpectedly, and reading the gateway access log instead of guessing.
-- Where address-based rules genuinely help, and where a client certificate or a JWT is the control the requirement actually needs.
+- Writing an `AuthorizationPolicy` that guards the ingress gateway, in the gateway's own namespace and with the gateway pod's labels.
+- `ipBlocks`: the address of whoever opened the connection. Behind a load balancer, or a port forward, that is the relay, not the client.
+- `remoteIpBlocks`: the client address the gateway reads from the `X-Forwarded-For` header.
+- `numTrustedProxies`: how many relays the gateway trusts. Set it with `meshConfig.defaultConfig.gatewayTopology.numTrustedProxies` or the gateway's `proxy.istio.io/config` annotation, and prove it with `xffNumTrustedHops` in the gateway's listener. Too low and the gate sees a relay; too high and a client can fake its address.
+- That a refusal at the gate is an ordinary `403`, and that the refused signal never reaches the app.
+- Opening one path to one network with a `DENY` rule and `notRemoteIpBlocks`, without closing the rest of the gate.
+- Reading the gateway's access log to see the decision and the client address side by side.
+- Where address rules help, and where a client certificate or a token is the control you really need.
 
 ---
 
@@ -24,22 +25,30 @@ One module. It applies `AuthorizationPolicy` to the ingress gateway rather than 
 
 ### 1. Authorize By Source IP At The Ingress Gateway
 *   **Module Reader:** **[Module 1: Authorize By Source IP At The Ingress Gateway](./module-01/course.md)**
-    Deep-dive parts, in reading order:
-    1. [Authorizing at the gateway, and the connection peer](./module-01/course-01-authorizing-at-the-gateway.md)
-    2. [`X-Forwarded-For` and trusted proxies](./module-01/course-02-trusting-x-forwarded-for.md)
-    3. [Verifying, and where address rules fit](./module-01/course-03-verifying-and-design.md)
-*   **Hands-on Playground:** `sections/section-050/module-01/playground` — namespace `gwauthz-demo` with a `Gateway` and `VirtualService` for `booking.ica.local` already applied as the target of your policies. No `AuthorizationPolicy`, and no `numTrustedProxies` set.
+    Parts, in reading order:
+    1. [Guard The Arrival Gate](./module-01/course-01-guard-the-arrival-gate.md)
+    2. [Who Opened The Connection: `ipBlocks`](./module-01/course-02-who-opened-the-connection.md)
+    3. [Trust The Right Number Of Relays](./module-01/course-03-trust-the-right-number-of-relays.md)
+    4. [Block A Client Range With `remoteIpBlocks`](./module-01/course-04-block-a-client-range.md)
+    5. [One Path, One Network](./module-01/course-05-one-path-one-network.md)
+    6. [Wrap-Up: Mission Debrief](./module-01/course-06-wrap-up.md)
+*   **Hands-on Playground:** `sections/section-050/module-01/playground`: the Starfleet on the planet `starfleet`, Istio 1.30.5 installed with Helm, and the ingress gateway `istio-ingress` (label `istio=ingress`) on its own planet `istio-ingress`. A `Gateway` and `VirtualService` for `starfleet.example.com` are ready. `astrona run` keeps two port forwards open: `127.0.0.1:8080` to the gateway's port `80` and `127.0.0.1:8443` to its port `443`. No `AuthorizationPolicy`, and `numTrustedProxies` is not set: you set it.
     ```bash
     astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-050/module-01/playground
     ```
-*   **Graded lab:** **[Block A Client Range At The Gateway](./module-01/labs/lab-01/)** — read the
-    [exam question](./module-01/labs/lab-01/docs/exam-question.md), solve it, then
-    ```bash
-    astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-050/module-01/labs/lab-01
-    astrona submit -c .
-    ```
+*   **Graded labs:** two missions, each right after the part it tests.
+    *   **[Block A Client Range At The Gateway](./module-01/labs/lab-01/README.md)**: read the [task](./module-01/labs/lab-01/question.md), solve it, then
+        ```bash
+        astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-050/module-01/labs/lab-01
+        astrona submit -c sections/section-050/module-01/labs/lab-01
+        ```
+    *   **[Open One Path To One Network](./module-01/labs/lab-02/README.md)**: read the [task](./module-01/labs/lab-02/question.md), solve it, then
+        ```bash
+        astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-050/module-01/labs/lab-02
+        astrona submit -c sections/section-050/module-01/labs/lab-02
+        ```
 
-**No load balancer on `kind`.** Reach the gateway with `kubectl -n istio-system port-forward svc/istio-ingressgateway 8080:80`, and remember that a port-forward makes the connection appear to come from inside the cluster — which is itself one of the module's lessons.
+**No load balancer on `kind`.** The port forward ends inside the gateway pod, so the gateway sees every signal come from `127.0.0.1`. That is itself one of the module's lessons.
 
 The playground is ungraded: it spins up, prepares the environment, and waits. There is no task and no `astrona submit`. Tear it down with `astrona destroy <name>` when you are finished — the name is printed in the module's playground callout.
 

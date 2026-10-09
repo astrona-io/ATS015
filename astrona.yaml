@@ -803,20 +803,67 @@ modules:
         title: "Authorize By Source IP At The Ingress Gateway"
         path: sections/section-050/module-01/course.md
       - type: reading
-        title: "Authorizing at the gateway, and the connection peer"
-        path: sections/section-050/module-01/course-01-authorizing-at-the-gateway.md
+        title: "Guard The Arrival Gate"
+        path: sections/section-050/module-01/course-01-guard-the-arrival-gate.md
       - type: reading
-        title: "X-Forwarded-For and trusted proxies"
-        path: sections/section-050/module-01/course-02-trusting-x-forwarded-for.md
+        title: "Who Opened The Connection: ipBlocks"
+        path: sections/section-050/module-01/course-02-who-opened-the-connection.md
       - type: reading
-        title: "Verifying, and where address rules fit"
-        path: sections/section-050/module-01/course-03-verifying-and-design.md
+        title: "Trust The Right Number Of Relays"
+        path: sections/section-050/module-01/course-03-trust-the-right-number-of-relays.md
+      - type: reading
+        title: "Block A Client Range With remoteIpBlocks"
+        path: sections/section-050/module-01/course-04-block-a-client-range.md
       - type: reading
         title: Question
         path: sections/section-050/module-01/labs/lab-01/question.md
       - type: lab
         title: "Block A Client Range At The Gateway Lab"
         path: sections/section-050/module-01/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 15m
+        topic: edge-authorization
+        task_kind: build
+        tags: [authorizationpolicy, ingress-gateway, remote-ip-blocks, num-trusted-proxies, deny-policy, rbac-403, proxy-config]
+        learning_goals:
+          - Write an AuthorizationPolicy in the gateway's namespace that selects the ingress gateway pod
+          - Refuse a client range by its forwarded address with remoteIpBlocks while every other client still gets through
+          - Prove from the gateway listener that it trusts one proxy hop
+        resources:
+          - name: "AuthorizationPolicy Source reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source
+          - name: "Ingress gateway authorization"
+            url: https://istio.io/latest/docs/tasks/security/authorization/authz-ingress/
+          - name: "Configuring gateway network topology"
+            url: https://istio.io/latest/docs/ops/configuration/traffic-management/network-topologies/
+      - type: reading
+        title: "One Path, One Network"
+        path: sections/section-050/module-01/course-05-one-path-one-network.md
+      - type: reading
+        title: Question
+        path: sections/section-050/module-01/labs/lab-02/question.md
+      - type: lab
+        title: "Open One Path To One Network Lab"
+        path: sections/section-050/module-01/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 15m
+        topic: edge-authorization
+        task_kind: build
+        tags: [authorizationpolicy, ingress-gateway, remote-ip-blocks, paths, deny-policy, num-trusted-proxies, access-log]
+        learning_goals:
+          - Open one path at the ingress gateway to one network with a DENY rule and notRemoteIpBlocks
+          - Keep every other path open by avoiding an ALLOW policy on the shared gateway
+          - Show that a forged X-Forwarded-For entry in front of the trusted one is ignored
+        resources:
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+          - name: "Ingress gateway authorization"
+            url: https://istio.io/latest/docs/tasks/security/authorization/authz-ingress/
+          - name: "Configuring gateway network topology"
+            url: https://istio.io/latest/docs/ops/configuration/traffic-management/network-topologies/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-050/module-01/course-06-wrap-up.md
 
       - type: reading
         title: Question
