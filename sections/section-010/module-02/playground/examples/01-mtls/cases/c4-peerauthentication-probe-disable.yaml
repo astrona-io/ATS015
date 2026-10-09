@@ -1,0 +1,14 @@
+# Case 4: server side DISABLE for the probe: it only accepts plain text.
+# What do callers in the mesh do? (auto mTLS reads this policy and sends
+# plain text too, so nothing breaks, but there is no identity any more)
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: probe
+  mtls:
+    mode: DISABLE

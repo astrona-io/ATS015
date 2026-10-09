@@ -1,0 +1,13 @@
+# Case 3: client side set explicitly to Istio mTLS. Same result as auto mTLS.
+# Needed when a DestinationRule has a trafficPolicy anyway (for example for
+# load balancing) and you want to be explicit, or auto mTLS is turned off.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  host: probe
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL

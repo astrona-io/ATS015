@@ -1,0 +1,10 @@
+# Case 2: namespace policy PERMISSIVE under a mesh-wide STRICT policy.
+# Namespace beats mesh: starfleet accepts plain text again.
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: starfleet
+spec:
+  mtls:
+    mode: PERMISSIVE

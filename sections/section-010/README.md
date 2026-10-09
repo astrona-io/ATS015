@@ -16,7 +16,8 @@ Three modules, in dependency order. Module 1 opens a certificate and reads the i
 - `PeerAuthentication` at mesh, namespace and workload scope, and the narrowest-wins precedence between them.
 - `STRICT`, `PERMISSIVE`, `DISABLE` and `UNSET`, and the connection-reset failure signature a `STRICT` server produces.
 - Reading `connection_security_policy` off `istio_requests_total` to prove no plaintext remains before enforcing.
-- `portLevelMtls` exceptions on container ports, and why a client-side `DestinationRule` with `tls.mode: DISABLE` breaks a `STRICT` server.
+- `portLevelMtls` exceptions on container ports, and why a client-side `DestinationRule` with `tls.mode: DISABLE` breaks a `STRICT` server with `503 UC`.
+- Reading the mode a pod really uses with `istioctl x describe pod` and its inbound listener.
 
 ---
 
@@ -42,20 +43,34 @@ Three modules, in dependency order. Module 1 opens a certificate and reads the i
 
 ### 2. Enforce mTLS With PeerAuthentication At Three Scopes
 *   **Module Reader:** **[Module 2: Enforce mTLS With PeerAuthentication At Three Scopes](./module-02/course.md)**
-    Deep-dive parts, in reading order:
-    1. [Modes, and what they do to the inbound listener](./module-02/course-01-modes-and-the-inbound-listener.md)
-    2. [The three scopes and how precedence resolves](./module-02/course-02-scopes-and-precedence.md)
-    3. [Proving what is in effect](./module-02/course-03-proving-what-is-in-effect.md)
-*   **Hands-on Playground:** `sections/section-010/module-02/playground` — namespace `mtls-demo` (injected) plus `outside` (deliberately not injected), so a plaintext caller exists to be refused.
+    Parts, in reading order:
+    1. [Two Callers, One Default](./module-02/course-01-two-callers-one-default.md)
+    2. [Require The Handshake With STRICT](./module-02/course-02-require-the-handshake.md)
+    3. [Three Scopes, Narrowest Wins](./module-02/course-03-three-scopes-narrowest-wins.md)
+    4. [Read The Mode Off The Ship](./module-02/course-04-read-the-mode-off-the-ship.md)
+    5. [An Exception For One Port](./module-02/course-05-an-exception-for-one-port.md)
+    6. [Client And Server Must Agree](./module-02/course-06-client-and-server-must-agree.md)
+    7. [Wrap-Up: Mission Debrief](./module-02/course-07-wrap-up.md)
+*   **Hands-on Playground:** `sections/section-010/module-02/playground`: the Starfleet on the planet `starfleet` (sidecars on), plus the `drifter` on the planet `outpost` (no sidecar), so there is a plain-text caller to refuse. No `PeerAuthentication` and no `DestinationRule` yet.
     ```bash
     astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-010/module-02/playground
     ```
-*   **Graded lab:** **[Enforce mTLS At Three Scopes](./module-02/labs/lab-01/)** — read the
-    [exam question](./module-02/labs/lab-01/docs/exam-question.md), solve it, then
-    ```bash
-    astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-010/module-02/labs/lab-01
-    astrona submit -c .
-    ```
+*   **Graded labs:** three missions, each right after the part it tests.
+    *   **[Enforce mTLS At Three Scopes](./module-02/labs/lab-01/README.md)**: read the [task](./module-02/labs/lab-01/question.md), solve it, then
+        ```bash
+        astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-010/module-02/labs/lab-01
+        astrona submit -c sections/section-010/module-02/labs/lab-01
+        ```
+    *   **[Open One Port For The Drifter](./module-02/labs/lab-02/README.md)**: read the [task](./module-02/labs/lab-02/question.md), solve it, then
+        ```bash
+        astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-010/module-02/labs/lab-02
+        astrona submit -c sections/section-010/module-02/labs/lab-02
+        ```
+    *   **[Fix The Broken Handshake](./module-02/labs/lab-03/README.md)**: read the [task](./module-02/labs/lab-03/question.md), solve it, then
+        ```bash
+        astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-010/module-02/labs/lab-03
+        astrona submit -c sections/section-010/module-02/labs/lab-03
+        ```
 
 ### 3. Migrate A Namespace From PERMISSIVE To STRICT mTLS
 *   **Module Reader:** **[Module 3: Migrate A Namespace From PERMISSIVE To STRICT mTLS](./module-03/course.md)**

@@ -1,0 +1,15 @@
+# Workload-level exception: the probe accepts plain text again.
+# Precedence: workload (selector) > namespace > mesh-wide.
+# So the probe is PERMISSIVE while the rest of starfleet stays STRICT.
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  # Only pods with this label.
+  selector:
+    matchLabels:
+      app: probe
+  mtls:
+    mode: PERMISSIVE

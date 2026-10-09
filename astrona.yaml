@@ -109,20 +109,83 @@ modules:
         title: "Enforce mTLS With PeerAuthentication At Three Scopes"
         path: sections/section-010/module-02/course.md
       - type: reading
-        title: "Modes, and what they do to the inbound listener"
-        path: sections/section-010/module-02/course-01-modes-and-the-inbound-listener.md
+        title: "Two Callers, One Default"
+        path: sections/section-010/module-02/course-01-two-callers-one-default.md
       - type: reading
-        title: "The three scopes and how precedence resolves"
-        path: sections/section-010/module-02/course-02-scopes-and-precedence.md
+        title: "Require The Handshake With STRICT"
+        path: sections/section-010/module-02/course-02-require-the-handshake.md
       - type: reading
-        title: "Proving what is in effect"
-        path: sections/section-010/module-02/course-03-proving-what-is-in-effect.md
+        title: "Three Scopes, Narrowest Wins"
+        path: sections/section-010/module-02/course-03-three-scopes-narrowest-wins.md
       - type: reading
         title: Question
         path: sections/section-010/module-02/labs/lab-01/question.md
       - type: lab
         title: "Enforce mTLS At Three Scopes Lab"
         path: sections/section-010/module-02/labs/lab-01
+        difficulty: beginner
+        estimated_duration: 20m
+        topic: mtls
+        task_kind: build
+        tags: [peerauthentication, mtls-strict, mtls-permissive, mtls-scopes, connection-reset]
+        learning_goals:
+          - Place a PeerAuthentication at mesh, namespace and workload scope
+          - Predict that the narrowest policy decides and prove it with a plain-text caller
+        resources:
+          - name: "PeerAuthentication reference"
+            url: https://istio.io/latest/docs/reference/config/security/peer_authentication/
+          - name: "Authentication policy task"
+            url: https://istio.io/latest/docs/tasks/security/authentication/authn-policy/
+      - type: reading
+        title: "Read The Mode Off The Ship"
+        path: sections/section-010/module-02/course-04-read-the-mode-off-the-ship.md
+      - type: reading
+        title: "An Exception For One Port"
+        path: sections/section-010/module-02/course-05-an-exception-for-one-port.md
+      - type: reading
+        title: Question
+        path: sections/section-010/module-02/labs/lab-02/question.md
+      - type: lab
+        title: "Open One Port For The Drifter Lab"
+        path: sections/section-010/module-02/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 15m
+        topic: mtls
+        task_kind: build
+        tags: [peerauthentication, port-level-mtls, mtls-strict, mtls-scopes, connection-reset]
+        learning_goals:
+          - Open one container port of a workload with portLevelMtls while the mesh stays STRICT
+          - Prove that only the chosen workload accepts plain text and meshed callers still use mTLS
+        resources:
+          - name: "PeerAuthentication reference"
+            url: https://istio.io/latest/docs/reference/config/security/peer_authentication/
+          - name: "Mutual TLS migration"
+            url: https://istio.io/latest/docs/tasks/security/authentication/mtls-migration/
+      - type: reading
+        title: "Client And Server Must Agree"
+        path: sections/section-010/module-02/course-06-client-and-server-must-agree.md
+      - type: reading
+        title: Question
+        path: sections/section-010/module-02/labs/lab-03/question.md
+      - type: lab
+        title: "Fix The Broken Handshake Lab"
+        path: sections/section-010/module-02/labs/lab-03
+        difficulty: intermediate
+        estimated_duration: 15m
+        topic: mtls
+        task_kind: troubleshooting
+        tags: [destinationrule, peerauthentication, mtls-strict, 503-uc, access-log]
+        learning_goals:
+          - Read a 503 UC in the caller's access log as a client and server mTLS mismatch
+          - Fix a DestinationRule tls mode without weakening the server's STRICT policy
+        resources:
+          - name: "DestinationRule ClientTLSSettings"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/#ClientTLSSettings
+          - name: "PeerAuthentication reference"
+            url: https://istio.io/latest/docs/reference/config/security/peer_authentication/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-010/module-02/course-07-wrap-up.md
 
       - type: reading
         title: "Migrate A Namespace From PERMISSIVE To STRICT mTLS"

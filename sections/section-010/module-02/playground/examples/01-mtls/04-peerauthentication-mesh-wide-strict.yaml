@@ -1,0 +1,12 @@
+# Mesh-wide STRICT mTLS: every namespace, every workload.
+# A PeerAuthentication in the root namespace (istio-system) without a selector
+# is the mesh-wide default. Namespace and workload policies still override it.
+# Roll out PERMISSIVE first and check all callers use mTLS before this.
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: istio-system
+spec:
+  mtls:
+    mode: STRICT
