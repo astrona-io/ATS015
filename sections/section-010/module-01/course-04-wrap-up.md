@@ -1,4 +1,4 @@
-# Wrap-Up: Workload Identity And Certificates
+# Summary
 
 Every security rule in the mesh matches on one thing: the identity of the workload that sends the request. This module followed that identity from where it comes from, to where it lives, to how a rule checks it.
 
@@ -35,57 +35,15 @@ No. Both run as `default`, so both have the same identity, `.../sa/default`. Giv
 </details>
 
 <details>
-<summary>3. You decode a mesh certificate and the <code>subject</code> line is empty. Is something broken?</summary>
-
-No. Mesh certificates leave the subject empty and carry the identity only in the SAN, as a `spiffe://` URI.
-</details>
-
-<details>
-<summary>4. Your rule lists <code>spiffe://cluster.local/ns/starfleet/sa/shuttle</code>. What happens to requests from <code>shuttle</code>?</summary>
+<summary>3. Your rule lists <code>spiffe://cluster.local/ns/starfleet/sa/shuttle</code>. What happens to requests from <code>shuttle</code>?</summary>
 
 They get `403`. Istio adds `spiffe://` itself, so the proxy looks for `spiffe://spiffe://...`. The object is accepted and `istioctl analyze` stays quiet. Write `cluster.local/ns/starfleet/sa/shuttle`.
 </details>
 
-<details>
-<summary>5. istiod goes down. When do the workloads start failing?</summary>
+## Clean up
 
-Not right away. Proxies keep working with their current certificates. They fail only when those certificates expire, at most 24 hours later, if istiod is still down.
-</details>
-
-<details>
-<summary>6. A team changes <code>meshConfig.trustDomain</code> to <code>acme.internal</code>. What happens to a rule that lists <code>cluster.local/ns/starfleet/sa/shuttle</code>?</summary>
-
-It stops matching workloads that have new certificates, and at first only some workloads have them. List `cluster.local` in `meshConfig.trustDomainAliases` while you update the rules.
-</details>
-
-## Clean up the playground
-
-Your playground is a whole Kubernetes cluster running on your machine. When you are done with this module, remove it, and any lab that is still running. First, see what is still running:
-
-```sh
-astrona list
-```
-
-Remove the playground. The command takes its **name**, not its folder path:
+When you are done with this module, remove the playground. It always starts clean the next time you run it.
 
 ```sh
 astrona destroy ats-015-playground-010-01
 ```
-
-If `astrona list` also showed the lab, remove it the same way:
-
-```sh
-astrona destroy ats-015-lab-010-01
-```
-
-Then check that everything is gone:
-
-```sh
-astrona list
-```
-
-```text
-No astrona labs running.
-```
-
-You can start the playground again at any time with the `astrona run` command from the module's landing page. It always starts clean, so nothing you broke carries over.
