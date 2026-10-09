@@ -1,0 +1,22 @@
+# Only tokens from the sample user that are in group "group1" may reach the probe.
+# Needs the RequestAuthentication "probe-jwt" (applied by the playground).
+# requestPrincipals is "<iss>/<sub>" of a validated token.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: probe-require-jwt
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: probe
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        requestPrincipals: ["testing@secure.istio.io/testing@secure.istio.io"]
+    # "when" adds conditions on request attributes, here a JWT claim.
+    # For list claims, the condition matches if the list contains the value.
+    when:
+    - key: request.auth.claims[groups]
+      values: ["group1"]

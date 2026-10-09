@@ -1,0 +1,37 @@
+metadata:
+  name: "ats-015-lab-030-02-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base and istiod) with Helm"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-030-02-02-workloads"
+      description: "Creates the starfleet namespace with the shuttle client, probe v1/v2, mesh-wide access logs and the probe-jwt RequestAuthentication for the sample issuer"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+    - name: "lab-030-02-02-fault"
+      description: "Applies the starting state: AuthorizationPolicy probe-access, whose public rule requires a token and whose admin rule compares the claim group instead of groups"
+      type: "file"
+      source: "bootstrap/03-seed-fault.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-claim-rule"
+      description: "Confirms probe-access is the only AuthorizationPolicy in starfleet and compares request.auth.claims[groups], the RequestAuthentication is unchanged, and live signals from the shuttle reach /headers without a token, /get only with a token, and /anything/admin only with the group1 token"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

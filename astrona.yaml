@@ -469,20 +469,65 @@ modules:
         title: "Authorize On JWT Claims"
         path: sections/section-030/module-02/course.md
       - type: reading
-        title: "Claims as request attributes"
-        path: sections/section-030/module-02/course-01-claims-as-attributes.md
+        title: "Read What The Token Says"
+        path: sections/section-030/module-02/course-01-read-what-the-token-says.md
       - type: reading
-        title: "when conditions and how they match"
-        path: sections/section-030/module-02/course-02-when-conditions.md
+        title: "Require A Claim"
+        path: sections/section-030/module-02/course-02-require-a-claim.md
       - type: reading
-        title: "Designing and debugging claim rules"
-        path: sections/section-030/module-02/course-03-designing-and-debugging.md
+        title: "One Rule Per Role"
+        path: sections/section-030/module-02/course-03-one-rule-per-role.md
       - type: reading
         title: Question
         path: sections/section-030/module-02/labs/lab-01/question.md
       - type: lab
         title: "Authorize On A JWT Claim Lab"
         path: sections/section-030/module-02/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 15m
+        topic: jwt
+        task_kind: build
+        tags: [authorizationpolicy, requestauthentication, jwt-claims, when-conditions, request-principals, rbac-403]
+        learning_goals:
+          - Gate one path on a group claim with a when condition on request.auth.claims[groups]
+          - Require a valid token in every rule with requestPrincipals, so a request without a token is refused everywhere
+        resources:
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+          - name: "Authorization policy conditions"
+            url: https://istio.io/latest/docs/reference/config/security/conditions/
+          - name: "Authorization with JWT"
+            url: https://istio.io/latest/docs/tasks/security/authorization/authz-jwt/
+      - type: reading
+        title: "Debug A Claim Rule"
+        path: sections/section-030/module-02/course-04-debug-a-claim-rule.md
+      - type: reading
+        title: Question
+        path: sections/section-030/module-02/labs/lab-02/question.md
+      - type: lab
+        title: "Fix The Claim Rule Lab"
+        path: sections/section-030/module-02/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: jwt
+        task_kind: troubleshooting
+        tags: [authorizationpolicy, jwt-claims, when-conditions, request-principals, paths, proxy-config, rbac-403]
+        learning_goals:
+          - Find a claim name that no token carries by comparing the proxy's rule with a decoded token
+          - Make one path public by giving it its own rule without a from block
+          - Prove each path answers the right callers with live signals
+        resources:
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+          - name: "Authorization policy conditions"
+            url: https://istio.io/latest/docs/reference/config/security/conditions/
+          - name: "Authorization with JWT"
+            url: https://istio.io/latest/docs/tasks/security/authorization/authz-jwt/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
+        title: "Wrap-Up"
+        path: sections/section-030/module-02/course-05-wrap-up.md
 
       - type: reading
         title: Question

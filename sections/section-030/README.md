@@ -18,7 +18,7 @@ Two modules, and the first exists mainly to correct an expectation. Module 1 sho
 - The request attributes a validated token exposes — `request.auth.principal`, `request.auth.audiences`, `request.auth.claims[...]`.
 - `when` conditions: values inside one entry ORed, multiple entries ANDed, and a list claim matching if any element matches.
 - That a missing claim never matches, so a `when` condition fails closed under `ALLOW` and open under `DENY`.
-- Why every claim rule should also carry `requestPrincipals`, or a tokenless request can slip past it.
+- Building one policy with one rule per role, including a public path, and pairing claim rules with `requestPrincipals`.
 
 ---
 
@@ -43,19 +43,18 @@ Two modules, and the first exists mainly to correct an expectation. Module 1 sho
 ### 2. Authorize On JWT Claims
 *   **Module Reader:** **[Module 2: Authorize On JWT Claims](./module-02/course.md)**
     Deep-dive parts, in reading order:
-    1. [Claims as request attributes](./module-02/course-01-claims-as-attributes.md)
-    2. [`when` conditions and how they match](./module-02/course-02-when-conditions.md)
-    3. [Designing and debugging claim rules](./module-02/course-03-designing-and-debugging.md)
-*   **Hands-on Playground:** `sections/section-030/module-02/playground` — namespace `jwtclaims-demo` with the `RequestAuthentication` already applied as a precondition, so the module starts where the previous one ended.
+    1. [Read What The Token Says](./module-02/course-01-read-what-the-token-says.md)
+    2. [Require A Claim](./module-02/course-02-require-a-claim.md)
+    3. [One Rule Per Role](./module-02/course-03-one-rule-per-role.md)
+    4. [Debug A Claim Rule](./module-02/course-04-debug-a-claim-rule.md)
+    5. [Wrap-Up](./module-02/course-05-wrap-up.md)
+*   **Hands-on Playground:** `sections/section-030/module-02/playground`: the Starfleet on the planet `starfleet`, with the `shuttle` and the echo `probe`. A `RequestAuthentication` on the probe is already in place, so tokens are checked but none is required yet.
     ```bash
-    astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-030/module-02/playground
+    astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-030/module-02/playground
     ```
-*   **Graded lab:** **[Authorize On A JWT Claim](./module-02/labs/lab-01/)** — read the
-    [exam question](./module-02/labs/lab-01/docs/exam-question.md), solve it, then
-    ```bash
-    astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-030/module-02/labs/lab-01
-    astrona submit -c .
-    ```
+*   **Graded labs:**
+    - **[Authorize On A JWT Claim](./module-02/labs/lab-01/)**: open one path to any valid token and an admin path only to `group1` (its own small app on the planet `jwtclaims-demo`). Read [the question](./module-02/labs/lab-01/question.md), then submit with `astrona submit -c sections/section-030/module-02/labs/lab-01`.
+    - **[Fix The Claim Rule](./module-02/labs/lab-02/)**: find a wrong claim name and a public path that asks for a token, and fix both (Starfleet). Read [the question](./module-02/labs/lab-02/question.md), then submit with `astrona submit -c sections/section-030/module-02/labs/lab-02`.
 
 **Both playgrounds need outbound internet.** They use Istio's published demo tokens and the matching JWKS endpoint on `raw.githubusercontent.com`: you fetch the tokens, the proxy fetches the keys. Without outbound access you will see key-fetch failures rather than the behaviour the modules describe.
 

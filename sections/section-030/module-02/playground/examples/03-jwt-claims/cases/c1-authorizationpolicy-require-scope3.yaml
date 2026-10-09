@@ -1,0 +1,19 @@
+# Case 1: a claim that no sample token has: scope must contain "scope3".
+# Even the groups token (scope1, scope2) is denied, with 403, not 401.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: probe-require-jwt
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: probe
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        requestPrincipals: ["*"]
+    when:
+    - key: request.auth.claims[scope]
+      values: ["scope3"]

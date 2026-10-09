@@ -138,7 +138,7 @@ Work on exactly one module at a time. Read `CLAUDE.md` first, all of it.
 | 020-02 DENY Policies And Evaluation Order | done | new-data 02-authorization DENY files merged; Starfleet playground, 6 parts + wrap-up checked on 1.30.5 (DENY TCP-port warning shown, fortio via `fortio load`, waits now "up to a minute"); lab-01 converted (own app, demo profile), new lab-02 (probe read-only with notMethods); both astrona test PASS |
 | 020 capstone | todo | |
 | 030-01 Authenticate End Users With JWT | done | new-data 03-jwt 01, 02, c1, c2 merged (README, PRACTICE, bootstrap left for 030-02); Starfleet playground, 4 parts + wrap-up checked on 1.30.5 (istiod inlines the JWKS as `localJwks`, DENY TCP-port warning shown, waits now "about a minute"); lab-01 converted (own app, now Helm), new lab-02 (fromParams + DENY); both astrona test PASS |
-| 030-02 Authorize On JWT Claims | todo | new-data 03-jwt |
+| 030-02 Authorize On JWT Claims | done | new-data 03-jwt 03, c3, c4, PRACTICE merged; Starfleet playground with `probe-jwt` RequestAuthentication, 4 parts + wrap-up checked on 1.30.5 (claim names show under `payload` in proxy-config, not `request.auth.claims`); lab-01 converted (own app, now Helm, grader retries), new lab-02 (claim typo + public path); both astrona test PASS |
 | 030 capstone | todo | |
 | 040-01 Terminate TLS At The Ingress Gateway | todo | new-data 04-ingress-https |
 | 040-02 Require Client Certificates At The Edge | todo | new-data 04-ingress-https |

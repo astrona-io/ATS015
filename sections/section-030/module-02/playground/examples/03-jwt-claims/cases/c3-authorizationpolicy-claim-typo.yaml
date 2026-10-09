@@ -1,0 +1,20 @@
+# Case 3: the claim name has a typo ("group" instead of "groups").
+# Istio accepts it and istioctl analyze stays quiet, but no token has a
+# "group" claim, so the rule never matches and every request gets 403.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: probe-require-jwt
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: probe
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        requestPrincipals: ["*"]
+    when:
+    - key: request.auth.claims[group]
+      values: ["group1"]
