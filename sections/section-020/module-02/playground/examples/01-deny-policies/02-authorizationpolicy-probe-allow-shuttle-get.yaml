@@ -1,0 +1,24 @@
+# A guest list for the probe: only the shuttle (by its service account), and
+# only with GET. Everything else to the probe is now refused (default-deny).
+# Together with 01: the shuttle may GET any path EXCEPT /status/*.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: probe-allow-shuttle-get
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: probe
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        # Caller identity from its mTLS certificate:
+        # <trust domain>/ns/<namespace>/sa/<service account>
+        principals:
+        - cluster.local/ns/starfleet/sa/shuttle
+    to:
+    - operation:
+        methods:
+        - GET

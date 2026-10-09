@@ -1,0 +1,35 @@
+# Make The Probe Read-Only (ats-015-lab-020-02-02)
+# Astrona hands-on lab. kind runtime (default): a single-node cluster with Istio 1.30.5.
+metadata:
+  name: "ats-015-lab-020-02-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base and istiod) with Helm"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-020-02-02-workloads"
+      description: "Creates the starfleet namespace with access logs, probe v1/v2, the shuttle and fortio clients, STRICT mTLS and the starting guest list probe-allow-fleet. Creates no DENY policy."
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-read-only-probe"
+      description: "Confirms probe-allow-fleet is unchanged and probe-read-only is a DENY on the probe built on notMethods, then sends real traffic: GET gets 200 from shuttle and fortio, POST, DELETE and PATCH get 403"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

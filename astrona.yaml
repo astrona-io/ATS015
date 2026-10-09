@@ -324,20 +324,65 @@ modules:
         title: "DENY Policies And Evaluation Order"
         path: sections/section-020/module-02/course.md
       - type: reading
-        title: "The evaluation pipeline"
-        path: sections/section-020/module-02/course-01-the-evaluation-pipeline.md
+        title: "The Guard Checks The Banned List First"
+        path: sections/section-020/module-02/course-01-the-guard-checks-the-banned-list-first.md
       - type: reading
-        title: "Writing DENY rules"
-        path: sections/section-020/module-02/course-02-writing-deny-rules.md
+        title: "A Guest List Cannot Overrule The Ban"
+        path: sections/section-020/module-02/course-02-a-guest-list-cannot-overrule-the-ban.md
       - type: reading
-        title: "AUDIT, and choosing between ALLOW and DENY"
-        path: sections/section-020/module-02/course-03-audit-and-design.md
+        title: "Lock Everything With One Empty Rule"
+        path: sections/section-020/module-02/course-03-lock-everything-with-one-empty-rule.md
+      - type: reading
+        title: "Close The Whole Path"
+        path: sections/section-020/module-02/course-04-close-the-whole-path.md
       - type: reading
         title: Question
         path: sections/section-020/module-02/labs/lab-01/question.md
       - type: lab
         title: "Close A Path With DENY Lab"
         path: sections/section-020/module-02/labs/lab-01
+        difficulty: beginner
+        estimated_duration: 15m
+        topic: authorization
+        task_kind: build
+        tags: [authorizationpolicy, deny-policy, paths, evaluation-order, rbac-403]
+        learning_goals:
+          - Ban a path and everything beneath it with a DENY policy that uses a prefix match
+          - Prove that an ALLOW policy for the same path cannot reopen it, because DENY is checked first
+          - Keep a service's normal call working next to the ban
+        resources:
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+          - name: "Explicit deny"
+            url: https://istio.io/latest/docs/tasks/security/authorization/authz-deny/
+      - type: reading
+        title: "Say It Out Loud: Negative Fields"
+        path: sections/section-020/module-02/course-05-say-it-out-loud-negative-fields.md
+      - type: reading
+        title: Question
+        path: sections/section-020/module-02/labs/lab-02/question.md
+      - type: lab
+        title: "Make The Probe Read-Only Lab"
+        path: sections/section-020/module-02/labs/lab-02
+        difficulty: beginner
+        estimated_duration: 15m
+        topic: authorization
+        task_kind: build
+        tags: [authorizationpolicy, deny-policy, methods, evaluation-order, rbac-403, access-log]
+        learning_goals:
+          - Write a DENY policy with notMethods that refuses every method except GET for every caller
+          - Prove with live requests from two callers that an open ALLOW policy cannot let writes through
+        resources:
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+          - name: "Authorization for HTTP traffic"
+            url: https://istio.io/latest/docs/tasks/security/authorization/authz-http/
+      - type: reading
+        title: "AUDIT, And Choosing ALLOW Or DENY"
+        path: sections/section-020/module-02/course-06-audit-and-choosing-allow-or-deny.md
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-020/module-02/course-07-wrap-up.md
 
       - type: reading
         title: Question

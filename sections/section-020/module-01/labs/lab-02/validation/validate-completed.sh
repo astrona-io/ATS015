@@ -11,6 +11,9 @@
 
 set -u
 
+# Use the pinned istioctl the bootstrap installed, before any other on the PATH.
+export PATH="/usr/local/bin:$HOME/.local/bin:$PATH"
+
 NS="starfleet"
 BRIDGE_SA="cluster.local/ns/starfleet/sa/starfleet-bridge"
 SCOUT_SA="cluster.local/ns/starfleet/sa/starfleet-scout"

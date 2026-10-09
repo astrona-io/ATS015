@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Installs Istio 1.30.5 (sidecar mode) into the lab cluster with Helm:
 #   istio-system   istio-base (CRDs) + istiod (control plane)
+# It also installs a pinned istioctl 1.30.5: the grader reads
+# navcom's proxy configuration with `istioctl proxy-config`.
 # astrona runs this script with KUBECONFIG pointed at the lab cluster.
 set -euo pipefail
 
@@ -8,6 +10,27 @@ ISTIO_VERSION="${ISTIO_VERSION:-1.30.5}"
 REPO="https://istio-release.storage.googleapis.com/charts"
 # First run pulls images; give Helm time to wait for ready pods.
 WAIT=(--wait --timeout 10m)
+
+BIN_DIR="/usr/local/bin"
+[ -w "$BIN_DIR" ] || BIN_DIR="$HOME/.local/bin"
+mkdir -p "$BIN_DIR"
+export PATH="$BIN_DIR:$PATH"
+
+# Pin the version rather than accepting whatever istioctl happens to be on the
+# machine: a different client installs a different control plane, and the
+# lab is written against ${ISTIO_VERSION}. BIN_DIR goes first on PATH above,
+# so the pinned binary wins over any system-wide one.
+have_version=""
+command -v istioctl >/dev/null 2>&1 && \
+  have_version=$(istioctl version --remote=false 2>/dev/null | awk '/client version/{print $3}')
+if [ "$have_version" != "$ISTIO_VERSION" ]; then
+  WORK="$(mktemp -d)"
+  trap 'rm -rf "$WORK"' EXIT
+  echo "==> Downloading Istio ${ISTIO_VERSION}"
+  (cd "$WORK" && curl -fsSL https://istio.io/downloadIstio | ISTIO_VERSION="$ISTIO_VERSION" sh -)
+  install -m 0755 "$WORK/istio-${ISTIO_VERSION}/bin/istioctl" "$BIN_DIR/istioctl"
+fi
+istioctl version --remote=false
 
 echo "==> Istio $ISTIO_VERSION: base (CRDs)"
 helm upgrade --install istio-base base --repo "$REPO" --version "$ISTIO_VERSION" \

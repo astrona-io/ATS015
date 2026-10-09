@@ -1,0 +1,13 @@
+# The precondition for this module: STRICT mTLS on the planet starfleet.
+# Every ship must do the secret handshake and show its ID badge before it may
+# dock. That makes each caller's identity (its principal) trustworthy, so an
+# AuthorizationPolicy can use it. The drifter on the outpost has no badge and
+# no communications officer, so starfleet ships refuse its plain-text signals.
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: starfleet
+spec:
+  mtls:
+    mode: STRICT

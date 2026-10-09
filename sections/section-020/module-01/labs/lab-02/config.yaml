@@ -7,7 +7,7 @@ metadata:
 bootstrap:
   init:
     - name: "install-istio"
-      description: "Installs Istio 1.30.5 (istio-base and istiod) with Helm"
+      description: "Installs Istio 1.30.5 (istio-base and istiod) with Helm, and a pinned istioctl 1.30.5 for the grader"
       type: "file"
       source: "bootstrap/01-install-istio.sh"
     - name: "lab-020-01-02-workloads"

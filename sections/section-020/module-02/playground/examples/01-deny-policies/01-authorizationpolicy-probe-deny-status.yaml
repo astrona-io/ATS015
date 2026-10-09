@@ -1,0 +1,19 @@
+# Block /status/* on the probe for every caller.
+# DENY policies are checked BEFORE ALLOW policies, so this wins even when a
+# guest list (02) lets the shuttle GET any path.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: probe-deny-status
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: probe
+  action: DENY
+  rules:
+  - to:
+    - operation:
+        # Path matching: exact, prefix ("/status/*"), suffix ("*.php"), or "*".
+        paths:
+        - /status/*
