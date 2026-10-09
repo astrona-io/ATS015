@@ -1,14 +1,14 @@
 # Configure A MUTUAL TLS Gateway
 
-You have a CA and two certificates. Now you give the gateway what it needs and switch on the client certificate check. Then you send two requests to the gateway: one with a client certificate, one without.
+A CA and two signed certificates are sitting in your `certs/` folder, but the gateway knows nothing about them yet. In this chapter you hand the gateway what it needs and switch on the client certificate check. Then you send two requests to the gateway, one with a client certificate and one without, and see how differently they end.
 
-`MUTUAL` differs from `SIMPLE` TLS by one word in the `Gateway` and one key in the secret. This part starts with the secret, because that is where most mistakes happen.
+`MUTUAL` differs from `SIMPLE` TLS by one word in the `Gateway` and one key in the secret. The chapter starts with the secret, because that is where most mistakes happen.
 
-The commands below need the files in `certs/` (the CA `example.com`, the server certificate `starfleet.example.com` and the client certificate `client.example.com`). Run them from the folder that holds `certs/`.
+The commands below need the files in `certs/`: the CA `example.com`, the server certificate `starfleet.example.com` and the client certificate `client.example.com`. Run them from the folder that holds `certs/`.
 
 ## One secret, two jobs
 
-The gateway needs two different things from its secret, and Envoy (the proxy that runs in the gateway pod) has a name for each:
+The gateway needs two different things from its secret. Envoy, the proxy that runs in the gateway pod, has a name for each job:
 
 | Key in the secret | What it is | Envoy's name for the job |
 | --- | --- | --- |
@@ -18,19 +18,13 @@ The gateway needs two different things from its secret, and Envoy (the proxy tha
 
 For `SIMPLE` TLS, only the first two keys exist, and the gateway checks no client. Adding `ca.crt` is what gives the gateway something to check client certificates against.
 
-The key names are fixed: `tls.crt`, `tls.key` and `ca.crt`. Istio also reads an older set of names, `cert`, `key` and `cacert` (we checked: a secret with only those three keys works the same). Any other name, such as `ca`, is ignored.
+The key names are fixed: `tls.crt`, `tls.key` and `ca.crt`. Istio also reads an older set of names, `cert`, `key` and `cacert`; in our tests, a secret with only those three keys worked the same. Any other name, such as `ca`, is ignored.
 
-### Why `kubectl create secret tls` cannot build it
-
-`kubectl create secret tls` takes exactly one certificate and one key. It has no flag for a CA. So you build this secret with `kubectl create secret generic`, and name each key yourself.
-
-The secret goes to the namespace where the gateway **pod** runs, `istio-ingress`. The gateway reads `credentialName` from its own namespace and nowhere else.
+Those fixed names explain why the usual command does not work here. `kubectl create secret tls` takes exactly one certificate and one key, and it has no flag for a CA. So you build this secret with `kubectl create secret generic`, and name each key yourself. The secret goes to the namespace where the gateway **pod** runs, `istio-ingress`, because the gateway reads `credentialName` from its own namespace and nowhere else.
 
 <!-- astrona:playground:renew -->
 
-### Create the secret
-
-Create it with the three keys:
+Create the secret with the three keys:
 
 ```sh
 kubectl create -n istio-ingress secret generic starfleet-credential-mutual \
@@ -45,7 +39,7 @@ secret/starfleet-credential-mutual created
 
 The `name=path` form of `--from-file` sets the key name inside the secret, whatever the file is called on disk. Without `tls.crt=`, the key would be named after the file, `starfleet.example.com.crt`, and the gateway would not find it.
 
-Then check the key names before you do anything else:
+A wrong key name gives no error at this point, so check the names before you do anything else:
 
 ```sh
 kubectl get secret starfleet-credential-mutual -n istio-ingress \
@@ -58,15 +52,11 @@ tls.crt
 tls.key
 ```
 
-Exactly three keys, with exactly those names.
+The secret has exactly three keys, with exactly those names.
 
 ## Switch the gateway to `MUTUAL`
 
-The secret is in place. Now you need a `VirtualService` for the `bridge` and a `Gateway` that asks for a client certificate.
-
-### The VirtualService behind the gateway
-
-The `VirtualService` holds routing rules: it says where requests that come through the gateway go next. The gateway handles TLS, so the `VirtualService` looks the same for HTTP and for HTTPS.
+With the secret in place, the gateway needs two objects: a `VirtualService` for the `bridge` and a `Gateway` that asks for a client certificate. The `VirtualService` holds routing rules: it says where requests that come through the gateway go next. The gateway handles TLS, so the `VirtualService` looks the same for HTTP and for HTTPS.
 
 Save this as `virtualservice-bridge.yaml`:
 
@@ -110,9 +100,7 @@ kubectl apply -f virtualservice-bridge.yaml
 virtualservice.networking.istio.io/bridge created
 ```
 
-### The Gateway that asks for a client certificate
-
-Save this as `gateway-starfleet.yaml`:
+The `Gateway` is where the client certificate check is switched on. Save this as `gateway-starfleet.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -160,7 +148,7 @@ Everything except `tls` is what any HTTPS server on a gateway needs: port `443`,
 
 ## What changes in the handshake
 
-The **TLS handshake** is the first exchange of a TLS connection, where both sides agree on the encryption and send their certificates. `MUTUAL` adds one certificate request from the gateway, and one check on its side.
+The configuration is in place, but to read the test results you need to know where the check happens. The **TLS handshake** is the first exchange of a TLS connection, where both sides agree on the encryption and send their certificates. `MUTUAL` adds one certificate request from the gateway, and one check on its side.
 
 ```mermaid
 sequenceDiagram
@@ -176,9 +164,7 @@ sequenceDiagram
 
 The gateway asks for a certificate, and the client answers with one or without one. The request and the check both happen inside the handshake, before a single byte of HTTP exists. That is why a refused client never gets an HTTP status code.
 
-### See it in your playground
-
-The commands below use the `https_status` helper from the landing page. If this is a new terminal, paste it first:
+You can see this in your playground with the `https_status` helper. If this is a new terminal, paste it first:
 
 ```sh
 https_status() { curl -s -o /dev/null -w "%{http_code} " --cacert certs/example.com.crt \
@@ -199,9 +185,9 @@ https_status
 
 With the client certificate, the `bridge` answers `200`. Without a certificate, curl gets no HTTP status at all (`000`) and exits with code `56`: the connection was cut. The gateway did the checking, and in the second case the request never reached the `bridge`.
 
-The order matters for one reason. A refused handshake also ends astrona's port forward on `8443`, and astrona needs a few seconds to start it again. A request sent in that gap gets `000 exit=7`. So after a refused request, wait about ten seconds before the next one.
+The order of the two requests matters for one reason. A refused handshake also ends astrona's port forward on `8443`, and astrona needs a few seconds to start it again. A request sent in that gap gets `000 exit=7`. So after a refused request, wait about ten seconds before the next one.
 
-curl's exit code tells you what went wrong when there is no status code:
+When there is no status code, curl's exit code tells you what went wrong:
 
 | Exit code | Meaning |
 | --- | --- |
@@ -212,6 +198,8 @@ curl's exit code tells you what went wrong when there is no status code:
 
 In our runs, a missing or refused client certificate gave `56`, and the other TLS failures gave `35`. With TLS 1.3, the client finishes its side of the handshake before the gateway has checked the certificate. The gateway then sends a "certificate required" alert and closes the connection, and curl only notices when it tries to read the response. Other curl builds may report it differently, so treat `35` and `56` alike: the gateway refused, and the gateway's side tells you why.
 
+You now have a working `MUTUAL` gateway. Its secret carries `ca.crt` next to the server certificate, the `Gateway` asks every client for a certificate, and a client without one is cut off in the handshake. What you have not tested yet is a client that does send a certificate, but one your CA never signed.
+
 ## Common pitfalls
 
 > [!WARNING]
@@ -221,8 +209,6 @@ In our runs, a missing or refused client certificate gave `56`, and the other TL
 > - **Expecting `403` for a missing client certificate.** The gateway refuses the client in the handshake. Look for `000` and curl exit code `56` (or `35`).
 > - **Sending the next request too fast.** After a refused handshake the port forward restarts, and the next request gets `000 exit=7` for a few seconds. Wait about ten seconds.
 > - **Testing only with a good client certificate.** A `200` with a certificate does not show that the gateway checks certificates. Always test without one too.
-
-> *`ca.crt` is the one extra key that lets the gateway check a client certificate, and the check happens before any HTTP is sent.*
 
 ## Your mission: Require Client Certificates At The Edge
 

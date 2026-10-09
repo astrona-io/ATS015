@@ -1,18 +1,16 @@
 # Reject Untrusted Client Certificates And Prove It
 
-The gateway asks for a client certificate, and it refuses a client without one. But having **a** certificate is not enough. The certificate must come from the CA the gateway trusts. In this part a client sends a certificate from another CA, and you watch the gateway refuse it too.
+The gateway now asks for a client certificate, and it refuses a client without one. But having **a** certificate is not enough. The certificate must come from the CA the gateway trusts. In this chapter a client sends a certificate from another CA, and you watch the gateway refuse it too.
 
-Then you collect the proof. A request that gets through shows that the gateway accepted one client. It does not show that the gateway checks client certificates. The gateway's own proxy is where that proof lives.
+Then you collect the proof. A request that gets through shows that the gateway accepted one client. It does not show that the gateway checks client certificates at all. That proof lives in the gateway's own proxy, and this chapter shows you where to read it.
 
-The commands below need the `MUTUAL` `Gateway` `starfleet-gateway`, the `VirtualService` `bridge` and the secret `starfleet-credential-mutual` (with `tls.crt`, `tls.key` and `ca.crt`) in your playground, the files in `certs/`, and the `https_status` helper from the landing page.
+The commands below need the `MUTUAL` `Gateway` `starfleet-gateway`, the `VirtualService` `bridge` and the secret `starfleet-credential-mutual` (with `tls.crt`, `tls.key` and `ca.crt`) in your playground. They also need the files in `certs/` and the `https_status` helper, which sends one HTTPS request through the gateway and prints the status code and curl's exit code.
 
 ## A client certificate from another CA
 
-An untrusted client has its own CA, `other-ca`, and a certificate it signed. The gateway does not trust that CA.
+To test the check, you need a client the gateway should not trust. That client has its own CA, `other-ca`, and a certificate that CA signed. The gateway has never seen `other-ca`.
 
 <!-- astrona:playground:renew -->
-
-### Make the untrusted client certificate
 
 Make the other CA and the untrusted client certificate, in the same `certs/` folder:
 
@@ -32,9 +30,7 @@ Certificate request self-signature ok
 subject=CN=other-client, O=other
 ```
 
-### Send a request with the untrusted certificate
-
-Send a request with the trusted client certificate, then with the untrusted one:
+Now send a request with the trusted client certificate, then one with the untrusted certificate:
 
 ```sh
 https_status --cert certs/client.example.com.crt --key certs/client.example.com.key
@@ -52,13 +48,9 @@ From the outside, "you sent no certificate" and "you sent a certificate I do not
 
 ## Ask the gateway why
 
-The gateway's access log does not help here. It writes one line per HTTP request, and a client that was refused in the handshake never sent one. We checked: the refused connections leave no line at all, only the `200` requests do.
+Your first idea might be the gateway's access log, but it does not help here. The access log writes one line per HTTP request, and a client that was refused in the handshake never sent one. In our tests, the refused connections left no line at all; only the `200` requests did.
 
-The gateway's proxy can tell you more if you ask it to. Envoy keeps a separate log level for each part of its work, and the part called `connection` writes a line for every failed handshake when it is set to `debug`.
-
-### Turn up the gateway's connection log
-
-Set the `connection` logger of the gateway's proxy to `debug`:
+The gateway's proxy can tell you more if you ask it to. Envoy keeps a separate log level for each part of its work, and the part called `connection` writes a line for every failed handshake when it is set to `debug`. Set that logger on the gateway's proxy:
 
 ```sh
 istioctl proxy-config log deploy/istio-ingress -n istio-ingress --level connection:debug
@@ -77,9 +69,7 @@ active loggers:
 
 The command prints every logger and its level (shortened here). Only `connection` changed. The change takes effect at once, with no restart, and it is lost when the pod restarts.
 
-### Send two refused requests and read the reasons
-
-Send a request without a certificate, wait for the port forward, then send one with the untrusted certificate:
+With the logger up, send a request without a certificate, wait for the port forward, then send one with the untrusted certificate:
 
 ```sh
 https_status
@@ -92,7 +82,7 @@ https_status --cert certs/other-client.crt --key certs/other-client.key
 000 exit=56
 ```
 
-From the outside, both look the same. Wait a few seconds, then read the gateway's log for TLS errors:
+From the outside, both still look the same. Wait a few seconds, then read the gateway's log for TLS errors:
 
 ```sh
 kubectl logs -n istio-ingress deploy/istio-ingress --since=1m | grep TLS_error
@@ -116,11 +106,9 @@ istioctl proxy-config log deploy/istio-ingress -n istio-ingress --level connecti
 
 ## Prove that the gateway checks client certificates
 
-A `200` with a good certificate proves the gateway accepts that certificate. It proves nothing about everyone else. Two readings from the gateway's proxy give the real proof: the CA arrived, and the listener was built to require a client certificate.
+Knowing why one client was refused is useful, but it is still not proof that the check is on for everyone. A `200` with a good certificate proves the gateway accepts that certificate, and nothing about anyone else. Two readings from the gateway's proxy give the real proof: the CA arrived, and the listener was built to require a client certificate.
 
-### The CA arrived at the gateway
-
-`istiod` sends certificates to the gateway's proxy over **SDS** (Secret Discovery Service), the part of its configuration protocol that carries keys and certificates. List what the gateway's proxy holds:
+The first reading is about the CA. `istiod` sends certificates to the gateway's proxy over **SDS** (Secret Discovery Service), the part of its configuration protocol that carries keys and certificates. List what the gateway's proxy holds:
 
 ```sh
 istioctl proxy-config secret deploy/istio-ingress -n istio-ingress
@@ -138,13 +126,11 @@ ROOTCA                                              CA             ACTIVE     tr
 
 Two rows belong to your secret. `kubernetes://starfleet-credential-mutual` is the server certificate and its key. `kubernetes://starfleet-credential-mutual-cacert` is the CA the gateway checks clients against. Istio always names that second item after the secret, plus `-cacert`, even when the CA sits in the same secret.
 
-Both must be `ACTIVE`. `WARMING` means the proxy asked for the item and never got it: the secret is missing, in the wrong namespace, or has no CA in it. A gateway that cannot load its certificates refuses every client, the good ones too.
+Both rows must be `ACTIVE`. `WARMING` means the proxy asked for the item and never got it: the secret is missing, in the wrong namespace, or has no CA in it. A gateway that cannot load its certificates refuses every client, the good ones too.
 
-We tried it: a `MUTUAL` gateway pointed at a secret made with `kubectl create secret tls` (no `ca.crt`). The `-cacert` row stayed `WARMING`, and every client got `000 exit=35`, even the one with a good certificate. `istioctl analyze` reported no problem at all, so `proxy-config secret` is the place to look.
+We tried this on purpose with a `MUTUAL` gateway pointed at a secret made with `kubectl create secret tls`, so with no `ca.crt`. The `-cacert` row stayed `WARMING`, and every client got `000 exit=35`, even the one with a good certificate. `istioctl analyze` reported no problem at all, so `proxy-config secret` is the place to look.
 
-### The listener requires a client certificate
-
-Read the gateway's listener on port `443` and look for one field:
+The second reading is about the listener. A listener is the part of Envoy that accepts connections on one port. Read the gateway's listener on port `443` and look for one field:
 
 ```sh
 istioctl proxy-config listener deploy/istio-ingress -n istio-ingress --port 443 -o json \
@@ -155,7 +141,7 @@ istioctl proxy-config listener deploy/istio-ingress -n istio-ingress --port 443 
                         "requireClientCertificate": true
 ```
 
-A listener is the part of Envoy that accepts connections on one port. `requireClientCertificate: true` means the listener asks every client for a certificate. Together with the `-cacert` row above, it is your proof: the gateway asks for a client certificate, and it holds the CA to check it with.
+`requireClientCertificate: true` means the listener asks every client for a certificate. Together with the `-cacert` row above, it is your proof: the gateway asks for a client certificate, and it holds the CA to check it with.
 
 ```mermaid
 flowchart TB
@@ -167,11 +153,11 @@ flowchart TB
     OK2 --> P
 ```
 
-Each reading alone can mislead you. The secret can be loaded while the `Gateway` still says `SIMPLE`, and the listener can require a client certificate while the CA never arrived. Read both.
+The diagram shows that the proof needs both readings. Each one alone can mislead you. The secret can be loaded while the `Gateway` still says `SIMPLE`, and the listener can require a client certificate while the CA never arrived.
 
 ## Transport refused, or request refused?
 
-The status code tells you which layer said no. This is worth learning as a rule, because it holds across the whole mesh:
+Everything in this chapter came back as `000`, never as an HTTP error. That is a general rule worth learning, because it holds across the whole mesh: the status code tells you which layer said no.
 
 | What the client sees | What refused it | Examples |
 | --- | --- | --- |
@@ -181,6 +167,8 @@ The status code tells you which layer said no. This is worth learning as a rule,
 
 A `MUTUAL` gateway is a connection-level check. It never produces a `403`.
 
+You can now prove the client certificate check from both sides. From the client, a missing certificate and an untrusted one both end in `000`. From the gateway, the `connection` log names the reason, and `proxy-config secret` plus `requireClientCertificate` show that the check is really in place. One question is still open: where else the CA can live, and what a trusted certificate actually allows a client to do.
+
 ## Common pitfalls
 
 > [!WARNING]
@@ -189,8 +177,6 @@ A `MUTUAL` gateway is a connection-level check. It never produces a `403`.
 > - **Looking for refused clients in the access log.** It has no line for a handshake that failed. Only requests that got through are logged.
 > - **Taking a `200` as proof.** It only shows that one good certificate is accepted. Prove the check with `proxy-config secret` and `requireClientCertificate`.
 > - **Ignoring `WARMING`.** A `-cacert` row in `WARMING` means the gateway has no CA, and it refuses every client, trusted or not. `istioctl analyze` does not warn about it.
-
-> *A refused client learns nothing, and an accepted one proves nothing: the proof is in the gateway's own proxy.*
 
 ## Your mission: Fix The Trusted CA In A MUTUAL Gateway
 

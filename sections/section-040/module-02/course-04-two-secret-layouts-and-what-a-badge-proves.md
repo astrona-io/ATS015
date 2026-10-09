@@ -1,10 +1,10 @@
 # The Separate CA Secret And What A Client Certificate Proves
 
-A `MUTUAL` gateway can read the server certificate and the CA from one secret. Istio also accepts a second layout, with the CA in a secret of its own. You will meet both in real clusters and in exam tasks, so in this part you switch the gateway to the second layout and watch it keep working.
+So far the gateway has read the server certificate and the CA from one secret. Istio also accepts a second layout, with the CA in a secret of its own. You will meet both in real clusters and in exam tasks, so in this chapter you switch the gateway to the second layout and watch it keep working.
 
-Then you look at what the client certificate check has really achieved. It tells the gateway that a CA it trusts signed the client's certificate. It does not tell the gateway what that client may do.
+Then you step back and look at what the client certificate check has really achieved. It tells the gateway that a CA it trusts signed the client's certificate. It does not tell the gateway what that client may do, and that gap decides what you still have to build.
 
-The commands below need the `VirtualService` `bridge` and the `Gateway` `starfleet-gateway` in your playground, the files in `certs/`, and the `https_status` helper from the landing page.
+The commands below need the `VirtualService` `bridge` and the `Gateway` `starfleet-gateway` in your playground. They also need the files in `certs/`, including the untrusted `certs/other-client.*` files, and the `https_status` helper, which sends one HTTPS request through the gateway and prints the status code and curl's exit code.
 
 ## The split layout: a separate `-cacert` secret
 
@@ -18,8 +18,6 @@ In the split layout, `credentialName` names a normal TLS secret with only `tls.c
 The split layout is handy when one team owns the server certificate and another team owns the list of trusted CAs. It also lets you build the server secret with `kubectl create secret tls`. Both secrets still live in the gateway pod's namespace, `istio-ingress`.
 
 <!-- astrona:playground:renew -->
-
-### Create the two secrets
 
 Create the server secret and its `-cacert` partner:
 
@@ -37,9 +35,7 @@ secret/starfleet-credential-split-cacert created
 
 The first secret has the type `kubernetes.io/tls`, the type `kubectl create secret tls` always makes. The second is a generic secret that holds only the CA.
 
-### Point the gateway at the split secret
-
-Change only `credentialName`. Save this as `gateway-starfleet.yaml`, replacing the earlier version:
+The gateway still points at the old secret, so the next step is to change only `credentialName`. Save this as `gateway-starfleet.yaml`, replacing the earlier version:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -92,13 +88,11 @@ kubernetes://starfleet-credential-split-cacert     CA             ACTIVE     tru
 
 The gateway behaves exactly as before. The proxy holds the same two items: the server certificate, and the CA under the `-cacert` name. This time the `-cacert` item really comes from a secret with that name.
 
-The untrusted client certificate needs the `certs/other-client.*` files. If you have not made them yet, the third line fails with a curl file error instead.
+If you have not made the `certs/other-client.*` files, the third request fails with a curl file error instead of `000 exit=56`.
 
 ## What a checked client certificate proves
 
-A checked client certificate answers one question: *did a CA I trust sign this?* If your CA signs certificates for five partners, all five can connect. The gateway does not decide which partner is calling, or what each one may do.
-
-### Who is this client?
+Both layouts give the gateway the same power, so it is worth being exact about what that power is. A checked client certificate answers one question: *did a CA I trust sign this?* If your CA signs certificates for five partners, all five can connect. The gateway does not decide which partner is calling, or what each one may do.
 
 Telling the partners apart is a separate step, and there are two places to do it:
 
@@ -107,13 +101,11 @@ Telling the partners apart is a separate step, and there are two places to do it
 
 Either way the rule is the same: **authentication says who, authorization decides what.** `MUTUAL` TLS only does the first. It does it at the earliest moment possible, which is its real value: a client without a trusted certificate never gets to send a request.
 
-### Client certificates and tokens answer different questions
+A client certificate is also not the only way to say who is calling. A JSON Web Token (JWT) identifies an end user, a person, and can carry roles. A client certificate identifies a calling **system** and carries little more than a name. An API that serves partner systems on behalf of their users often wants both.
 
-A JSON Web Token (JWT) identifies an end user, a person, and can carry roles. A client certificate identifies a calling **system** and carries little more than a name. An API that serves partner systems on behalf of their users often wants both.
+## The edge and the mesh are separate
 
-### The edge and the mesh are separate
-
-Client certificates at the gateway and mesh mTLS (mutual TLS between sidecar proxies, where both sides present a certificate) look alike, but they share no machinery:
+Client certificates at the gateway look a lot like mesh mTLS, where the sidecar proxies inside the mesh use mutual TLS and both sides present a certificate. The two share no machinery:
 
 | | Mesh mTLS | `MUTUAL` at the gateway |
 | --- | --- | --- |
@@ -121,7 +113,9 @@ Client certificates at the gateway and mesh mTLS (mutual TLS between sidecar pro
 | Who renews them | `istiod`, automatically | you |
 | What the identity is used for | `principals` in authorization rules | up to you |
 
-Turning one on says nothing about the other. A gateway can require client certificates while the mesh behind it is fully `PERMISSIVE`, and the other way round. Check `PeerAuthentication` (the resource that sets whether workloads accept plain text, mTLS or both) separately.
+Turning one on says nothing about the other. A gateway can require client certificates while the mesh behind it is fully `PERMISSIVE`, and the other way round. Check `PeerAuthentication`, the resource that sets whether workloads accept plain text, mTLS or both, separately.
+
+You now know both ways to hand the gateway its CA: one secret with three keys, or a `-cacert` secret next to a normal TLS secret. You also know where the check stops. A trusted certificate gets a client through the door, and deciding what that client may do is a separate job, for the app or an `AuthorizationPolicy`.
 
 ## Common pitfalls
 
@@ -130,5 +124,3 @@ Turning one on says nothing about the other. A gateway can require client certif
 > - **Treating a checked client certificate as permission.** It proves that your CA signed the certificate, and nothing more. Decide what each partner may do in the app or with an `AuthorizationPolicy`.
 > - **Trusting `X-Forwarded-Client-Cert` everywhere.** Only the gateway sets it after a real check. A backend that can be reached without going through the gateway must not believe it.
 > - **Assuming a `MUTUAL` gateway means mesh mTLS.** They are unrelated. Check `PeerAuthentication` on its own.
-
-> *A client certificate check tells the gateway who signed for the client; deciding what that client may do is a separate job.*
