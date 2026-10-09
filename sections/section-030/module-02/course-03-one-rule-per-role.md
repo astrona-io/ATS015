@@ -1,14 +1,12 @@
 # One Rule Per Role
 
-Real services rarely have one kind of user. A health page should be open to anyone, normal paths need any valid token, and an administrator path needs one group. In this part you build all three into one policy, and you see why a missing claim is safe under `ALLOW` and dangerous under `DENY`.
+Real services rarely have one kind of user. A health page should be open to anyone, normal paths need any valid token, and an administrator path needs one group. If you get the mix wrong, either the health check breaks or the administrator path opens to everyone.
+
+In this chapter you build all three roles into one policy on the probe, one step at a time. You start with a single public path, then add the administrator path. At the end you see why a missing claim is safe under `ALLOW` and dangerous under `DENY`.
 
 ## One public path
 
-Start with the smallest version: one path anyone may read, and a token required everywhere else.
-
-### Two rules mean OR
-
-Rules in one `ALLOW` policy are combined with OR. A request is allowed if **any** rule fits. So "public path, or valid token" is two rules.
+Start with the smallest version: one path anyone may read, and a token required everywhere else. The key fact is that rules in one `ALLOW` policy are combined with OR. A request is allowed if **any** rule fits, so "public path, or valid token" is two rules.
 
 <!-- astrona:playground:renew -->
 
@@ -53,7 +51,7 @@ Apply it:
 kubectl apply -f authorizationpolicy-probe-require-jwt.yaml
 ```
 
-Wait about a minute, then check the result: the public path with no token, another path with no token, and that path with a token:
+Wait about a minute, then check the result with three requests: the public path with no token, another path with no token, and that path with a token:
 
 ```sh
 check_status $PROBE/headers
@@ -69,13 +67,11 @@ check_status -H "$AUTH $TOKEN" $PROBE/get
 
 Rule 1 has no `from`, so it fits any caller on `/headers`, with or without a token. Rule 2 fits any request with a valid token, on any path. This is the usual shape for health checks or a public landing page.
 
-The order of the rules does not matter: OR has no order. If you put `requestPrincipals` **inside** rule 1, it would mean "`/headers` **and** a token", and the path would stop being public.
+The order of the rules does not matter, because OR has no order. What does matter is where you put each part. If you put `requestPrincipals` **inside** rule 1, it would mean "`/headers` **and** a token", and the path would stop being public.
 
 ## A whole access model in one policy
 
-Now add a third role: an administrator path that only `group1` may reach. Each rule is one complete sentence about one role. Read top to bottom, the policy is the probe's whole access model in one object.
-
-### Write the three roles
+With a public path and a token path in place, you can add the third role: an administrator path that only `group1` may reach. Each rule is one complete sentence about one role. Read top to bottom, the policy becomes the probe's whole access model in one object:
 
 ```text
    rule 1   anyone                     → /headers
@@ -140,17 +136,13 @@ check_status -H "$AUTH $GROUPS_TOKEN" $PROBE/anything/admin
 
 Only the groups token reaches the administrator path. The demo token still reaches `/get`, because rule 2 fits it.
 
-### Why the claim rule also has `requestPrincipals`
+You may wonder why rule 3 also has `requestPrincipals`. A request with no token has no claims, so the `when` in rule 3 already refuses it. Adding `requestPrincipals: ["*"]` makes that requirement written down, not only implied. Anyone reading rule 3 sees "a valid token, and it must say `group1`", and that stays true if someone later edits the `when` block. Istio's own examples pair the two in the same way.
 
-A request with no token has no claims, so the `when` in rule 3 already refuses it. Adding `requestPrincipals: ["*"]` makes that requirement written down, not only implied. Anyone reading rule 3 sees "a valid token, and it must say `group1`". It also stays true if someone later edits the `when` block. Istio's own examples pair the two in the same way.
-
-One policy per workload, with one rule per role, is easier to check than one policy per role. With several policies, you must first find every policy whose `selector` matches the probe before you can answer "who can reach `/anything/admin`?".
+The same thinking explains why one policy per workload, with one rule per role, is easier to check than one policy per role. With several policies, you must first find every policy whose `selector` matches the probe. Only then can you answer "who can reach `/anything/admin`?".
 
 ## A missing claim under ALLOW and DENY
 
-If a token has no `groups` claim, a condition on `request.auth.claims[groups]` does not fit. It is not skipped, and it does not fit by default. The effect depends on the action, and the two results are opposites.
-
-### Fails closed, fails open
+The policy you just built always says what is allowed. You could also try the opposite and say what is denied, but a missing claim makes the two behave very differently. If a token has no `groups` claim, a condition on `request.auth.claims[groups]` does not fit. It is not skipped, and it does not fit by default, so the effect depends on the action.
 
 ```mermaid
 flowchart TB
@@ -160,15 +152,17 @@ flowchart TB
     D -->|"rule does not fit"| D1["nothing denies: allowed"]
 ```
 
-The same missing claim gives opposite results. Under `ALLOW` the request is refused, which is safe. Under `DENY` it passes, which is a hole.
+The diagram shows that the same missing claim gives opposite results: under `ALLOW` the request is refused, which is safe, and under `DENY` it passes, which is a hole.
 
-That is why you write requirements as `ALLOW` rules. The tokens most likely to miss a claim are the odd ones: a token from another issuer, an old token from before the claim existed, a token from a badly set-up provider. Those are exactly the tokens a `DENY` was meant to stop.
+That is why you write requirements as `ALLOW` rules. The tokens most likely to miss a claim are the odd ones: a token from another issuer, an old token from before the claim existed, or a token from a badly set-up provider. Those are exactly the tokens a `DENY` was meant to stop.
 
 Clean up before you go on:
 
 ```sh
 kubectl delete authorizationpolicy probe-require-jwt -n starfleet
 ```
+
+You can now describe a workload's whole access model in one `ALLOW` policy, with one rule per role. A rule without `from` makes a public path, a `when` on `groups` guards the administrator path, and a missing claim fails closed under `ALLOW` but open under `DENY`. What is still open is what to do when a rule like this refuses the very user it should allow.
 
 ## Common pitfalls
 
@@ -177,8 +171,6 @@ kubectl delete authorizationpolicy probe-require-jwt -n starfleet
 > - **Putting a requirement in a `DENY`.** A token without the claim does not fit the `DENY`, so it passes.
 > - **Spreading one workload's access over many policies.** It works, but you can no longer read who may do what in one place.
 > - **Testing only with a well-formed token.** The token that breaks your policy is the one missing the claim, or no token at all.
-
-> *One `ALLOW` policy per workload, one rule per role. A rule without `from` is public, and a missing claim fails closed under `ALLOW` but open under `DENY`.*
 
 ## Your mission: Authorize On A JWT Claim
 

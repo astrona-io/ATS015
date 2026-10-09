@@ -1,12 +1,12 @@
 # Debug A Claim Rule
 
-A claim rule that is wrong usually gives no error. Kubernetes accepts it, `istiod` (Istio's control plane) sends it to the proxies, and every request is quietly refused. In this part you break a rule on purpose, find the cause with two commands, and fix it.
+A claim rule that is wrong usually gives no error. Kubernetes accepts it, `istiod` (Istio's control plane) sends it to the proxies, and the proxy quietly refuses every request. On the exam, and in real work, you need a fast way to find out why.
+
+In this chapter you break a rule on purpose, find the cause with two commands, and fix it. First, though, it helps to know what can go wrong, because three different faults look almost the same from the outside.
 
 ## Three causes, three fixes
 
-When the right user gets `403` from a claim rule, one of three things is usually wrong. They look alike from the outside, but each one has a different fix.
-
-### Tell them apart
+When the right user gets `403` from a claim rule, one of three things is usually wrong. Each one has a different fix:
 
 | What is wrong | What you see | Where to look |
 | --- | --- | --- |
@@ -14,15 +14,11 @@ When the right user gets `403` from a claim rule, one of three things is usually
 | No `RequestAuthentication` selects the workload | No `request.auth` attributes at all, so every claim rule fails | `kubectl get requestauthentication -n <namespace>` and its `selector` |
 | The policy's `selector` matches no pod | The policy does nothing at all, for anyone | the rule is missing from the proxy |
 
-The first two both look like "the right user is refused". The third looks like "the policy changed nothing". Reading the proxy's configuration separates them.
+The first two both look like "the right user is refused". The third looks like "the policy changed nothing". Reading the proxy's configuration separates them, as the rest of this chapter shows.
 
 ## Break the claim name
 
-Write a rule with one letter missing, so you can see what that looks like.
-
-### Apply a rule with a typo
-
-This rule asks for `request.auth.claims[group]`. The real claim in the token is `groups`.
+The first cause is the most common one, so make it happen. The rule below asks for `request.auth.claims[group]`, but the real claim in the token is `groups`. Only one letter is missing.
 
 <!-- astrona:playground:renew -->
 
@@ -77,13 +73,11 @@ check_status -H "$AUTH $GROUPS_TOKEN" $PROBE/headers
 403 403 403 
 ```
 
-The right user is refused. Nothing told you why.
+The right user is refused, and nothing told you why.
 
 ## Find the cause
 
-Two checks settle it: ask Istio's own checker, then read the rule the probe's sidecar proxy actually holds.
-
-### Ask istioctl analyze
+Two checks settle it. First you ask Istio's own checker, then you read the rule the probe's sidecar proxy actually holds.
 
 `istioctl analyze` runs Istio's checks over the objects in a namespace:
 
@@ -98,9 +92,7 @@ istioctl analyze -n starfleet
 
 It finds nothing. `analyze` cannot know which claims your issuer puts in its tokens, so a wrong claim name looks fine to it.
 
-### Read the rule in the proxy
-
-The authorization filter's rules live in the probe's inbound listener, a long JSON dump. Inside the proxy, a claim rule does not say `request.auth.claims` any more. It reads the token's `payload` that the JWT filter left behind, and then the claim name. This command picks out every claim name the proxy compares:
+The proxy itself is the better witness. The authorization filter's rules live in the probe's inbound listener, the part of the proxy's configuration that handles requests coming in. It is a long JSON dump. Inside the proxy, a claim rule does not say `request.auth.claims` any more: it reads the token's `payload` that the JWT filter left behind, and then the claim name. This command picks out every claim name the proxy compares:
 
 ```sh
 istioctl proxy-config listener deploy/probe-v1 -n starfleet -o json \
@@ -113,7 +105,7 @@ istioctl proxy-config listener deploy/probe-v1 -n starfleet -o json \
 "key":"sub"
 ```
 
-`iss` and `sub` come from `requestPrincipals: ["*"]`: the proxy checks that the token has an issuer and a subject. `group` comes from the `when` block. The rule reached the proxy, so the `selector` is fine. The claim it compares is `group`. Now compare that with the decoded token:
+`iss` and `sub` come from `requestPrincipals: ["*"]`: the proxy checks that the token has an issuer and a subject. `group` comes from the `when` block. So the rule reached the proxy, which means the `selector` is fine, and the claim it compares is `group`. Now compare that with the decoded token:
 
 ```sh
 echo "$GROUPS_TOKEN" | cut -d. -f2 | base64 -d 2>/dev/null; echo
@@ -123,15 +115,14 @@ echo "$GROUPS_TOKEN" | cut -d. -f2 | base64 -d 2>/dev/null; echo
 {"exp":3537391104,"groups":["group1","group2"],"iat":1537391104,"iss":"testing@secure.istio.io","scope":["scope1","scope2"],"sub":"testing@secure.istio.io"}
 ```
 
-The token says `groups`, the rule says `group`. That one letter is the whole fault. If the command had printed nothing at all, the policy would never have reached this proxy: check its `selector` against the pod labels instead.
+The token says `groups`, and the rule says `group`. That one letter is the whole fault. If the `proxy-config` command had printed nothing at all, the policy would never have reached this proxy, and you would check its `selector` against the pod labels instead.
+
+> [!TIP]
+> When a claim rule refuses the right user, put two things side by side: the claim names from `proxy-config` and the decoded token. Two things you can both see settle it in seconds, where guessing can take an hour.
 
 ## Fix it
 
-Put the right claim name back and prove the fix with live requests.
-
-### Correct the claim name
-
-In `authorizationpolicy-probe-require-jwt.yaml`, change the key to `request.auth.claims[groups]`, so the `when` block reads:
+Now that you know the cause, the fix is one word. In `authorizationpolicy-probe-require-jwt.yaml`, change the key to `request.auth.claims[groups]`, so the `when` block reads:
 
 ```yaml
     when:
@@ -157,19 +148,17 @@ check_status -H "$AUTH $TOKEN" $PROBE/headers
 403 403 403 
 ```
 
-Run the `proxy-config` command again if you like: it now prints `"key":"groups"`.
+The groups token gets in, and the demo token, which has no `groups` claim, is still refused. If you run the `proxy-config` command again, it now prints `"key":"groups"`. Clean up with `kubectl delete authorizationpolicy probe-require-jwt -n starfleet` before you start the lab.
 
-The groups token gets in, and the demo token, which has no `groups` claim, is still refused. Clean up with `kubectl delete authorizationpolicy probe-require-jwt -n starfleet` before you start the lab.
+You now have a short routine for a claim rule that refuses everyone. A clean `istioctl analyze` proves little. The claim names in the proxy show whether the rule arrived and what it compares, and the decoded token shows what it should compare. If no claim names appear, the `selector` is the problem; if no `RequestAuthentication` selects the workload, no claim rule can ever fit.
 
 ## Common pitfalls
 
 > [!WARNING]
 > - **Trusting a clean `istioctl analyze`.** It does not know your issuer's claim names. A wrong claim name passes every check.
-> - **Guessing instead of comparing.** Decode the refused token and put it next to the rule from `proxy-config`. Two things you can both see settle it in seconds.
+> - **Guessing instead of comparing.** Decode the refused token and put it next to the rule from `proxy-config`.
 > - **Missing that the rule never arrived.** If `proxy-config` shows no claim name at all, the problem is the policy's `selector`, not the claim.
 > - **Forgetting the `RequestAuthentication`.** Without one on the workload, no claims are published and every claim rule fails, even a correct one.
-
-> *A wrong claim name is accepted everywhere and fits nothing. Read the rule from the proxy, decode the refused token, and compare them.*
 
 ## Your mission: Fix The Claim Rule
 
