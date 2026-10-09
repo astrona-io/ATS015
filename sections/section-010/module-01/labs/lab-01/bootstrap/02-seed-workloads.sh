@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Creates the planet identity-demo (sidecar injection on) with:
+# Creates the namespace identity-demo (sidecar injection on) with:
 #   booking-service-v1       service account booking-sa
 #   notification-service-v1  no service account of its own -> default
 #   tester                   curl client, no service account of its own -> default

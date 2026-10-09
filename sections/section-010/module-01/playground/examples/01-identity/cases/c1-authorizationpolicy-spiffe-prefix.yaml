@@ -1,5 +1,5 @@
 # MISTAKE CASE: spiffe:// written into principals.
-# Accepted by Kubernetes, istioctl analyze is clean, and nobody gets in:
+# Accepted by Kubernetes, istioctl analyze is clean, and every request is denied:
 # the proxy compares against spiffe://spiffe://cluster.local/... .
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy

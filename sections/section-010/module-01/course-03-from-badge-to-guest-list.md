@@ -1,16 +1,16 @@
-# From Badge To Guest List
+# Turn An Identity Into An AuthorizationPolicy Principal
 
-Astronaut, you can now read the name on any ship's badge. This part turns that name into the string a security rule matches on. You will write one guest list for the `probe`, watch the right ship get through and the wrong ones stay outside, and then break the list on purpose with the most common mistake in this whole topic.
+You can now read the identity in any workload's certificate. This part turns that identity into the string a security rule matches on. You will write one `AuthorizationPolicy` for the `probe` workload, see the right caller get through and the wrong ones get denied, and then break the policy on purpose with the most common mistake in this whole topic.
 
-## The receiving ship sees the caller's badge
+## The receiving proxy sees the caller's identity
 
-A badge only matters if the ship on the other end reads it. When two ships with communications officers talk, Istio does the secret handshake (mTLS) for them on its own, even before you write any rule. This is called **auto mTLS**. So the receiving ship's proxy knows the caller's name.
+An identity only matters if the workload on the other end reads it. When two pods with sidecar proxies talk, Istio uses mutual TLS (mTLS) between them on its own, even before you write any rule. In mTLS, both sides present a certificate, so the connection is encrypted and both identities are verified. This is called **auto mTLS**. So the receiving workload's proxy knows the caller's identity.
 
 ### See it in your playground
 
 <!-- astrona:playground:renew -->
 
-The probe echoes back the headers it received. Its proxy adds one header that shows the caller's badge:
+The `probe` workload echoes back the headers it received. Its sidecar proxy adds one header that shows the caller's identity:
 
 ```sh
 kubectl exec -n starfleet deploy/shuttle -- curl -s http://probe:8000/headers | grep -A2 Client-Cert
@@ -22,15 +22,15 @@ kubectl exec -n starfleet deploy/shuttle -- curl -s http://probe:8000/headers | 
     ],
 ```
 
-`By=` is the probe's own badge. `URI=` is the badge the shuttle showed during the handshake. The probe's communications officer read it and passed it on to the crew.
+`By=` is the `probe` workload's own identity. `URI=` is the identity the `shuttle` proxy presented during the TLS handshake. The `probe` sidecar proxy read it from the certificate and passed it on to the application.
 
-## The guest list matches the badge
+## The policy matches the identity
 
-An `AuthorizationPolicy` is the guard's list at the airlock: who may come aboard and what they may do. Its field `principals` lists the badge names that may come in. Before you write one, set up a quick test.
+An `AuthorizationPolicy` allows or denies requests to a workload, by source, operation and conditions. Its field `principals` lists the caller identities a rule matches. Before you write one, set up a quick test.
 
 ### A helper to test three callers
 
-Paste this helper. It sends one signal to the probe from three ships: the shuttle (`sa/shuttle`), fortio (`sa/default`) and the drifter (no badge at all):
+Paste this helper. It sends one request to the `probe` Service from three clients: `shuttle` (`sa/shuttle`), `fortio` (`sa/default`) and `drifter` (no certificate at all):
 
 ```sh
 check_callers() {
@@ -47,11 +47,11 @@ fortio:  200
 drifter: 200
 ```
 
-With no rule, every ship gets in. Even the drifter gets in, because the probe still accepts plain text by default.
+With no policy, every request is allowed. Even the `drifter` request is allowed, because the `probe` proxy still accepts plain text by default.
 
-### Write the guest list
+### Write the policy
 
-The shuttle's badge says `spiffe://cluster.local/ns/starfleet/sa/shuttle`. In `principals` you write the same name **without** `spiffe://`.
+The `shuttle` certificate says `spiffe://cluster.local/ns/starfleet/sa/shuttle`. In `principals` you write the same name **without** `spiffe://`.
 
 Save this as `authorizationpolicy-probe.yaml`:
 
@@ -91,20 +91,20 @@ fortio:  403
 drifter: 403
 ```
 
-The `selector` picked which ships the guard protects: the probes. The probe's own communications officer did the check. Fortio showed a real badge with the wrong name, so it got `403`. The drifter showed no badge at all, so there was no name to match, and it got `403` too. The body of that answer is `RBAC: access denied`: the guard turned the signal away at the airlock.
+The `selector` picked which workloads the policy protects: the `probe` pods. The `probe` sidecar proxy did the check. `fortio` presented a real certificate with the wrong identity, so it got `403`. `drifter` presented no certificate at all, so there was no identity to match, and it got `403` too. The body of that response is `RBAC: access denied`: the `probe` proxy rejected the request before it reached the application.
 
-Once an `ALLOW` list exists for a ship, anyone not on it stays outside. That is why one line is enough to shut out every other caller.
+Once an `ALLOW` policy exists for a workload, any request that matches no rule is denied. That is why one line is enough to deny every other caller.
 
 > [!TIP]
-> After you change a policy, give it up to a minute before you trust a test. In this playground, signals on connections that were already open sometimes kept the old rule for that long. Run your test twice; if the answers disagree, wait and run it again.
+> After you change a policy, give it up to a minute before you trust a test. In this playground, requests on connections that were already open sometimes kept the old rule for that long. Run your test twice; if the answers disagree, wait and run it again.
 
 ## The `spiffe://` trap
 
-The badge says `spiffe://...`, but `principals` must not. This one difference causes more silent failures than anything else in this topic, so see it once on purpose.
+The certificate says `spiffe://...`, but `principals` must not. This one difference causes more silent failures than anything else in this topic, so see it once on purpose.
 
-### Break the list
+### Break the policy
 
-Save this as `authorizationpolicy-probe-spiffe.yaml`. It is the same list with `spiffe://` in front of the name:
+Save this as `authorizationpolicy-probe-spiffe.yaml`. It is the same policy with `spiffe://` in front of the name:
 
 ```yaml
 apiVersion: security.istio.io/v1
@@ -141,11 +141,11 @@ drifter: 403
 ✔ No validation issues found when analyzing namespace: starfleet.
 ```
 
-Now nobody gets in, not even the shuttle. Kubernetes accepted the object, and `istioctl analyze` sees nothing wrong. The rule simply never matches.
+Now every request is denied, even the one from `shuttle`. Kubernetes accepted the object, and `istioctl analyze` sees nothing wrong. The rule simply never matches.
 
 ### Why it never matches
 
-Ask the probe's communications officer what it really compares against. The inbound listener on channel `15006` holds the guard's list:
+Ask the `probe` sidecar proxy what it really compares against. A listener is the part of Envoy that accepts connections on one port. The inbound listener on port `15006` holds the policy rules:
 
 ```sh
 istioctl proxy-config listener deploy/probe-v1 -n starfleet --port 15006 -o json \
@@ -156,11 +156,11 @@ istioctl proxy-config listener deploy/probe-v1 -n starfleet --port 15006 -o json
 "exact": "spiffe://spiffe://cluster.local/ns/starfleet/sa/shuttle"
 ```
 
-Istio adds `spiffe://` in front of every principal for you. Write it yourself, and the proxy looks for `spiffe://spiffe://...`, a badge no ship can ever carry.
+Istio adds `spiffe://` in front of every principal for you. Write it yourself, and the proxy looks for `spiffe://spiffe://...`, an identity no workload can ever have.
 
 ### Put it back
 
-Apply the correct list again and check:
+Apply the correct policy again and check:
 
 ```sh
 kubectl apply -f authorizationpolicy-probe.yaml
@@ -178,56 +178,56 @@ Run the `proxy-config listener` command again and it shows `"exact": "spiffe://c
 
 ### The rule
 
-`principals` takes `<trust-domain>/ns/<namespace>/sa/<service-account>`. Two wildcard forms are also allowed: `cluster.local/ns/starfleet/sa/*` matches every service account on the planet, and `*` matches any ship that showed a badge. The field `namespaces` takes plain namespace names, such as `starfleet`.
+`principals` takes `<trust-domain>/ns/<namespace>/sa/<service-account>`. Two wildcard forms are also allowed: `cluster.local/ns/starfleet/sa/*` matches every service account in the namespace, and `*` matches any caller that presented a certificate. The field `namespaces` takes plain namespace names, such as `starfleet`.
 
 ## Settling a denial in one pass
 
-When a guest list turns away a signal you expected to get through, the mistake sits in one of two places: the badge the caller really shows, or the name you wrote in the list. Check both, in this order:
+When a policy denies a request you expected to be allowed, the mistake sits in one of two places: the identity the caller really presents, or the name you wrote in the policy. Check both, in this order:
 
-1. Read the caller's badge with `istioctl proxy-config secret` and `openssl`.
+1. Read the caller's certificate with `istioctl proxy-config secret` and `openssl`.
 2. Remove `spiffe://` from the name.
 3. Compare it letter by letter with the `principals` entry.
 
-A typo in the planet name, a service account you guessed instead of read, and a stray `spiffe://` explain most cases.
+A typo in the namespace name, a service account you guessed instead of read, and a stray `spiffe://` explain most cases.
 
-The method also works the other way. A `principals` value tells you exactly which planet and which service account a rule was written for. There is only one way to build that name, so you do not need to find the Deployment first.
+The method also works the other way. A `principals` value tells you exactly which namespace and which service account a rule was written for. There is only one way to build that name, so you do not need to find the Deployment first.
 
 ## Changing the trust domain
 
-The trust domain is the first part of every badge name, `cluster.local` in your playground. It is the fleet's official seal, set at install time in `meshConfig.trustDomain`, and teams often change it to their own name, so that badges from two meshes never collide. This is a topic to understand, not to run in the playground: changing it means installing Istio again and waiting for every ship to get a new badge.
+The trust domain is the first part of every identity, `cluster.local` in your playground. It is set at install time in `meshConfig.trustDomain`. Teams often change it to their own name, so that identities from two meshes never collide. This is a topic to understand, not to run in the playground: changing it means installing Istio again and waiting for every workload to get a new certificate.
 
 ### What breaks
 
-Change the trust domain to, for example, `acme.internal`, and istiod prints every *new* badge with the new seal. A guest list that says `cluster.local/ns/starfleet/sa/shuttle` no longer matches a shuttle whose badge says `acme.internal/ns/starfleet/sa/shuttle`. Nothing warns you, because both strings are valid.
+Change the trust domain to, for example, `acme.internal`, and istiod issues every *new* certificate with the new trust domain. A policy that says `cluster.local/ns/starfleet/sa/shuttle` no longer matches a `shuttle` pod whose certificate says `acme.internal/ns/starfleet/sa/shuttle`. Nothing warns you, because both strings are valid.
 
-It also does not happen all at once. Ships get new badges as they rotate, so for up to a day the fleet carries a mix of old and new seals.
+It also does not happen all at once. Workloads get new certificates as they rotate, so for up to a day the mesh has a mix of old and new trust domains.
 
 ### What helps
 
-`meshConfig.trustDomainAliases` lists extra trust domains the mesh treats as its own. With the old domain listed as an alias, guest lists that name `cluster.local/...` keep matching ships that already carry `acme.internal/...` badges. That gives you time to update every list before you remove the alias.
+`meshConfig.trustDomainAliases` lists extra trust domains the mesh treats as its own. With the old domain listed as an alias, policies that name `cluster.local/...` keep matching workloads that already have `acme.internal/...` certificates. That gives you time to update every policy before you remove the alias.
 
 ## Common pitfalls
 
 > [!WARNING]
 > - **Writing `spiffe://` in `principals`.** The object is accepted, `istioctl analyze` is clean, and the rule never matches. Leave the scheme out.
-> - **Guessing the service account.** Read it from the badge or from the pod. A Deployment without `serviceAccountName` runs as `default`.
-> - **Expecting a selector to name the caller.** `selector` picks the ships the guard protects. `principals` names who may come in.
-> - **Forgetting plain-text callers.** A ship without a sidecar shows no badge, so it never matches `principals` and gets `403`.
-> - **Hard-coding `cluster.local` after a trust domain change.** Every `principals` entry stops matching, and at first only for some ships.
+> - **Guessing the service account.** Read it from the certificate or from the pod. A Deployment without `serviceAccountName` runs as `default`.
+> - **Expecting a selector to name the caller.** `selector` picks the workloads the policy protects. `principals` names the callers a rule matches.
+> - **Forgetting plain-text callers.** A pod without a sidecar presents no certificate, so it never matches `principals` and gets `403`.
+> - **Hard-coding `cluster.local` after a trust domain change.** Every `principals` entry stops matching, and at first only for some workloads.
 
-> *Read the badge off the caller, drop `spiffe://`, and compare it with the guest list: that one comparison settles every identity denial.*
+> *Read the identity from the caller's certificate, drop `spiffe://`, and compare it with the policy: that one comparison settles every identity denial.*
 
 ## Your mission: Prove A Workload Identity And Authorize On It
 
-You can now read a ship's badge from its live certificate and write a guest list that lets in exactly that badge. Now prove it in a graded mission: on a planet called `identity-demo`, read the badge of `booking-service`, require the secret handshake for the whole planet, and let only `booking-service` call `notification-service`. This mission runs its own small app (`booking-service`, `notification-service` and a `tester` client), not the Starfleet.
+You can now read a workload's identity from its live certificate and write an `AuthorizationPolicy` that allows exactly that identity. The graded lab asks you to prove it: in the namespace `identity-demo`, read the identity of `booking-service`, require STRICT mTLS for the whole namespace, and allow only `booking-service` to call `notification-service`. This lab runs its own small app (`booking-service`, `notification-service` and a `tester` client), not the Starfleet.
 
-The mission runs in its own training solar system, so first pause your playground. Nothing in it is lost:
+The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
 
 ```sh
 astrona stop ats-015-playground-010-01
 ```
 
-Then start the mission:
+Then start the lab:
 
 ```sh
 astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-010/module-01/labs/lab-01
@@ -239,7 +239,7 @@ Read the task in [`question.md`](./labs/lab-01/question.md) and solve it on your
 astrona submit -c sections/section-010/module-01/labs/lab-01
 ```
 
-When the mission is done, remove it and wake your playground up again:
+When the lab is done, remove it and start your playground again:
 
 ```sh
 astrona destroy ats-015-lab-010-01

@@ -1,4 +1,4 @@
-# Guest list for cargo: only the bridge's badge (starfleet-bridge).
+# AuthorizationPolicy for cargo: only the bridge identity (starfleet-bridge).
 # Expect: the bridge page still shows the cargo facts ("paperback"),
 # and the shuttle gets 403 on http://cargo:9080/details/0.
 apiVersion: security.istio.io/v1

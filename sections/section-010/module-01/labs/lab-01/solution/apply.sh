@@ -4,7 +4,7 @@
 # Kept in step with solution.md - if one changes, change the other.
 set -euo pipefail
 
-# STRICT mTLS for the whole namespace: every caller must show its badge.
+# STRICT mTLS for the whole namespace: every caller must present a certificate.
 kubectl apply -f - <<'YAML'
 apiVersion: security.istio.io/v1
 kind: PeerAuthentication

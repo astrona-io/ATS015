@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Install Istio (sidecar mode) into this playground's kind cluster with Helm:
 #   istio-system   istio-base (CRDs) + istiod (control plane and certificate authority)
-# No gateway: this module only looks at the ID badges inside the mesh.
+# No gateway: this module only looks at the workload certificates inside the mesh.
 # Change the version with:  ISTIO_VERSION=1.29.3 astrona run -c .
 set -euo pipefail
 

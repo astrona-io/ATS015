@@ -6,7 +6,7 @@ estimated_duration: 20m
 
 Solve this question on: `terminal`
 
-Astronaut, your team runs a booking system. `booking-service` calls `notification-service` when a booking is confirmed, and that is the only call `notification-service` should receive. Right now anything on the planet can call it, including a debugging pod that someone left running. Make the restriction hold on something that cannot drift: the caller's mesh identity.
+Your team runs a booking system. `booking-service` calls `notification-service` when a booking is confirmed, and that is the only call `notification-service` should receive. Right now any workload in the namespace can call it, including a debugging pod that someone left running. Make the restriction hold on something that cannot drift: the caller's mesh identity.
 
 The namespace `identity-demo` has sidecar injection on and runs:
 
