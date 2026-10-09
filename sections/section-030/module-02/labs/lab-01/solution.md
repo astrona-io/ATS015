@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. Both tokens carry the same principal, so `requestPrincipals` alone cannot tell an ordinary user from an administrator. Only the `groups` claim can. One policy with one rule per role does the job.
+Both tokens carry the same principal, so `requestPrincipals` alone cannot tell an ordinary user from an administrator. Only the `groups` claim can. One policy with one rule per role does the job.
 
 ---
 
@@ -100,7 +100,7 @@ no token  /admin:  403
 
 The demo token is refused at `/admin` because it has no `groups` claim, so the second rule's `when` cannot fit. Under `ALLOW`, a missing claim fails closed. The groups token gets through, and the app answers. Any status other than `403` means the mesh let the request pass.
 
-If you see an old result, wait half a minute and send the requests again. Connections that were already open keep the old orders for a while.
+If you see an old result, wait half a minute and send the requests again. Connections that were already open keep the old configuration for a while.
 
 Now submit:
 

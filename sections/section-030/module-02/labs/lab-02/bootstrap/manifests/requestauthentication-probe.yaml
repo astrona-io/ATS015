@@ -1,5 +1,5 @@
-# Precondition for this module: the probe's communications officer (sidecar)
-# checks end-user tokens (JWTs) from Istio's sample issuer.
+# Precondition for this module: the probe's sidecar proxy (Envoy)
+# validates end-user tokens (JWTs) from Istio's sample issuer.
 # A request WITH a token: the token must be valid, otherwise HTTP 401.
 # A request WITHOUT a token: still allowed. RequestAuthentication only checks
 # tokens that are present. The module adds AuthorizationPolicies that read the

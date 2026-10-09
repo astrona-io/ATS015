@@ -1,6 +1,6 @@
-# Wrap-Up: Mission Debrief
+# Wrap-Up
 
-Well flown, astronaut. You have finished every part and every mission in this module. Before you move on, look back at what you learned, check yourself, and land the playground cleanly.
+You have finished every part and every graded lab in this module. Before you move on, look back at what you learned, check yourself, and remove the playground cleanly.
 
 ## What you learned
 
@@ -8,7 +8,7 @@ This module was about reading what a token says, and letting only the right clai
 
 **From [Read What The Token Says](./course-01-read-what-the-token-says.md):**
 
-- The JWT filter checks the token (`401` if it is bad) and publishes its facts as `request.auth` attributes. The authorization filter reads them and answers `403` when no rule fits.
+- The JWT filter checks the token (`401` if it is bad) and publishes its claims as `request.auth` attributes. The authorization filter reads them and answers `403` when no rule fits.
 - With no `RequestAuthentication` on the workload, no attributes are published, and no claim rule can fit.
 - `request.auth.claims[<name>]` reads any claim. A nested claim uses one bracket per level, such as `[realm_access][roles]`.
 - `request.auth.principal` is a `when` key; `requestPrincipals` is a `from.source` field. Both match `<iss>/<sub>`.
@@ -33,16 +33,16 @@ This module was about reading what a token says, and letting only the right clai
 - `istioctl proxy-config listener <pod> -o json`, filtered for the keys under `"payload"`, shows the claim names the proxy really compares. No claim name at all means the policy's `selector` reaches no pod.
 - Compare the rule from the proxy with the decoded token. That settles it.
 
-## Your missions
+## Your graded labs
 
-You proved each skill in a graded mission, right after the part that taught it:
+You proved each skill in a graded lab, right after the part that taught it:
 
-| Mission | After the part | What you proved |
+| Lab | After the part | What you proved |
 | --- | --- | --- |
-| [Authorize On A JWT Claim](./labs/lab-01/README.md) | One Rule Per Role | open a path to any token and gate an admin path on a group claim |
+| [Authorize On A JWT Claim](./labs/lab-01/README.md) | One Rule Per Role | open a path to any token and gate an administrator path on a group claim |
 | [Fix The Claim Rule](./labs/lab-02/README.md) | Debug A Claim Rule | find a wrong claim name and a public path that needed a token, and fix both |
 
-If you skipped one, go back to it now. Each mission is short, and the exam asks for exactly these skills.
+If you skipped one, go back to it now. Each lab is short, and the exam asks for exactly these skills.
 
 ## Check yourself
 
@@ -67,7 +67,7 @@ Two `when` entries, one with `values: ["group1"]` and one with `values: ["group2
 </details>
 
 <details>
-<summary>4. A <code>DENY</code> policy has a rule with <code>when: request.auth.claims[groups]</code> and <code>values: ["guest"]</code>, to keep guests out of the admin path. A token from another system has no <code>groups</code> claim at all. Is it kept out?</summary>
+<summary>4. A <code>DENY</code> policy has a rule with <code>when: request.auth.claims[groups]</code> and <code>values: ["guest"]</code>, to keep guests out of the administrator path. A token from another system has no <code>groups</code> claim at all. Is it kept out?</summary>
 
 No. A condition on a missing claim does not fit, so the `DENY` rule does not fit, and the request passes. Write the requirement as an `ALLOW` rule with `values: ["admin"]` instead: a missing claim then fails closed.
 </details>
@@ -86,7 +86,7 @@ Read the claim names from the proxy with `istioctl proxy-config listener ... -o 
 
 ## Clean up the playground
 
-Your playground is a whole Kubernetes cluster running on your machine. When you are done with this module, remove it, and any mission that is still running.
+Your playground is a whole Kubernetes cluster running on your machine. When you are done with this module, remove it, and any lab that is still running.
 
 First, see what is still running:
 
@@ -100,7 +100,7 @@ Remove the playground. The command takes its **name**, not its folder path:
 astrona destroy ats-015-playground-030-02
 ```
 
-If `astrona list` also showed a mission, remove it the same way, for example:
+If `astrona list` also showed a lab, remove it the same way, for example:
 
 ```sh
 astrona destroy ats-015-lab-030-02-02

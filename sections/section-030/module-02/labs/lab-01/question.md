@@ -6,7 +6,7 @@ estimated_duration: 15m
 
 Solve this question on: `terminal`
 
-Astronaut, every logged-in user can reach the notification service, including its admin path. The identity provider already puts group membership in the token. Use it, so that only administrators reach the admin path.
+Every logged-in user can reach the notification service, including its `/admin` path. The identity provider already puts group membership in the token. Use it, so that only administrators reach the `/admin` path.
 
 The namespace `jwtclaims-demo` has sidecar injection on and runs:
 

@@ -1,6 +1,6 @@
 # One Rule Per Role
 
-Astronaut, real services rarely have one kind of user. A health page should be open to anyone, normal paths need any valid token, and an admin hatch needs one group. In this part you build all three into one policy, and you see why a missing claim is safe under `ALLOW` and dangerous under `DENY`.
+Real services rarely have one kind of user. A health page should be open to anyone, normal paths need any valid token, and an administrator path needs one group. In this part you build all three into one policy, and you see why a missing claim is safe under `ALLOW` and dangerous under `DENY`.
 
 ## One public path
 
@@ -8,7 +8,7 @@ Start with the smallest version: one path anyone may read, and a token required 
 
 ### Two rules mean OR
 
-Rules in one `ALLOW` policy are combined with OR. A signal gets in if **any** rule fits. So "public path, or valid token" is two rules.
+Rules in one `ALLOW` policy are combined with OR. A request is allowed if **any** rule fits. So "public path, or valid token" is two rules.
 
 <!-- astrona:playground:renew -->
 
@@ -73,7 +73,7 @@ The order of the rules does not matter: OR has no order. If you put `requestPrin
 
 ## A whole access model in one policy
 
-Now add a third role: an admin path that only `group1` may reach. Each rule is one complete sentence about one role. Read top to bottom, the policy is the probe's whole access model in one object.
+Now add a third role: an administrator path that only `group1` may reach. Each rule is one complete sentence about one role. Read top to bottom, the policy is the probe's whole access model in one object.
 
 ### Write the three roles
 
@@ -124,7 +124,7 @@ Apply it:
 kubectl apply -f authorizationpolicy-probe-require-jwt.yaml
 ```
 
-Wait about a minute, then check the admin path with no token, the demo token and the groups token:
+Wait about a minute, then check the administrator path with no token, the demo token and the groups token:
 
 ```sh
 check_status $PROBE/anything/admin
@@ -138,7 +138,7 @@ check_status -H "$AUTH $GROUPS_TOKEN" $PROBE/anything/admin
 200 200 200 
 ```
 
-Only the groups token reaches the admin path. The demo token still reaches `/get`, because rule 2 fits it.
+Only the groups token reaches the administrator path. The demo token still reaches `/get`, because rule 2 fits it.
 
 ### Why the claim rule also has `requestPrincipals`
 
@@ -182,15 +182,15 @@ kubectl delete authorizationpolicy probe-require-jwt -n starfleet
 
 ## Your mission: Authorize On A JWT Claim
 
-You can now build one policy with a rule for every role and gate a path on a group claim. Now prove it in a graded mission: open one path to any logged-in user and an admin path only to `group1`, on a small notification service that has its own app.
+You can now build one policy with a rule for every role and gate a path on a group claim. The graded lab asks you to open one path to any logged-in user and an administrator path only to `group1`, on a small notification service that has its own app.
 
-The mission runs in its own training solar system, so first pause your playground. Nothing in it is lost:
+The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
 
 ```sh
 astrona stop ats-015-playground-030-02
 ```
 
-Then start the mission:
+Then start the lab:
 
 ```sh
 astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-030/module-02/labs/lab-01
@@ -202,7 +202,7 @@ Read the task in [`question.md`](./labs/lab-01/question.md) and solve it on your
 astrona submit -c sections/section-030/module-02/labs/lab-01
 ```
 
-When the mission is done, remove it and wake your playground up again:
+When the lab is done, remove it and start your playground again:
 
 ```sh
 astrona destroy ats-015-lab-030-02

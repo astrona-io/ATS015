@@ -1,6 +1,6 @@
 # Require A Claim
 
-Astronaut, a valid token says who the user is. Its claims say what the user is, for example which groups they belong to. In this part you let only members of one group reach the probe, and you learn the four rules that decide when a `when` condition fits.
+A valid token says who the user is. Its claims say what the user is, for example which groups they belong to. In this part you let only members of one group reach the probe, and you learn the four rules that decide when a `when` condition fits.
 
 ## Only group1 may pass
 
@@ -8,7 +8,7 @@ Start with a real rule and watch it decide. The two sample tokens have the same 
 
 ### Write the rule
 
-This policy lets in a signal only if it carries a valid token from the sample user **and** that token's `groups` claim contains `group1`.
+This policy allows a request only if it carries a valid token from the sample user **and** that token's `groups` claim contains `group1`.
 
 <!-- astrona:playground:renew -->
 
@@ -57,11 +57,11 @@ kubectl apply -f authorizationpolicy-probe-require-jwt.yaml
 authorizationpolicy.security.istio.io/probe-require-jwt created
 ```
 
-Wait about a minute before you test. The new orders reach the probe's communications officer within seconds, but connections that are already open keep the old orders for a while.
+Wait about a minute before you test. `istiod`, Istio's control plane, sends the new configuration to the probe's sidecar proxy within seconds, but connections that are already open keep the old configuration for a while.
 
 ### Test three callers
 
-Send signals with the demo token, with the groups token, and with no token:
+Send requests with the demo token, with the groups token, and with no token:
 
 ```sh
 check_status -H "$AUTH $TOKEN" $PROBE/headers
@@ -164,6 +164,6 @@ kubectl delete authorizationpolicy probe-require-jwt -n starfleet
 > - **Expecting `values: ["a", "b"]` to need both.** It needs either one. Two requirements need two entries.
 > - **Looking for a list operator.** `values: ["group1"]` already matches any item of a list claim.
 > - **Reading a `403` as "bad token".** A bad token gets `401` from the JWT filter. A `403` means the token was fine and no rule fit.
-> - **Testing too fast.** Connections that were already open keep the old orders for a while. If the result looks old, wait and run it again.
+> - **Testing too fast.** Connections that were already open keep the old configuration for a while. If the result looks old, wait and run it again.
 
 > *A `when` condition is one AND part of a rule. Values in one entry are OR, entries are AND, and a list claim fits if any item matches.*

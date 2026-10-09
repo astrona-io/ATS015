@@ -1,6 +1,6 @@
 # Debug A Claim Rule
 
-Astronaut, a claim rule that is wrong usually gives no error. Kubernetes accepts it, mission control sends it out, and every request is quietly refused. In this part you break a rule on purpose, find the cause with two commands, and fix it.
+A claim rule that is wrong usually gives no error. Kubernetes accepts it, `istiod` (Istio's control plane) sends it to the proxies, and every request is quietly refused. In this part you break a rule on purpose, find the cause with two commands, and fix it.
 
 ## Three causes, three fixes
 
@@ -67,7 +67,7 @@ Apply it:
 kubectl apply -f authorizationpolicy-probe-require-jwt.yaml
 ```
 
-Wait about a minute, then send signals with the groups token, which really is in `group1`:
+Wait about a minute, then send requests with the groups token, which really is in `group1`:
 
 ```sh
 check_status -H "$AUTH $GROUPS_TOKEN" $PROBE/headers
@@ -81,7 +81,7 @@ The right user is refused. Nothing told you why.
 
 ## Find the cause
 
-Two checks settle it: ask Istio's own checker, then read the rule the probe's communications officer actually holds.
+Two checks settle it: ask Istio's own checker, then read the rule the probe's sidecar proxy actually holds.
 
 ### Ask istioctl analyze
 
@@ -127,7 +127,7 @@ The token says `groups`, the rule says `group`. That one letter is the whole fau
 
 ## Fix it
 
-Put the right claim name back and prove the fix with live signals.
+Put the right claim name back and prove the fix with live requests.
 
 ### Correct the claim name
 
@@ -159,7 +159,7 @@ check_status -H "$AUTH $TOKEN" $PROBE/headers
 
 Run the `proxy-config` command again if you like: it now prints `"key":"groups"`.
 
-The groups token gets in, and the demo token, which has no `groups` claim, is still refused. Clean up with `kubectl delete authorizationpolicy probe-require-jwt -n starfleet` before you start the mission.
+The groups token gets in, and the demo token, which has no `groups` claim, is still refused. Clean up with `kubectl delete authorizationpolicy probe-require-jwt -n starfleet` before you start the lab.
 
 ## Common pitfalls
 
@@ -173,15 +173,15 @@ The groups token gets in, and the demo token, which has no `groups` claim, is st
 
 ## Your mission: Fix The Claim Rule
 
-You can now find a broken claim rule from the proxy's configuration and a decoded token. Now prove it in a graded mission: a policy on the probe refuses the admin group and blocks a path that should be public, and you have to find and fix both faults.
+You can now find a broken claim rule from the proxy's configuration and a decoded token. The graded lab gives you a policy on the probe that refuses the administrator group and blocks a path that should be public. You have to find and fix both faults.
 
-The mission runs in its own training solar system, so first pause your playground. Nothing in it is lost:
+The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
 
 ```sh
 astrona stop ats-015-playground-030-02
 ```
 
-Then start the mission:
+Then start the lab:
 
 ```sh
 astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-030/module-02/labs/lab-02
@@ -193,7 +193,7 @@ Read the task in [`question.md`](./labs/lab-02/question.md) and solve it on your
 astrona submit -c sections/section-030/module-02/labs/lab-02
 ```
 
-When the mission is done, remove it and wake your playground up again:
+When the lab is done, remove it and start your playground again:
 
 ```sh
 astrona destroy ats-015-lab-030-02-02
