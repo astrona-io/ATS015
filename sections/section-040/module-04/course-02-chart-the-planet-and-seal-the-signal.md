@@ -1,6 +1,8 @@
 # Originate TLS With A ServiceEntry And A DestinationRule
 
-TLS origination needs two Istio objects, and each one does one half of the job. You add them one at a time here, and after each one you send a request to see what changed. The half-done stage has its own symptom, and you will meet it again whenever one half is missing.
+An app that calls `https://` hides its requests from the mesh, and an app that calls `http://` sends them across the internet in plain text. TLS origination fixes both: the app calls `http://`, and its own sidecar proxy (Envoy) encrypts the request before it leaves the pod. To make that happen, you have to tell the sidecar two things about the outside host.
+
+This chapter adds the two Istio objects that do it, one at a time. After each one you send a request and see what changed. The half-done stage has its own symptom, and you will meet it again whenever one half is missing.
 
 ```mermaid
 flowchart LR
@@ -8,14 +10,18 @@ flowchart LR
     S -->|"TLS to port 443"| X["httpbin.org"]
 ```
 
-The diagram shows the goal. The `shuttle` app sends a plain HTTP request to its own sidecar proxy (Envoy) on port `80`. The sidecar encrypts it with TLS and sends it on to port `443` of the real server. Two settings make the right-hand arrow work:
+The diagram shows the goal. The `shuttle` app sends a plain HTTP request to its own sidecar on port `80`. The sidecar encrypts it with TLS and sends it on to port `443` of the real server. Two settings make the right-hand arrow work:
 
 - **`ServiceEntry` port `80` with `targetPort: 443`** decides **where** the sidecar connects: "requests the app sends to port 80 go to port 443 on the real server".
 - **`DestinationRule` `tls.mode: SIMPLE` for port `80`** decides **how** it connects: "start a normal TLS connection".
 
-## Before you send anything
+## Half done: add the ServiceEntry
 
-The commands below use two helpers. Paste them into your terminal if you have not yet. The first prints the status code and the time of one request from the `shuttle` pod. The second waits two seconds and prints the last line of the `shuttle` pod's access log, where the sidecar writes one line per request.
+The first half tells the sidecar about the host. A `ServiceEntry` adds an external host to Istio's service registry, the list of services the mesh knows about. For origination it needs **two** ports. Port `80` with protocol `HTTP` is where the app's plain request arrives, so the sidecar knows it can read it. Port `443` with protocol `HTTPS` keeps the app's own `https://` calls working as before.
+
+The key field is `targetPort` on port `80`. The app still calls port `80`, but the sidecar connects to port `443` on the real server.
+
+The commands in this chapter use two helpers. Paste them into your terminal if you have not yet. The first prints the status code and the time of one request from the `shuttle` pod. The second waits two seconds and prints the last line of the `shuttle` pod's access log, where the sidecar writes one line per request.
 
 <!-- astrona:playground:renew -->
 
@@ -24,15 +30,7 @@ status_and_time() { kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/
 last_log_line() { sleep 2; kubectl logs -n starfleet deploy/shuttle -c istio-proxy --tail=1; }
 ```
 
-## Half done: add the ServiceEntry
-
-A `ServiceEntry` adds an external host to Istio's service registry, the list of services the mesh knows about. For origination it needs **two** ports. Port `80` with protocol `HTTP` is where the app's plain request arrives, so the sidecar knows it can read it. Port `443` with protocol `HTTPS` keeps the app's own `https://` calls working as before.
-
-The key field is `targetPort` on port `80`. The app still calls port `80`, but the sidecar connects to port `443` on the real server.
-
-### Add httpbin.org to the service registry
-
-Save this as `serviceentry-httpbin-org.yaml`:
+Now add `httpbin.org` to the service registry. Save this as `serviceentry-httpbin-org.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -75,17 +73,17 @@ last_log_line
 [2026-10-09T10:47:02.469Z] "GET /get HTTP/1.1" 400 - via_upstream - "-" 0 220 237 236 "-" "curl/8.11.1" "cd5fbb11-eac5-4eeb-8a4b-8820ef4f96cd" "httpbin.org" "98.89.203.252:443" outbound|80||httpbin.org 10.244.0.6:59970 54.159.186.149:80 10.244.0.6:58506 - default
 ```
 
-If you still see `200`, `istiod` (Istio's control plane, which sends configuration to every proxy) has not pushed the new configuration to the sidecar yet: wait a few seconds and send the request again.
+If you still see `200`, `istiod` (Istio's control plane, which sends configuration to every proxy) has not pushed the new configuration to the sidecar yet. Wait a few seconds and send the request again.
 
-Two things changed. The log line is readable now: the sidecar knows port `80` carries HTTP, so it logs the method, the path and the status. The cluster `outbound|80||httpbin.org` is the port the shuttle called, and the upstream address `"98.89.203.252:443"` ends in `:443`, so `targetPort` worked. But the sidecar still speaks plain HTTP, and the server on port `443` expects TLS. So httpbin.org rejects the request with `400`. Only half the job is done.
+Two things changed. First, the log line is readable now: the sidecar knows port `80` carries HTTP, so it logs the method, the path and the status. The cluster `outbound|80||httpbin.org` is the port the shuttle called, and the upstream address `"98.89.203.252:443"` ends in `:443`, so `targetPort` worked.
+
+Second, the request failed. The sidecar still speaks plain HTTP, and the server on port `443` expects TLS. So httpbin.org rejects the request with `400`. Only half the job is done.
 
 ## Add the TLS settings
 
-A `DestinationRule` sets the traffic policy for one destination. Its `tls` block with `mode: SIMPLE` makes the sidecar open a TLS connection, like a normal HTTPS client.
+The second half tells the sidecar how to connect. A `DestinationRule` sets the traffic policy for one destination. Its `tls` block with `mode: SIMPLE` makes the sidecar open a TLS connection, like a normal HTTPS client.
 
-Put the `tls` block under `portLevelSettings` for port `80` only: that is the port the app's plain request uses. Port `443` must stay as it is, because the app's own `https://` requests already arrive there encrypted. The `sni` field is the server name the sidecar sends in the TLS handshake. The sidecar is the TLS client now, so it names the server.
-
-### Add the DestinationRule
+Put the `tls` block under `portLevelSettings` for port `80` only, because that is the port the app's plain request uses. Port `443` must stay as it is, because the app's own `https://` requests already arrive there encrypted. The `sni` field is the server name the sidecar sends in the TLS handshake. The sidecar is the TLS client now, so it names the server.
 
 Save this as `destinationrule-httpbin-org.yaml`:
 
@@ -130,11 +128,9 @@ The shuttle sent `http://`, and httpbin.org says it was reached on `https://`. T
 
 ## Proof from the proxy
 
-The server's response is one proof. The second proof is in the sidecar's own configuration. Each port of `httpbin.org` is a **cluster** in the shuttle's proxy: a named destination it can send to. A cluster that starts TLS on its connections carries a **transport socket** named `envoy.transport_sockets.tls`, and it holds the `sni` name you set.
+The server's response is one proof that the sidecar started TLS. The second proof is in the sidecar's own configuration, and it is useful when you cannot reach the server at all. Each port of `httpbin.org` is a **cluster** in the shuttle's proxy: a named destination it can send to. A cluster that starts TLS on its connections carries a **transport socket** named `envoy.transport_sockets.tls`, and that socket holds the `sni` name you set.
 
-### Read the shuttle's clusters for httpbin.org
-
-List the clusters, then look inside the one for port `80`:
+List the shuttle's clusters for `httpbin.org`, then look inside the one for port `80`:
 
 ```sh
 istioctl proxy-config cluster deploy/shuttle -n starfleet --fqdn httpbin.org
@@ -149,7 +145,9 @@ httpbin.org      443      -          outbound      STRICT_DNS     httpbin-org.st
                 "sni": "httpbin.org"
 ```
 
-Both clusters use the `httpbin-org` `DestinationRule` in `starfleet`. `STRICT_DNS` means the sidecar looks up the address of `httpbin.org` itself, because of `resolution: DNS`. The port `80` cluster carries the TLS transport socket and the SNI name `httpbin.org`. That is the setting that makes the sidecar start TLS for every request it sends there. If the second command prints nothing, the new configuration has not reached the sidecar yet: wait a second and run it again.
+Both clusters use the `httpbin-org` `DestinationRule` in `starfleet`. `STRICT_DNS` means the sidecar looks up the address of `httpbin.org` itself, because of `resolution: DNS`. The port `80` cluster carries the TLS transport socket and the SNI name `httpbin.org`. That is the setting that makes the sidecar start TLS for every request it sends there. If the second command prints nothing, the new configuration has not reached the sidecar yet, so wait a second and run it again.
+
+You have now built TLS origination from its two halves. The `ServiceEntry` decides where the sidecar connects, and the `DestinationRule` decides how; with only the first, the server answers `400`. The sidecar now encrypts every request on port `80`, but it does not yet insist on talking to the right server. That check is the next question.
 
 ## Common pitfalls
 
@@ -158,5 +156,3 @@ Both clusters use the `httpbin-org` `DestinationRule` in `starfleet`. `STRICT_DN
 > - **The `tls` block on port `443`.** The app's plain request uses port `80`. Set TLS on the port the app calls, not the port the server listens on.
 > - **`tls` at the top of `trafficPolicy`.** It turns on TLS for every port of the host, including `443`, so the app's own `https://` requests get encrypted a second time and fail. When the course was tested, `curl https://httpbin.org/get` from the shuttle then failed with exit code `35` and `packet length too long`. Use `portLevelSettings`.
 > - **Trusting a `200` alone.** Check the server's view (`"url": "https://..."`) and the port `80` cluster (`envoy.transport_sockets.tls`).
-
-> *The `ServiceEntry` decides where the sidecar connects, and the `DestinationRule` decides how. You need both.*
