@@ -1,13 +1,13 @@
 # Practice: Authorize HTTP Traffic Between Workloads
 
-Two exam-style missions for this playground, astronaut. Start the playground
+Two exam-style tasks for this playground. Start the playground
 first, and paste the helpers from [overview.md](./overview.md#helpers). The
 solutions use them.
 
 Try each task on your own first, then open the solution. The solutions were
 run and checked on a real cluster.
 
-Start each task from a clean planet: `kubectl delete authorizationpolicy --all -n starfleet`.
+Start each task from a clean namespace: `kubectl delete authorizationpolicy --all -n starfleet`.
 Leave the `STRICT` `PeerAuthentication` in place.
 
 ## Task 1: one caller, one method, one path
@@ -18,8 +18,8 @@ Leave the `STRICT` `PeerAuthentication` in place.
 
 <details><summary>Solution</summary>
 
-Two policies: the empty guest list for the whole planet, and one narrow entry
-for the probe.
+Two policies: the allow-nothing policy for the whole namespace, and one
+narrow `ALLOW` policy for the probe.
 
 Save this as `authorizationpolicy-allow-nothing.yaml`:
 
@@ -81,13 +81,13 @@ Code 403
 403 403 403 <- -X POST http://probe:8000/post
 ```
 
-fortio sends a `POST` when you give it `-payload`. The shuttle is turned away
-because it carries another ID badge (`sa/shuttle`), even though it asks for
+fortio sends a `POST` when you give it `-payload`. The shuttle is denied
+because it has another identity (`sa/shuttle`), even though it asks for
 the same method and path.
 
 </details>
 
-## Task 2: a whole planet, one path
+## Task 2: a whole namespace, one path
 
 > In namespace `starfleet`, deny everything by default. Then allow **every**
 > workload in the `starfleet` namespace to **GET** `/headers` on the probe.
@@ -96,7 +96,7 @@ the same method and path.
 <details><summary>Solution</summary>
 
 This needs the `allow-nothing` policy from task 1. Apply it first if you
-started from a clean planet.
+started from a clean namespace.
 
 Save this as `authorizationpolicy-probe-allow-starfleet-headers.yaml`:
 
@@ -141,8 +141,8 @@ Code 200
 403 403 403 <- http://probe:8000/get
 ```
 
-`namespaces` matches the planet name printed on the caller's ID badge, so
-both the shuttle and fortio get in. `/get` is a different path, so no rule
-fits and the guard turns it away.
+`namespaces` matches the namespace in the caller's certificate, so both the
+shuttle and fortio get in. `/get` is a different path, so no rule matches and
+the probe's proxy denies it.
 
 </details>

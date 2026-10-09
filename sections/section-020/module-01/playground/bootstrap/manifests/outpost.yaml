@@ -1,8 +1,8 @@
-# The outpost: a planet WITHOUT sidecar injection, on purpose.
-# The drifter is an old ship with no communications officer on board (1/1).
+# The outpost: a namespace WITHOUT sidecar injection, on purpose.
+# The drifter is a client pod with no sidecar proxy (1/1).
 # It is the contrast for the module: the same client image as the shuttle,
-# but its signals never pass through a proxy on the way out. With no proxy it
-# gets no certificate, so it has no ID badge (no SPIFFE identity) at all and
+# but its requests never pass through a proxy on the way out. With no proxy it
+# gets no certificate, so it has no workload identity (no SPIFFE ID) at all and
 # can only send plain text.
 apiVersion: v1
 kind: Namespace

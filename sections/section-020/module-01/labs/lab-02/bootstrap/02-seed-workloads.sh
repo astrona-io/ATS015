@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Creates the planet `starfleet` (sidecar injection on), mesh-wide access logs,
+# Creates the namespace `starfleet` (sidecar injection on), mesh-wide access logs,
 # the Starfleet (bridge, cargo, scout v1-v3, navcom), the shuttle client and a
-# STRICT PeerAuthentication, so every caller carries a checked identity.
+# STRICT PeerAuthentication, so every caller carries a verified identity.
 # astrona runs this script with KUBECONFIG pointed at the lab cluster.
 set -euo pipefail
 cd "$(dirname "$0")"

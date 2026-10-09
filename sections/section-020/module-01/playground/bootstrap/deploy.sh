@@ -9,7 +9,7 @@
 #   - namespace outpost without injection, with the drifter: no sidecar, so no
 #     certificate and no identity
 #   - a STRICT PeerAuthentication for starfleet: the precondition, so every
-#     caller that gets in carries a checked identity
+#     caller that gets in carries a verified identity
 # No AuthorizationPolicy is created: writing them is the module.
 set -euo pipefail
 

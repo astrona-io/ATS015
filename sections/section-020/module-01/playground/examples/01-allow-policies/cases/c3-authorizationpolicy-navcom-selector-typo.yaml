@@ -1,6 +1,6 @@
-# Case 3: the navcom guest list with a typo in the selector (navcomm).
+# Case 3: the navcom policy with a typo in the selector (navcomm).
 # The object is accepted, but it selects no pod, so it never reaches navcom's
-# proxy. navcom is then covered only by allow-nothing, and the scouts lose
+# proxy. navcom is then covered only by allow-nothing, and the scout pods lose
 # their star ratings. istioctl analyze reports the empty selector.
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy

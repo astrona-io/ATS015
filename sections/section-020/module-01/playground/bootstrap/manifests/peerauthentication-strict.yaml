@@ -1,9 +1,9 @@
-# The precondition for this playground: STRICT mTLS on the planet starfleet.
-# Every ship must do the secret handshake (mTLS) before it may dock. So every
-# caller that gets in has a checked ID badge, and `principals` and
-# `namespaces` rules in an AuthorizationPolicy have a real name to compare.
-# The drifter on the outpost has no communications officer and no badge, so
-# its plain-text signals are cut off here, before any AuthorizationPolicy runs.
+# The precondition for this playground: STRICT mTLS in the namespace starfleet.
+# Every pod must use mTLS before it may connect. So every caller that gets
+# in has a verified certificate, and `principals` and
+# `namespaces` rules in an AuthorizationPolicy have a real identity to compare.
+# The drifter in the outpost namespace has no sidecar and no certificate, so
+# its plain-text requests are cut off here, before any AuthorizationPolicy runs.
 apiVersion: security.istio.io/v1
 kind: PeerAuthentication
 metadata:

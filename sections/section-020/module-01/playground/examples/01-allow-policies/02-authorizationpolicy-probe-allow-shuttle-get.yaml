@@ -15,7 +15,7 @@ spec:
   rules:
   - from:
     - source:
-        # Caller identity from its mTLS certificate (the name on its ID badge):
+        # Caller identity from its mTLS certificate (its SPIFFE ID without spiffe://):
         # <trust domain>/ns/<namespace>/sa/<service account>
         # Needs mTLS: a caller without a sidecar has no principal.
         principals:

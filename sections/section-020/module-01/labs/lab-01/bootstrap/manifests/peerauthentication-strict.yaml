@@ -1,5 +1,5 @@
 # The precondition for this lab: STRICT mTLS in authz-demo. Every caller must
-# do the secret handshake, so `principals` rules have a checked identity to
+# use mTLS, so `principals` rules have a verified identity to
 # compare. Do not change or remove it.
 apiVersion: security.istio.io/v1
 kind: PeerAuthentication

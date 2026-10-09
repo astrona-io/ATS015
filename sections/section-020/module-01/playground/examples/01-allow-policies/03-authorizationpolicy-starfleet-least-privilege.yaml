@@ -1,5 +1,5 @@
 # Open the Starfleet again under allow-nothing, with least privilege:
-# each ship may only be called by the ship that really needs it.
+# each workload may only be called by the workload that really needs it.
 #
 #   anyone ──▶ bridge ──▶ cargo
 #                    └──▶ scout ──▶ navcom
@@ -18,7 +18,7 @@ spec:
       app: bridge
   action: ALLOW
   rules:
-  # No "from": any source with a valid handshake (STRICT mTLS still applies).
+  # No "from": any source with a valid mTLS certificate (STRICT mTLS still applies).
   - to:
     - operation:
         methods: ["GET"]

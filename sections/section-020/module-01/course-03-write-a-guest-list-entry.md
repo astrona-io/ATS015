@@ -1,14 +1,14 @@
-# Write A Guest List Entry
+# Write An ALLOW Rule
 
-Astronaut, the planet is closed. Now you open it again, one narrow door at a time. Each door is a **rule** on a guest list: who may come in, through which door, and under which extra conditions.
+The namespace is closed. Now you open it again, one narrow call at a time. Each opening is a **rule** in an `ALLOW` policy: who may call, which operation they may use, and under which extra conditions.
 
 A rule has three optional parts, and they combine in a fixed way. Almost every policy that "looks right but does not work" comes from misreading how those parts combine. This part settles that.
 
 The commands below need the `allow-nothing` policy (`spec: {}` in `starfleet`) applied in your playground, and the three helpers from the module's landing page pasted into your terminal.
 
-## Open one door
+## Open one call
 
-Start with one real rule: only the shuttle may read from the probe. You apply it first, then take it apart.
+Start with one real rule: only the `shuttle` may read from the `probe`. You apply it first, then take it apart.
 
 ### Only the shuttle, only GET
 
@@ -58,40 +58,40 @@ from_fortio http://probe:8000/get
 Code 403
 ```
 
-Only the first one gets in. The shuttle's `POST` fails on the method. fortio's `GET` fails on the caller: it carries the badge `sa/default`, not `sa/shuttle`.
+Only the first one gets in. The `shuttle`'s `POST` fails on the method. The `fortio` `GET` fails on the caller: its identity is `sa/default`, not `sa/shuttle`.
 
 ### Read it out loud
 
-Read a rule as one sentence, starting with the selector: *on the probe ships, allow a caller with the badge `cluster.local/ns/starfleet/sa/shuttle` to use `GET`*. And, because `allow-nothing` is still there, nothing else.
+Read a rule as one sentence, starting with the selector: *on the `probe` pods, allow a caller with the identity `cluster.local/ns/starfleet/sa/shuttle` to use `GET`*. And, because `allow-nothing` is still there, nothing else.
 
 If a policy is hard to read aloud in one sentence, its parts probably do not combine the way its author thought.
 
 ## The three parts of a rule
 
-Every rule is built from up to three parts. Each part answers a different question, and each one gets its facts from a different stage of the signal's path.
+Every rule is built from up to three parts. Each part answers a different question, and each one gets its facts from a different stage of the request's path.
 
 ### From, to and when
 
 ```yaml
   rules:
-  - from:                       # who sends the signal
+  - from:                       # who sends the request
     - source:
-        principals: [...]         # the name on the caller's ID badge (from mTLS)
-        namespaces: [...]         # the caller's planet (from mTLS)
+        principals: [...]         # the identity in the caller's certificate (from mTLS)
+        namespaces: [...]         # the caller's namespace (from mTLS)
         ipBlocks: [...]           # the caller's address
-        requestPrincipals: [...]  # the astronaut's boarding pass (from a JWT)
-    to:                         # which door and channel the signal asks for
+        requestPrincipals: [...]  # the end user's identity (from a JWT)
+    to:                         # which operation and port the request asks for
     - operation:
         methods: [...]            # GET, POST, ...
         paths: [...]              # /get, /status/*, ...
         ports: [...]              # the destination port
         hosts: [...]              # the Host header
-    when:                       # extra conditions on the signal
+    when:                       # extra conditions on the request
     - key: request.headers[x-mission]
       values: ["apollo"]
 ```
 
-`from` facts come from the handshake, `to` facts from reading the HTTP request, and token facts in `when` from the token check. That is why `principals` fails quietly without mTLS, and why token conditions need a `RequestAuthentication`.
+`from` facts come from mTLS, `to` facts from reading the HTTP request, and token facts in `when` from the JWT check. That is why `principals` fails quietly without mTLS, and why token conditions need a `RequestAuthentication`.
 
 Every field also has a "not" form, for example `notMethods`, `notPaths` and `notPrincipals`. It means "everything except these".
 
@@ -106,8 +106,8 @@ flowchart TB
     V["values in one field"] -->|"OR: any one fits"| F["fields in one part"]
     F -->|"AND: all must fit"| P["parts in one rule"]
     P -->|"AND: all must fit"| R["rules in one policy"]
-    R -->|"OR: any rule fits"| L["policies on one ship"]
-    L -->|"OR: any policy fits"| OK["signal allowed"]
+    R -->|"OR: any rule fits"| L["policies on one workload"]
+    L -->|"OR: any policy fits"| OK["request allowed"]
 ```
 
 Read the diagram from the top: OR inside a list of values, AND across fields and parts, then OR again across rules and policies.
@@ -115,13 +115,13 @@ Read the diagram from the top: OR inside a list of values, AND across fields and
 Two facts follow, and both catch people out:
 
 - **A part you leave out is not a limit.** No `to` means *any* operation, not *no* operation. A rule with only `from` lets that caller do anything.
-- **Two rules are never an "and".** A second rule can only let more signals in. To say "this caller, but only these methods", put both in **one** rule, as two parts.
+- **Two rules are never an "and".** A second rule can only let more requests in. To say "this caller, but only these methods", put both in **one** rule, as two parts.
 
 Several `- source:` entries under one `from` are combined with OR. That is the usual way to say "either of these two callers" without copying the whole rule.
 
 ### See a missing part at work
 
-This rule has a `to` part and no `from` part, so it lets **any** caller with a badge read one path. Save this as `authorizationpolicy-probe-allow-headers.yaml`:
+This rule has a `to` part and no `from` part, so it lets **any** caller with a certificate read one path. Save this as `authorizationpolicy-probe-allow-headers.yaml`:
 
 ```yaml
 apiVersion: security.istio.io/v1
@@ -146,7 +146,7 @@ Apply it:
 kubectl apply -f authorizationpolicy-probe-allow-headers.yaml
 ```
 
-Then check the result from fortio, the caller that no rule names:
+Then check the result from `fortio`, the caller that no rule names:
 
 ```sh
 from_fortio http://probe:8000/headers
@@ -158,7 +158,7 @@ Code 200
 Code 403
 ```
 
-fortio now gets in on `/headers`, because the rule does not ask who is calling. `/get` is still closed to fortio, because no rule on any list fits it.
+`fortio` now gets in on `/headers`, because the rule does not ask who is calling. `/get` is still closed to `fortio`, because no rule in any policy matches it.
 
 ## Path matching, exactly
 
@@ -176,11 +176,11 @@ There is no regular expression and no wildcard in the middle. A `*` only works a
 
 Matching is case-sensitive and looks at the path only. The query string after `?` is not part of it. To check a header or a query value, use `when`.
 
-Two habits follow. An exact path in an `ALLOW` rule is often too narrow: `/status` does not let in `/status/200`. And an exact path in a `DENY` rule is often too wide open: banning `/admin` still lets in `/admin/users`.
+Two habits follow. An exact path in an `ALLOW` rule is often too narrow: `/status` does not let in `/status/200`. And an exact path in a `DENY` rule often leaves a gap: denying `/admin` still lets in `/admin/users`.
 
 ## `when`, briefly
 
-`when` checks facts that are not "who" or "which operation": request headers, the destination address, and, after a `RequestAuthentication` has run, the lines printed on a boarding pass (the token's claims).
+`when` checks facts that are not "who" or "which operation". Examples are request headers, the destination address and, after a `RequestAuthentication` has run, the JWT's claims (the facts written inside the token).
 
 ### The syntax
 
@@ -192,13 +192,13 @@ Two habits follow. An exact path in an `ALLOW` rule is often too narrow: `/statu
 
 Each entry has a `key` and either `values` or `notValues`. Entries are combined with AND, with each other and with the rest of the rule. That is the whole syntax.
 
-A `when` on a header is only as trustworthy as the header. The caller sets it, so the caller controls it. Conditions on `request.auth.claims[...]` are different: a signature was checked before those facts existed.
+A `when` on a header is only as trustworthy as the header. The caller sets it, so the caller controls it. Conditions on `request.auth.claims[...]` are different: the proxy checked a signature before those facts existed.
 
 ## Common pitfalls
 
 > [!WARNING]
 > - **Reading values in a list as "and".** `methods: ["GET", "POST"]` means either one.
-> - **Reading separate rules as "and".** A signal that fits any one rule gets in.
+> - **Reading separate rules as "and".** A request that matches any one rule gets in.
 > - **Leaving a part out and expecting it to limit.** No `from` means every caller; no `to` means every operation.
 > - **Splitting one idea over two rules.** "This caller, only GET" is one rule with a `from` and a `to`.
 > - **Guessing how paths match.** Exact, prefix (`/x/*`) and suffix (`*/x`) behave differently, and there is no regular expression.
