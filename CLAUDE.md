@@ -319,7 +319,9 @@ use the Starfleet.
 - **Playgrounds install Istio with Helm** (`istio-base` and `istiod`, plus the
   `istio-ingress` gateway chart where a module needs a gateway), the same way
   as ATS014. Section 060 installs the ambient charts (`istio-cni`, `ztunnel`).
-  Older graded labs still install with `istioctl install --set profile=demo`.
+  Labs install the same way; a few older labs still use
+  `istioctl install --set profile=demo`, and either is fine while the lab
+  passes `astrona test`.
 - **No load balancer on `kind`.** A gateway Service's `EXTERNAL-IP` stays
   `<pending>`. Playgrounds reach the gateway through the `portForwards` in
   `config.yaml` (`127.0.0.1:8080` and `127.0.0.1:8443`); labs use
