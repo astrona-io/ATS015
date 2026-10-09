@@ -1,12 +1,12 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. The certificate was fine all along. It sat in a Secret on the wrong planet, so the gateway never received it, and the `Gateway` served a host name nobody asks for. You find each fault from its clue, fix it, and prove the bridge answers over HTTPS.
+The certificate was fine all along. It sat in a Secret in the wrong namespace, so the gateway never received it, and the `Gateway` served a host name nobody asks for. You find each fault from its clue, fix it, and prove the bridge answers over HTTPS.
 
 ---
 
 ## Step 1: Confirm the failure
 
-Get the CA onto your machine, then send one HTTPS signal:
+Get the CA onto your machine, then send one HTTPS request:
 
 ```sh
 kubectl get configmap starfleet-ca -n starfleet -o jsonpath='{.data.ca\.crt}' > starfleet-ca.crt
@@ -18,9 +18,9 @@ curl -s -o /dev/null -w "%{http_code} " --cacert starfleet-ca.crt \
 000 exit=35
 ```
 
-`000` means no HTTP was spoken. Exit code `35` says the gate cut the handshake, so the problem is at the gate: its certificate, or the host names it serves. The exit code cannot tell you which, so ask the gateway next.
+`000` means no HTTP was spoken. Exit code `35` says the gateway closed the handshake, so the problem is at the gateway: its certificate, or the host names it serves. The exit code cannot tell you which, so ask the gateway next.
 
-After a failed handshake the port forward on `8443` restarts itself. If you send another signal within a few seconds and get `000 exit=7`, wait ten seconds and try again.
+After a failed handshake the port forward on `8443` restarts itself. If you send another request within a few seconds and get `000 exit=7`, wait ten seconds and try again.
 
 ## Step 2: Ask the gateway what it holds
 
@@ -50,7 +50,7 @@ Error: Analyzers found issues when analyzing namespace: starfleet.
 See https://istio.io/v1.30/docs/reference/config/analysis for more information about causes and resolutions.
 ```
 
-`IST0101` says the `Gateway`'s `credentialName` does not resolve. `IST0132` says the flight plan asks for `starfleet.example.com`, but the `Gateway` does not serve that host. Now look at where the Secret really is, and at the host the `Gateway` serves:
+`IST0101` says the `Gateway`'s `credentialName` does not resolve. `IST0132` says the `VirtualService` asks for `starfleet.example.com`, but the `Gateway` does not serve that host. Now look at where the Secret really is, and at the host the `Gateway` serves:
 
 ```sh
 kubectl get secret -A --field-selector metadata.name=starfleet-credential
@@ -63,7 +63,7 @@ starfleet   starfleet-credential   kubernetes.io/tls   2      29s
 ["bridge.example.com"]
 ```
 
-Two faults: the Secret is in `starfleet`, and the door serves `bridge.example.com` instead of `starfleet.example.com`.
+Two faults: the Secret is in `starfleet`, and the HTTPS server serves `bridge.example.com` instead of `starfleet.example.com`.
 
 ---
 
@@ -127,7 +127,7 @@ gateway.networking.istio.io/starfleet-gateway configured
 
 ## Step 6: Prove it
 
-Wait about thirty seconds, so `istiod` can push the new certificate and door to the gateway. Then check the gateway first, and send a signal:
+Wait about thirty seconds, so `istiod` can push the new certificate and server to the gateway. Then check the gateway first, and send a request:
 
 ```sh
 istioctl proxy-config secret deploy/istio-ingress -n istio-ingress | grep starfleet-credential

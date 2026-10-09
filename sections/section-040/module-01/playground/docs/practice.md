@@ -1,12 +1,12 @@
 # Practice: Serve The Bridge Over HTTPS
 
-An exam-style mission for this playground, astronaut. Start the playground
+An exam-style task for this playground. Start the playground
 first, make the test certificates and paste the `https_status` helper from
 [overview.md](./overview.md#helper). The solution uses them.
 
 Try the task on your own first, then open the solution.
 
-## Task: put the arrival gate behind HTTPS
+## Task: serve HTTPS at the ingress gateway
 
 > Serve `starfleet.example.com` over HTTPS at the ingress gateway with a TLS
 > Secret named **`starfleet-tls`** (use the certificate and key in `certs/`).
@@ -24,7 +24,7 @@ kubectl create -n istio-ingress secret tls starfleet-tls \
   --key=certs/starfleet.example.com.key --cert=certs/starfleet.example.com.crt
 ```
 
-Then open the gate. Save this as `gateway-starfleet.yaml`:
+Then create the `Gateway`. Save this as `gateway-starfleet.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -61,7 +61,7 @@ Apply it:
 kubectl apply -f gateway-starfleet.yaml
 ```
 
-Then write the flight plan. Save this as `virtualservice-bridge.yaml`:
+Then write the `VirtualService`. Save this as `virtualservice-bridge.yaml`:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -104,10 +104,10 @@ curl -s -o /dev/null -w "%{http_code}\n" --resolve starfleet.example.com:8080:12
 301
 ```
 
-If the first line is not `200` right after the apply, wait ten seconds and run it again: the gate needs a moment to receive its orders.
+If the first line is not `200` right after the apply, wait ten seconds and run it again: the gateway needs a moment to receive its new configuration.
 
-HTTPS answers `200`, so the gateway loaded `starfleet-tls` and the flight plan
-reaches the bridge. Plain HTTP gets `301`, so port `80` only sends callers to
+HTTPS answers `200`, so the gateway loaded `starfleet-tls` and the `VirtualService`
+routes to `bridge`. Plain HTTP gets `301`, so port `80` only sends callers to
 HTTPS and serves nothing itself.
 
 </details>

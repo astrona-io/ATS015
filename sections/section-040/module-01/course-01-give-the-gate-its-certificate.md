@@ -1,6 +1,6 @@
-# Give The Gate Its Certificate
+# Create A TLS Certificate And Secret
 
-Astronaut, before the arrival gate can speak HTTPS, it needs a certificate to show and a private key to go with it. In this part you make both with `openssl`, and you put them in the one place the gateway reads them from. Get that place right now, and the rest of the module is easy.
+Before the ingress gateway can serve HTTPS, it needs a certificate to show and a private key to go with it. The ingress gateway is an Envoy proxy at the edge of the mesh that accepts traffic from outside the cluster. In this part you make the certificate and key with `openssl`, and you put them in the one place the gateway reads them from. Get that place right now, and the rest of the module is easy.
 
 ## Certificates in one picture
 
@@ -8,19 +8,19 @@ A certificate is easy to use and easy to misread. This section gives you the thr
 
 ### What a certificate proves
 
-A **certificate** is a ship's ID papers. It says "I am `starfleet.example.com`", and it carries a public key. The ship keeps the matching **private key** secret. During the **TLS handshake** (the first greeting, where both sides agree how to seal the signal), the gate shows its certificate and proves it holds the private key.
+A **certificate** is a signed file that binds a name to a public key. It says "I am `starfleet.example.com`", and it carries a public key. The server keeps the matching **private key** secret. During the **TLS handshake** (the first messages of a connection, where both sides agree how to encrypt it), the gateway shows its certificate and proves it holds the private key.
 
 ### Who signs it
 
-Anyone can write ID papers, so a client only believes papers that someone it trusts has signed. That signer is a **certificate authority (CA)**: think of it as Starfleet Command's registry office, which stamps every pilot's licence. A browser trusts a list of public CAs. In your playground you make your own small CA, and you tell `curl` to trust it.
+Anyone can create a certificate, so a client only believes a certificate that someone it trusts has signed. That signer is a **certificate authority (CA)**: a key pair whose job is to sign other certificates. A browser trusts a list of public CAs. In your playground you make your own small CA, and you tell `curl` to trust it.
 
-### The name on the papers
+### The name in the certificate
 
-The client also checks that the name on the certificate is the name it asked for. Modern clients read that name from the **SAN** (subject alternative name), a list of host names inside the certificate. The older `CN` (common name) field is not enough on its own. So your server certificate must list `starfleet.example.com` in its SAN.
+The client also checks that the name in the certificate is the name it asked for. Modern clients read that name from the **SAN** (subject alternative name), a list of host names inside the certificate. The older `CN` (common name) field is not enough on its own. So your server certificate must list `starfleet.example.com` in its SAN.
 
 ## Make the certificates
 
-You make two certificates on your own machine: a CA, and a server certificate for the gate that the CA signs. Run every command in the folder where you pasted the helper, so the files land in `certs/` next to it.
+You make two certificates on your own machine: a CA, and a server certificate for the gateway that the CA signs. Run every command in the folder where you pasted the helper, so the files land in `certs/` next to it.
 
 <!-- astrona:playground:renew -->
 
@@ -45,7 +45,7 @@ The rows of dots and plus signs are `openssl` searching for the large prime numb
 
 `req -x509` makes a finished certificate in one step instead of a request. `-nodes` ("no DES") leaves the private key unencrypted. The gateway starts on its own, with nobody to type a password, so its key must be readable without one. `-subj` fills in the name, so `openssl` does not ask you questions.
 
-### A server certificate for the gate
+### A server certificate for the gateway
 
 Now make a key and a signing request for `starfleet.example.com`, and let your CA sign it. The small `san.ext` file adds the SAN:
 
@@ -65,7 +65,7 @@ Certificate request self-signature ok
 subject=O=Starfleet, CN=starfleet.example.com
 ```
 
-The `.csr` file is the request: "please sign papers for this name and this public key". `openssl x509 -req` is the CA doing the signing.
+The `.csr` file is the certificate signing request: "please sign a certificate for this name and this public key". `openssl x509 -req` is the CA doing the signing.
 
 ### Read what you made
 
@@ -81,7 +81,7 @@ openssl x509 -in certs/starfleet.example.com.crt -noout -text | grep -E "Issuer:
                 DNS:starfleet.example.com
 ```
 
-The issuer is your CA, the subject is the gate's name, and the SAN lists `starfleet.example.com`. These are the papers the gate will show.
+The issuer is your CA, the subject is the gateway's host name, and the SAN lists `starfleet.example.com`. This is the certificate the gateway will show.
 
 ## Where the gateway looks for its certificate
 
@@ -97,11 +97,11 @@ In the `Gateway`, the TLS settings look like this:
       credentialName: starfleet-credential
 ```
 
-`credentialName` is the name of a Kubernetes **Secret** (a safe box for keys). It is not a file path, and it has no namespace part. Istio looks it up in the namespace of the **gateway pod**, here `istio-ingress`. The `Gateway` object itself can live with the app, in `starfleet`. The Secret cannot.
+`credentialName` is the name of a Kubernetes **Secret** (an object that stores sensitive data such as keys). It is not a file path, and it has no namespace part. Istio looks it up in the namespace of the **gateway pod**, here `istio-ingress`. The `Gateway` object itself can live with the app, in `starfleet`. The Secret cannot.
 
-### How the certificate reaches the gate
+### How the certificate reaches the gateway
 
-Nothing is mounted into the gateway pod as a file. Mission control (`istiod`) reads the Secret and radios its contents to the gate's Envoy proxy over **SDS** (secret discovery service), the same way it sends all other orders, with no restart.
+Nothing is mounted into the gateway pod as a file. `istiod`, Istio's control plane, reads the Secret and sends its contents to the gateway's Envoy proxy over **SDS** (secret discovery service). SDS is the part of Istio's configuration protocol that delivers certificates and keys, with no restart.
 
 ```mermaid
 flowchart LR
@@ -114,7 +114,7 @@ flowchart LR
 
 ### Why the rule exists
 
-The gateway's namespace is a border. If `credentialName` could point at any namespace, anyone who can create a Secret anywhere could hand the shared gate a certificate for any host name. Keeping the lookup in the gateway's own namespace means only the people who run the gate decide what it shows.
+The gateway's namespace is a security boundary. If `credentialName` could point at any namespace, anyone who can create a Secret anywhere could give the shared gateway a certificate for any host name. Keeping the lookup in the gateway's own namespace means only the people who run the gateway decide what it shows.
 
 ## Put the certificate in a Secret
 
@@ -162,7 +162,7 @@ tls.crt
 tls.key
 ```
 
-Two keys, with exactly these names: `tls.crt` holds the certificate and `tls.key` the private key. A Secret with other key names, such as `cert` and `key`, is accepted by Kubernetes but gives the gateway nothing it can use. Nothing has changed at the gate yet: the certificate waits in its Secret until a `Gateway` asks for it.
+Two keys, with exactly these names: `tls.crt` holds the certificate and `tls.key` the private key. A Secret with other key names, such as `cert` and `key`, is accepted by Kubernetes but gives the gateway nothing it can use. Nothing has changed at the gateway yet: the certificate waits in its Secret until a `Gateway` asks for it.
 
 > [!TIP]
 > Before you test traffic in a TLS task, list the Secret's key names with the `go-template` above. It takes five seconds and rules out a whole class of silent failures.
@@ -175,4 +175,4 @@ Two keys, with exactly these names: `tls.crt` holds the certificate and `tls.key
 > - **An encrypted private key.** The gateway cannot type a password. Make the key with `-nodes`.
 > - **A certificate without a SAN.** Clients check the host name against the SAN. A certificate with only a `CN` can be refused.
 
-> *The gate's certificate lives in a Secret in the gateway pod's namespace, and `istiod` radios it to the gate over SDS.*
+> *The gateway's certificate lives in a Secret in the gateway pod's namespace, and `istiod` sends it to the gateway over SDS.*

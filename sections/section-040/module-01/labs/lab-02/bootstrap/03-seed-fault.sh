@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The lab's starting state: an HTTPS door to the bridge, broken in two places.
+# The lab's starting state: an HTTPS server for the bridge, broken in two places.
 #   1. The TLS Secret starfleet-credential is in namespace starfleet (where the
 #      Gateway lives), not in istio-ingress (where the gateway POD runs), so
 #      the gateway never receives it.

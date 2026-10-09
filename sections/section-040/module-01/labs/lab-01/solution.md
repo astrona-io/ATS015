@@ -1,6 +1,6 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. Three objects do the work, in this order: the Secret where the gateway pod can read it, the `Gateway` with an HTTPS door and a redirect door, and the `VirtualService` that sends `/book` to the booking service. Then you prove it with real signals.
+Three objects do the work, in this order: the Secret where the gateway pod can read it, the `Gateway` with an HTTPS server and a redirect server, and the `VirtualService` that sends `/book` to the booking service. Then you prove it with real requests.
 
 ---
 
@@ -33,7 +33,7 @@ A Secret next to the `Gateway` object, in `tls-demo`, would be accepted by Kuber
 
 ---
 
-## Step 2: Open the HTTPS door and the redirect door
+## Step 2: Add the HTTPS server and the redirect server
 
 Save this as `gateway-booking.yaml`:
 
@@ -138,7 +138,7 @@ Start a port forward to the gateway in the background:
 kubectl -n istio-system port-forward svc/istio-ingressgateway 8443:443 8080:80 >/dev/null 2>&1 &
 ```
 
-Then send an HTTPS signal and read the certificate the gateway showed:
+Then send an HTTPS request and read the certificate the gateway showed:
 
 ```sh
 curl -sk --resolve booking.ica.local:8443:127.0.0.1 \
@@ -153,7 +153,7 @@ https: 200
 *  issuer: CN=booking.ica.local; O=ica
 ```
 
-`--resolve` connects to your port forward while still sending `booking.ica.local` as the SNI and the `Host` header. The SNI picks the HTTPS door; the `Host` header picks the route. `-k` accepts the self-signed certificate. Subject and issuer are the same because the certificate signed itself.
+`--resolve` connects to your port forward while still sending `booking.ica.local` as the SNI and the `Host` header. The SNI (server name indication) picks the HTTPS server; the `Host` header picks the route. `-k` accepts the self-signed certificate. Subject and issuer are the same because the certificate signed itself.
 
 ---
 

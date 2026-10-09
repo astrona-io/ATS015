@@ -4,7 +4,7 @@ estimated_duration: 3m
 
 # Serve HTTPS At The Ingress Gateway
 
-Welcome to your first edge mission, astronaut. In this graded lab you put a TLS certificate where the ingress gateway can read it, serve HTTPS for one host name, and redirect plain HTTP callers to HTTPS. The lab runs a small app of its own (`booking-service` in `tls-demo`), not the Starfleet.
+In this graded lab you put a TLS certificate where the ingress gateway can read it, serve HTTPS for one host name, and redirect plain HTTP callers to HTTPS. The lab runs a small app of its own (`booking-service` in `tls-demo`), not the Starfleet.
 
 ## Launching the Lab
 

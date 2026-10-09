@@ -2,9 +2,9 @@
 estimated_duration: 3m
 ---
 
-# Repair The Gate's Certificate
+# Fix A Broken HTTPS Gateway
 
-Welcome to a repair mission, astronaut. On the planet `starfleet`, every HTTPS signal to the bridge fails in the handshake, and Kubernetes reported no error. Somewhere between the TLS Secret and the `Gateway`, two things are wrong.
+In this troubleshooting lab, every HTTPS request to `bridge` in the namespace `starfleet` fails in the TLS handshake, and Kubernetes reported no error. Somewhere between the TLS Secret and the `Gateway`, two things are wrong.
 
 Your job is to find both faults with curl's exit code, `istioctl proxy-config secret` and `istioctl analyze`, fix them, and prove that `https://starfleet.example.com/productpage` answers `200` with the right certificate.
 

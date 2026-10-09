@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Confirms the HTTPS door to the bridge is repaired: the Secret
+# Confirms the HTTPS server for the bridge is repaired: the Secret
 # starfleet-credential lives in istio-ingress (where the gateway pod runs) and
 # holds a certificate for starfleet.example.com signed by the lab CA, the
 # Gateway serves starfleet.example.com with SIMPLE TLS from that Secret, the
 # gateway proxy holds the Secret as ACTIVE, istioctl analyze no longer reports
-# IST0101 for the Gateway, and - the part that matters - live HTTPS signals that
+# IST0101 for the Gateway, and - the part that matters - live HTTPS requests that
 # trust only the lab CA reach the bridge.
 
 set -u
@@ -97,7 +97,7 @@ if istioctl analyze -n "$NS" 2>&1 | grep -q "IST0101.*Gateway $NS/$GW"; then
   fail "istioctl analyze -n $NS still reports IST0101 for Gateway $NS/$GW: its credentialName does not resolve"
 fi
 
-# --- 6. live HTTPS signals, trusting only the lab CA -------------------------
+# --- 6. live HTTPS requests, trusting only the lab CA ------------------------
 # kubectl port-forward exits when the gateway cuts a handshake, so restart it
 # whenever it is gone.
 ensure_forward() {
