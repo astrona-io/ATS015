@@ -4,11 +4,11 @@ estimated_duration: 15m
 
 # Close A Path With DENY
 
-Welcome to a lockdown mission, astronaut. A small app has an admin area that nobody inside the cluster should reach. Until it is removed, it must stay shut, even when someone later adds a careless guest list for it.
+A small app has an admin area that no workload inside the cluster should reach. Until it is removed, it must stay closed, even when someone later adds a careless `ALLOW` policy for it.
 
-Your job is to allow the service's normal call, ban the admin path and everything beneath it with a `DENY` policy, and prove that an `ALLOW` for the same path changes nothing.
+In this lab you allow the service's normal call, deny the admin path and everything beneath it with a `DENY` policy, and prove that an `ALLOW` for the same path changes nothing.
 
-This mission uses its own small app, not the Starfleet: `notification-service`, `booking-service` and a `tester` client in the namespace `deny-demo`.
+This lab uses its own small app, not the Starfleet: `notification-service`, `booking-service` and a `tester` client in the namespace `deny-demo`.
 
 ## Launching the Lab
 

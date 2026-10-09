@@ -1,7 +1,7 @@
-# Fortio: the load generator, a swarm of signals fired at once.
+# Fortio: the load generator, it sends many requests at once.
 # In this course it is mostly a second caller with another identity. It has no
-# service account of its own, so it runs as "default" and its ID badge is
-# spiffe://cluster.local/ns/starfleet/sa/default. One test signal:
+# service account of its own, so it runs as "default" and its identity is
+# spiffe://cluster.local/ns/starfleet/sa/default. One test request:
 #   kubectl exec -n starfleet deploy/fortio -c fortio -- \
 #     fortio curl -quiet http://probe:8000/get
 apiVersion: apps/v1

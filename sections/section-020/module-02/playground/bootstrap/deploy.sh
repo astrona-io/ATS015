@@ -5,11 +5,11 @@
 #     names), each with its own service account (starfleet-bridge, ...)
 #   - shuttle (test client, service account "shuttle"), probe v1/v2 (echo
 #     service, service account "probe") and fortio (no service account of its
-#     own, so it runs as "default"): two callers with two different ID badges
+#     own, so it runs as "default"): two callers with two different identities
 #   - namespace outpost without injection, with the drifter: no sidecar, so no
 #     certificate and no identity
 #   - a STRICT PeerAuthentication for starfleet: the precondition, so every
-#     caller's ID badge is checked and can be used in a policy
+#     caller's identity is verified and can be used in a policy
 # No AuthorizationPolicy: writing them is the point of the module.
 set -euo pipefail
 

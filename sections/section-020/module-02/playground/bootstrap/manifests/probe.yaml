@@ -5,9 +5,9 @@
 #   /headers        echo the request headers
 #   /hostname       name of the pod that answered
 #   /status/403     always return 403
-#   /ip             the address the signal came from
-# In this course it is the ship most policies protect: signals to it are
-# easy to read, and its own ID badge is spiffe://cluster.local/ns/starfleet/sa/probe.
+#   /ip             the address the request came from
+# In this course it is the workload most policies protect: requests to it are
+# easy to read, and its own identity is spiffe://cluster.local/ns/starfleet/sa/probe.
 apiVersion: v1
 kind: ServiceAccount
 metadata:

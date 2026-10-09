@@ -1,4 +1,4 @@
-# A guest list for the probe: only the shuttle (by its service account), and
+# An ALLOW policy for the probe: only the shuttle (by its service account), and
 # only with GET. Everything else to the probe is now refused (default-deny).
 # Together with 01: the shuttle may GET any path EXCEPT /status/*.
 apiVersion: security.istio.io/v1

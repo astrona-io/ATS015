@@ -1,6 +1,6 @@
-# Lock Everything With One Empty Rule
+# Deny All Traffic With One Empty Rule
 
-Three policies in this domain look almost the same on paper, astronaut, and do opposite things. One curly-brace pair in the wrong place turns "nobody may enter" into "everybody may enter". In this part you learn to read all three at a glance, and you use the strongest one to lock the whole planet.
+Three policies in this domain look almost the same on paper and do opposite things. One curly-brace pair in the wrong place turns "deny all requests" into "allow all requests". In this part you learn to read all three at a glance, and you use the strongest one to deny all traffic in a namespace.
 
 ## Three look-alike specs
 
@@ -8,7 +8,7 @@ The difference between them is how many rules the policy has, and what is inside
 
 ### The table
 
-| Spec | What the guard does |
+| Spec | What the sidecar proxy does |
 | --- | --- |
 | `spec: {}` | allow nothing (deny all) |
 | `rules: [{}]` | allow everything |
@@ -16,21 +16,21 @@ The difference between them is how many rules the policy has, and what is inside
 
 ### Why they behave like this
 
-- **`spec: {}`** is an `ALLOW` policy (the default action) with **no rules**. It turns on default-deny for every ship it selects, but its list is empty. No rule can fit, so nothing gets in.
-- **`rules: [{}]`** is an `ALLOW` policy with **one empty rule**. An empty rule has no conditions, and a rule with no conditions fits every signal. So everything gets in.
-- **`action: DENY` with `rules: [{}]`** is a banned list with one empty rule. The rule fits every signal, and the guard checks the banned list first. So nothing gets in, and no guest list can change that.
+- **`spec: {}`** is an `ALLOW` policy (the default action) with **no rules**. It turns on default-deny for every pod it selects, but it has no rules. No rule can fit, so nothing gets in.
+- **`rules: [{}]`** is an `ALLOW` policy with **one empty rule**. An empty rule has no conditions, and a rule with no conditions fits every request. So everything gets in.
+- **`action: DENY` with `rules: [{}]`** is a `DENY` policy with one empty rule. The rule fits every request, and the sidecar proxy checks `DENY` first. So nothing gets in, and no `ALLOW` policy can change that.
 
 "No rules" and "one empty rule" are not the same thing. The first fits nothing; the second fits everything.
 
-## Open the planet, then lock it
+## Allow everything, then deny everything
 
-Here you start from a clean planet, open it with one empty `ALLOW` rule, and then lock it with one empty `DENY` rule. Watching the strongest guest list lose is the clearest proof of the order.
+Here you start from a clean namespace, open it with one empty `ALLOW` rule, and then deny everything with one empty `DENY` rule. Watching the widest possible `ALLOW` policy lose is the clearest proof of the order.
 
 <!-- astrona:playground:renew -->
 
 ### Start clean
 
-Remove every policy on the planet, so only the policies in this part decide:
+Remove every policy in the namespace, so only the policies in this part decide:
 
 ```sh
 kubectl delete authorizationpolicy --all -n starfleet
@@ -41,11 +41,11 @@ authorizationpolicy.security.istio.io "probe-allow-shuttle-get" deleted from sta
 authorizationpolicy.security.istio.io "probe-deny-status" deleted from starfleet namespace
 ```
 
-You see one line per policy that was still on the planet. If there was none, the command prints `No resources found`.
+You see one line per policy that was still in the namespace. If there was none, the command prints `No resources found`.
 
 ### Open everything
 
-This guest list has no `selector`, so it covers every ship on `starfleet`, and its one empty rule fits every signal.
+This `ALLOW` policy has no `selector`, so it covers every pod in `starfleet`, and its one empty rule fits every request.
 
 Save this as `authorizationpolicy-allow-all.yaml`:
 
@@ -81,11 +81,11 @@ Code 200
 200 200 200 <- shuttle http://navcom:9080/ratings/0
 ```
 
-Every caller reaches every ship. A guest list exists, so default-deny is on, but the one empty rule fits every signal.
+Every caller reaches every workload. An `ALLOW` policy exists, so default-deny is on, but the one empty rule fits every request.
 
-### Lock everything
+### Deny everything
 
-Now the banned list with one empty rule. It also has no `selector`, so it covers every ship on the planet.
+Now the `DENY` policy with one empty rule. It also has no `selector`, so it covers every pod in the namespace.
 
 Save this as `authorizationpolicy-deny-all.yaml`:
 
@@ -121,26 +121,26 @@ Code 403
 403 403 403 <- shuttle http://navcom:9080/ratings/0
 ```
 
-Everything is refused, while `allow-all` is still in place. The empty `DENY` rule fits every signal, the guard reads it first, and the decision ends there.
+Everything is refused, while `allow-all` is still in place. The empty `DENY` rule fits every request, the sidecar proxy checks it first, and the decision ends there.
 
-This is the emergency lock for a planet, for example during a security incident. Put the same policy in the `istio-system` root namespace and it locks every planet in the mesh.
+This is the emergency lockdown for a namespace, for example during a security incident. Put the same policy in the `istio-system` root namespace and it denies all traffic in every namespace of the mesh.
 
-### Unlock it
+### Remove the lockdown
 
-Remove the lock again:
+Delete the `DENY` policy again:
 
 ```sh
 kubectl delete -f authorizationpolicy-deny-all.yaml
 ```
 
-Wait up to about a minute, and `from_shuttle $PROBE/get` answers `200` again. `allow-all` can do its job once nothing on the banned list fits.
+Wait up to about a minute, and `from_shuttle $PROBE/get` answers `200` again. `allow-all` can do its job once no `DENY` rule fits.
 
 ## Common pitfalls
 
 > [!WARNING]
 > - **Mixing up `spec: {}` and `rules: [{}]`.** The first allows nothing. The second allows everything.
-> - **Trying to open a `DENY` with `rules: [{}]` by adding guest lists.** Nothing opens it. Delete it or narrow it.
-> - **Forgetting the selector.** A policy without a `selector` covers every ship in its namespace, and in `istio-system` every ship in the mesh.
-> - **Leaving an emergency lock in place.** Write down that you applied it, and remove it when the incident is over.
+> - **Trying to open a `DENY` with `rules: [{}]` by adding `ALLOW` policies.** Nothing opens it. Delete it or narrow it.
+> - **Forgetting the selector.** A policy without a `selector` covers every pod in its namespace, and in `istio-system` every pod in the mesh.
+> - **Leaving an emergency lockdown in place.** Write down that you applied it, and remove it when the incident is over.
 
-> *No rules fit nothing; one empty rule fits everything. As a `DENY`, one empty rule locks every door.*
+> *No rules fit nothing; one empty rule fits everything. As a `DENY`, one empty rule denies every request.*

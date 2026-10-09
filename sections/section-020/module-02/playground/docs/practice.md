@@ -1,6 +1,6 @@
 # Practice: DENY Policies And Evaluation Order
 
-Two exam-style missions for this playground, astronaut. Start the playground
+Two exam-style tasks for this playground. Start the playground
 first, and paste the helpers from [overview.md](./overview.md#helpers). The
 solutions use them.
 
@@ -16,7 +16,7 @@ minute after each apply before you trust a test.
 <details><summary>Solution</summary>
 
 A `DENY` with both a `from` and a `to` part. Inside one rule, both parts must
-fit, so only fortio's signals to `/status/...` are refused. Fortio runs as the
+fit, so only fortio's requests to `/status/...` are refused. Fortio runs as the
 service account `default`.
 
 Save this as `authorizationpolicy-probe-deny-fortio-status.yaml`:
@@ -61,23 +61,23 @@ Code 200
 200 200 200 <- shuttle http://probe:8000/status/200
 ```
 
-Fortio is refused on `/status/` only. The shuttle's badge does not fit the
-`from` part, so the rule does not fit its signals.
+Fortio is refused on `/status/` only. The shuttle's identity does not fit the
+`from` part, so the rule does not fit its requests.
 
 Clean up: `kubectl delete -f authorizationpolicy-probe-deny-fortio-status.yaml`
 
 </details>
 
-## Task 2: lock the navigation computer, then prove no guest list opens it
+## Task 2: deny all requests to navcom, then prove no ALLOW policy opens it
 
 > In namespace `starfleet`, an `ALLOW` policy named `navcom-allow-all` lets
-> every signal reach `navcom`. Lock `navcom` completely with a second policy,
-> so that every signal to it gets `403`, while `navcom-allow-all` stays in
-> place. Signals to `probe` must not be affected.
+> every request reach `navcom`. Lock `navcom` completely with a second policy,
+> so that every request to it gets `403`, while `navcom-allow-all` stays in
+> place. Requests to `probe` must not be affected.
 
 <details><summary>Solution</summary>
 
-First create the open guest list from the task.
+First create the open `ALLOW` policy from the task.
 
 Save this as `authorizationpolicy-navcom-allow-all.yaml`:
 
@@ -102,8 +102,9 @@ Apply it:
 kubectl apply -f authorizationpolicy-navcom-allow-all.yaml
 ```
 
-Now the lock: a `DENY` with one empty rule, on `navcom` only. The empty rule
-fits every signal, and the guard checks the banned list before the guest list.
+Now the lockdown: a `DENY` with one empty rule, on `navcom` only. The empty
+rule fits every request, and the sidecar proxy checks `DENY` policies before
+`ALLOW` policies.
 
 Save this as `authorizationpolicy-navcom-deny-all.yaml`:
 
@@ -144,7 +145,7 @@ navcom-allow-all   ALLOW    60s
 navcom-deny-all    DENY     60s
 ```
 
-The guest list is still there, and `navcom` refuses every signal anyway. The
+The `ALLOW` policy is still there, and `navcom` refuses every request anyway. The
 probe has no policy, so it still answers.
 
 Clean up: `kubectl delete authorizationpolicy navcom-allow-all navcom-deny-all -n starfleet`

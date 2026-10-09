@@ -6,9 +6,9 @@ estimated_duration: 15m
 
 Solve this question on: `terminal`
 
-Astronaut, mission control wants the echo probe on the planet `starfleet` to become read-only. Today every ship on the planet may send it anything, because of a guest list that another team owns. You may not touch that guest list.
+The operations team wants the `probe` echo service in the namespace `starfleet` to become read-only. Today every workload in the namespace may send it anything, because of an `ALLOW` policy that another team owns. You may not touch that policy.
 
-The planet `starfleet` has sidecar injection on and a `PeerAuthentication` named `default` in `STRICT` mode. It holds:
+The namespace `starfleet` has sidecar injection on and a `PeerAuthentication` named `default` in `STRICT` mode. It holds:
 
 * `probe-v1` and `probe-v2`: an echo service behind the Service `probe` on port `8000`. Its pods carry the label `app: probe`. `/get`, `/post`, `/delete` and `/anything` answer.
 * `shuttle`: a client pod with `curl`, service account `shuttle`.

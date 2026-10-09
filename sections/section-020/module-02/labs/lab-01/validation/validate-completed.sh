@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Grading for ats-015-lab-020-02 - a DENY that a conflicting ALLOW cannot reopen.
 # Checks that the policies exist (a DENY, and an ALLOW naming /admin), then
-# sends real traffic from the tester pod and checks the guard's answers:
+# sends real traffic from the tester pod and checks the sidecar's answers:
 #   POST /notify      -> 200
 #   GET  /admin       -> 403
 #   GET  /admin/users -> 403

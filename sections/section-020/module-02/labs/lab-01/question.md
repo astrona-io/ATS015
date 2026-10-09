@@ -6,7 +6,7 @@ estimated_duration: 15m
 
 Solve this question on: `terminal`
 
-Astronaut, the notification service has an admin area that was never meant to be reachable from inside the cluster. It will be removed next quarter. Until then it must stay shut, and it must **stay** shut when someone who never heard of this mission adds a generous `ALLOW` rule later. To prove that, you write that careless `ALLOW` yourself and leave it in place.
+The notification service has an admin area that was never meant to be reachable from inside the cluster. It will be removed next quarter. Until then it must stay closed, and it must **stay** closed when someone who never heard of this task adds a generous `ALLOW` rule later. To prove that, you write that careless `ALLOW` yourself and leave it in place.
 
 The namespace `deny-demo` has sidecar injection on and a `PeerAuthentication` in `STRICT` mode. It runs:
 

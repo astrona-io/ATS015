@@ -1,10 +1,10 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. You need three policies on one workload: a guest list for the normal call, a banned list for the admin area, and a careless guest list that proves the ban holds. The guard checks the banned list first, so the third policy can never reopen the door.
+You need three policies on one workload: an `ALLOW` policy for the normal call, a `DENY` policy for the admin area, and a careless `ALLOW` policy that proves the `DENY` holds. The sidecar proxy checks `DENY` policies first, so the third policy can never reopen the admin path.
 
 ---
 
-## Step 1: The guest list for the normal call
+## Step 1: The ALLOW policy for the normal call
 
 Start with the `ALLOW` policy for `POST /notify`.
 
@@ -50,9 +50,9 @@ POST /notify: 200
 GET  /admin:  403
 ```
 
-`/admin` is already refused, and nobody banned it. A guest list now selects this workload, and `/admin` fits none of its rules, so the guard's last step says no. The `DENY` you add next gives the same `403` for a different reason.
+`/admin` is already refused, and nobody banned it. An `ALLOW` policy now selects this workload, and `/admin` fits none of its rules, so the sidecar proxy's last step says no. The `DENY` you add next gives the same `403` for a different reason.
 
-## Step 2: The banned list
+## Step 2: The DENY policy
 
 Save this as `authorizationpolicy-deny-admin.yaml`:
 
@@ -84,13 +84,13 @@ Warning: configured AuthorizationPolicy will deny all traffic to TCP ports under
 authorizationpolicy.security.istio.io/deny-admin created
 ```
 
-The warning is normal. A rule with only HTTP fields such as `paths` cannot be checked on a plain TCP port, so the guard blocks such ports on this workload completely. The notification service only speaks HTTP, so nothing breaks.
+The warning is normal. A rule with only HTTP fields such as `paths` cannot be checked on a plain TCP port, so the sidecar proxy blocks such ports on this workload completely. The notification service only speaks HTTP, so nothing breaks.
 
-The `*` matters. `paths: ["/admin"]` matches only that exact path and leaves `/admin/users` open. That hole hides well, because the path you tested is blocked.
+The `*` matters. `paths: ["/admin"]` matches only that exact path and leaves `/admin/users` open. That gap is easy to miss, because the path you tested is blocked.
 
-The rule has no `from`, so it covers every caller. Under `DENY`, a missing part is sweeping, which is what you want here.
+The rule has no `from`, so it covers every caller. Under `DENY`, a missing part matches everything, which is what you want here.
 
-## Step 3: The careless guest list
+## Step 3: The careless ALLOW policy
 
 Save this as `authorizationpolicy-allow-admin-attempt.yaml`:
 
@@ -139,7 +139,7 @@ GET  /admin:       403
 GET  /admin/users: 403
 ```
 
-Three policies, and one of them explicitly allows `/admin`. It is still refused. For each request the guard walks `CUSTOM`, then `DENY`, then `ALLOW`, and a `DENY` match **ends** the decision. `allow-admin-attempt` is never read.
+Three policies, and one of them explicitly allows `/admin`. It is still refused. For each request the sidecar proxy walks `CUSTOM`, then `DENY`, then `ALLOW`, and a `DENY` match **ends** the decision. `allow-admin-attempt` is never checked.
 
 That is why you cannot cut an exception out of a `DENY` with an `ALLOW`. If `/admin/health` had to stay reachable, the exception would have to go into the `DENY` itself, for example with `notPaths`.
 
