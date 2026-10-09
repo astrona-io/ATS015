@@ -2,15 +2,11 @@
 
 The first step of a migration changes nothing at all. It answers one question with evidence: **does any client still send plain-text requests to this namespace?** If you guess the answer, every later step rests on a guess.
 
-This part shows where the answer lives, how to read it, how to find the client behind it, and what the answer can never tell you.
+This chapter shows where the answer lives and how to read it. Then it finds the client behind the answer, and it ends with what the answer can never tell you.
 
-## Where the count lives
+## A counter on the receiving proxy
 
-Every sidecar proxy (Envoy) counts the requests it handles. A sidecar proxy is the proxy container Istio adds to each pod; all inbound and outbound traffic of the pod passes through it. This section explains what the count records, and why you read it on the workload that receives the requests.
-
-### A counter on the receiving proxy
-
-The counter is called `istio_requests_total`. It carries a label that answers the migration's question directly:
+Every sidecar proxy (Envoy) counts the requests it handles. A sidecar proxy is the proxy container Istio adds to each pod; all inbound and outbound traffic of the pod passes through it. The counter is called `istio_requests_total`, and it carries a label that answers the migration's question directly:
 
 ```text
 connection_security_policy="mutual_tls"   the request arrived over mTLS
@@ -19,9 +15,7 @@ connection_security_policy="none"         the request arrived as plain text
 
 The label tells you how a request **arrived**: with mTLS (mutual TLS, where both sides present a certificate) or as plain text. Only the proxy that received the connection knows that. So you read the counter on the workload being called, here `cargo`, not on the client. You are looking for clients you have forgotten about, and you cannot ask a client you do not know exists.
 
-### How you read it without a monitoring system
-
-The counter lives inside the proxy, in memory. No monitoring system is needed to read it.
+The counter lives inside the proxy, in memory, so you need no monitoring system to read it. The picture below shows how the numbers get from the `cargo` proxy to your terminal:
 
 ```mermaid
 flowchart LR
@@ -31,15 +25,13 @@ flowchart LR
     T -->|"pilot-agent request"| Y["your terminal"]
 ```
 
-The `shuttle` pod's sidecar proxy sends its requests with mTLS. The `drifter` pod has no sidecar proxy, so its requests arrive as plain text. The `cargo` proxy counts both, with the right label. `pilot-agent` (the helper process inside the `istio-proxy` container) returns the numbers when you ask.
+The `shuttle` pod's sidecar proxy sends its requests with mTLS. The `drifter` pod has no sidecar proxy, so its requests arrive as plain text. The `cargo` proxy counts both, with the right label, and `pilot-agent` (the helper process inside the `istio-proxy` container) returns the numbers when you ask.
 
-## See it in your playground
+## Read the counter in your playground
 
-Counters only count what has already happened. So first you send some requests from both clients, then you read the counter.
+A counter only counts what has already happened. So you first send some requests from both clients, and then you read the counter.
 
 <!-- astrona:playground:renew -->
-
-### Send requests from both clients
 
 Send 10 requests from `shuttle` (inside the mesh) and 10 from `drifter` (outside it) to `cargo`:
 
@@ -59,9 +51,7 @@ done | sort | uniq -c
 
 Both clients get `200`. In `PERMISSIVE` mode, the `cargo` proxy accepts both mTLS and plain text, so nothing looks wrong yet.
 
-### Read the counter
-
-Define the `plain_signals` helper and run it. It asks the `cargo` proxy for its counters, keeps the lines `cargo` wrote as the receiver (`reporter="destination"`), and adds up the requests for each value of `connection_security_policy`:
+Now define the `plain_signals` helper and run it. It asks the `cargo` proxy for its counters and keeps the lines `cargo` wrote as the receiver (`reporter="destination"`). Then it adds up the requests for each value of `connection_security_policy`:
 
 ```sh
 plain_signals() {
@@ -80,19 +70,15 @@ mutual_tls 10
 none 10
 ```
 
-The first line is an information message from `pilot-agent` itself. You can ignore it; it shows up every time you run the helper. The two lines can also come out in the other order.
+The first line is an information message from `pilot-agent` itself. You can ignore it; it shows up every time you run the helper. The two count lines can also come out in the other order.
 
-The line that matters is `none`. It is there, so at least one client would break the instant `starfleet` went `STRICT`. That is the whole check, and it is evidence, not belief.
-
-Note the `-c istio-proxy`. The command runs in the sidecar container, not in the app, because the sidecar holds the counter.
+The line that matters is `none`. It is there, so at least one client would break the instant `starfleet` went `STRICT`. That is the whole check, and it rests on evidence, not belief. Note the `-c istio-proxy` in the helper: the command runs in the sidecar container, not in the app, because the sidecar holds the counter.
 
 ## Find which client it is
 
-The `none` label says that plain-text requests arrived. It does not say who sent them. Two places name the client: the counter's other labels, and the receiving proxy's access log.
+The `none` label says that plain-text requests arrived, but it does not say who sent them. Two places name the client: the counter's other labels, and the receiving proxy's access log.
 
-### Read the source labels
-
-The same counter carries labels about the sender. Keep only the plain-text lines and show where they came from:
+Start with the labels. The same counter carries labels about the sender, so keep only the plain-text lines and show where they came from:
 
 ```sh
 kubectl -n starfleet exec deploy/cargo-v1 -c istio-proxy -- \
@@ -107,11 +93,9 @@ source_workload_namespace="unknown"
 source_workload="unknown"
 ```
 
-A client with no sidecar proxy sends no workload metadata, so the source is `unknown`. That is useful in itself. `unknown` together with `none` means the client is outside the mesh. A real workload name together with `none` means a client inside the mesh whose own sidecar proxy was told to send plain text, for example by a `DestinationRule`. That case comes back when you switch to `STRICT`.
+A client with no sidecar proxy sends no workload metadata, so the source is `unknown`. That is useful in itself. `unknown` together with `none` means the client is outside the mesh. A real workload name together with `none` means something else: a client inside the mesh whose own sidecar proxy was told to send plain text, for example by a `DestinationRule`. That case matters again when you switch to `STRICT`.
 
-### Read the access log
-
-The access log is the proxy's record of traffic: one line per request. On the receiving side, each line ends with the client's address and the server name the client asked for in the TLS handshake. Send one request from each client, wait a few seconds, then read the last two lines of `cargo`'s log, and the `drifter` pod's address:
+The labels tell you the client is outside the mesh, but not which pod it is. The access log fills that gap. It is the proxy's record of traffic, with one line per request. On the receiving side, each line ends with the client's address and the server name the client asked for in the TLS handshake. Send one request from each client and wait a few seconds. Then read the last two lines of `cargo`'s log, and the `drifter` pod's address:
 
 ```sh
 kubectl -n starfleet exec deploy/shuttle -- curl -s -o /dev/null http://cargo:9080/details/0
@@ -128,21 +112,22 @@ NAME                       READY   STATUS    RESTARTS   AGE   IP            NODE
 drifter-57fdbc6c95-48s56   1/1     Running   0          90s   10.244.0.15   astro-ats-015-playground-010-03-control-plane   <none>           <none>
 ```
 
-The proxy writes its log in small batches, not line by line. That is why the command waits five seconds: read the log too early, and the last two lines can be older requests.
+The command waits five seconds because the proxy writes its log in small batches, not line by line. Read the log too early, and the last two lines can be older requests.
 
 The `shuttle` line carries a server name from the TLS handshake (`outbound_.9080_._.cargo...`). The `drifter` line has `-` there: no TLS handshake, so no server name. The client address in that line, `10.244.0.15`, is the `drifter` pod's address. Now you know exactly which client to move.
 
 ## What a counter cannot prove
 
-A counter is a record of the past. The migration decision is about the future. Three limits follow, and each one has broken real migrations.
+A counter is a record of the past, but the migration decision is about the future. Three limits follow from that, and each one has broken real migrations.
 
-- **No count is not proof.** An hourly job, a nightly backup or a monthly report does not show up in a counter you read one minute after your test. Measure for longer than your slowest regular client runs. If you do not know that interval, a week is an honest default.
-- **Counters only go up.** The `none` lines you saw stay in the total. After you move a client, check that the count **stopped going up**, not that it is zero.
-- **A restart wipes them.** The counter lives in the proxy's memory. If `cargo` restarts during your measuring window, the history is gone.
+First, no count is not proof. An hourly job, a nightly backup or a monthly report does not show up in a counter you read one minute after your test. Measure for longer than your slowest regular client runs. If you do not know that interval, a week is an honest default.
 
-The counter is a record of requests received, not a list of every client that will ever call. In a cluster with Prometheus (a monitoring system that collects these counters over time), you read the same label there. It survives restarts and covers many workloads at once. The playground has no Prometheus, so this module reads the proxy directly.
+Second, counters only go up. The `none` lines you saw stay in the total, so after you move a client, check that the count **stopped going up**, not that it is zero. Third, a restart wipes them. The counter lives in the proxy's memory, so if `cargo` restarts during your measuring window, the history is gone.
 
-> *Only the receiving proxy's `connection_security_policy` shows that plain-text requests still arrive, and a counter proves what happened, never what is about to happen.*
+> [!TIP]
+> In a cluster with Prometheus (a monitoring system that collects these counters over time), read the same `connection_security_policy` label there. It survives restarts and covers many workloads at once. The playground has no Prometheus, so this module reads the proxy directly.
+
+You can now tell, with evidence, whether plain-text requests still reach a workload, and which client sends them. In the playground, the answer is the `drifter` pod in `outpost`. You also know that the counter only describes the past. The open question is what to do before you change anything, so that a mistake can be undone in seconds.
 
 ## Common pitfalls
 

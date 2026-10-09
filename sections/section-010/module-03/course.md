@@ -4,6 +4,8 @@ This module is about one small change with a big effect. Writing `mode: STRICT` 
 
 The hard part is knowing that the change is safe. A client that still sends plain text breaks the moment the policy lands. It sees a connection reset, and that error shows up in *its* logs, not in yours. So this module teaches a procedure, not a new object: count, write down, move the clients, and only then switch.
 
+The procedure runs over four parts. **Count Plain-Text Requests To A Workload** reads the receiving proxy's request counter, finds the client that still sends plain text, and explains what a counter cannot prove. **Write Down The Current mTLS Mode** saves `PERMISSIVE` as a file, runs a short `STRICT` test, rolls it back, and sets out the safe order for adding and removing policies. **Inject A Sidecar Into A Plain-Text Client** shows why a namespace label is not enough and measures again after the restart. **Switch The Namespace To STRICT mTLS** makes the switch, proves it on the proxy, shows the client-side `DestinationRule` trap, and plans the rollback. A short summary closes the module.
+
 ## Learning objectives
 
 After this module you can:
@@ -18,19 +20,11 @@ After this module you can:
 
 ## Before you start
 
-This section lists what the module expects you to know, and what is waiting in your playground.
+You need a rough picture of how the mesh works. A sidecar proxy (Envoy) is a proxy container that Istio adds to each pod, and all inbound and outbound traffic of the pod passes through it. `istiod`, Istio's control plane, sends configuration and certificates to every proxy. You also need Kubernetes basics: namespaces, Deployments, Services, labels and `kubectl exec`.
 
-### What you should already know
+You should also know the basics of `PeerAuthentication`. It sets the mTLS mode a receiving proxy accepts: `STRICT` (mTLS only), `PERMISSIVE` (mTLS and plain text) or `DISABLE` (plain text only). A policy named `default` with no `selector` covers a whole namespace. A policy with a `selector` covers only the matching pods, and the narrower policy wins. With no policy at all, the mode is `PERMISSIVE`.
 
-- **How the mesh works.** A sidecar proxy (Envoy) is a proxy container that Istio adds to each pod. All inbound and outbound traffic of the pod passes through it. `istiod`, Istio's control plane, sends configuration and certificates to every proxy.
-- **`PeerAuthentication` basics.** It sets the mTLS mode a receiving proxy accepts: `STRICT` (mTLS only), `PERMISSIVE` (mTLS and plain text) or `DISABLE` (plain text only). A policy named `default` with no `selector` covers a whole namespace. A policy with a `selector` covers only the matching pods, and the narrower policy wins. With no policy at all, the mode is `PERMISSIVE`.
-- **Kubernetes basics.** Namespaces, Deployments, Services, labels and `kubectl exec`.
-
-### What is in your playground
-
-Your playground is one `kind` cluster with **Istio 1.30.5** already installed. It has two namespaces.
-
-**`starfleet`** has sidecar injection switched on. It runs **the Starfleet**: the Bookinfo sample app from the Istio docs, with space names.
+Your playground is one `kind` cluster with **Istio 1.30.5** already installed. It has two namespaces. The first, **`starfleet`**, has sidecar injection switched on. It runs the Bookinfo sample app from the Istio docs, with space names:
 
 | Workload | Its role in this module |
 | --- | --- |
@@ -38,7 +32,7 @@ Your playground is one `kind` cluster with **Istio 1.30.5** already installed. I
 | `shuttle` | Your test client. It has a sidecar proxy, so its requests use mTLS |
 | `bridge`, `scout`, `navcom`, `probe` | The rest of the sample app. They talk to each other with mTLS and keep working through the whole module |
 
-**`outpost`** has sidecar injection switched **off**, on purpose. Its one pod, **`drifter`**, has no sidecar proxy (`1/1`). It still sends plain-text requests to `cargo`. It is the client that would break if `starfleet` switched to `STRICT` today.
+The second namespace, **`outpost`**, has sidecar injection switched **off**, on purpose. Its one pod, **`drifter`**, has no sidecar proxy (`1/1`). It still sends plain-text requests to `cargo`, so it is the client that would break if `starfleet` switched to `STRICT` today.
 
 There is **no** `PeerAuthentication` yet, so `starfleet` runs in the default `PERMISSIVE` mode. That is a realistic start: a namespace whose mode was never chosen, only inherited.
 
@@ -46,9 +40,7 @@ Launch your playground now, and keep it running next to you while you read the p
 
 <!-- astrona:playground -->
 
-### One helper to paste first
-
-Paste this into each new terminal. It reads the request counter of `cargo`'s sidecar proxy and adds up how many requests arrived with mTLS (`mutual_tls`) and how many arrived as plain text (`none`):
+Once it runs, paste one helper into each new terminal you open. It reads the request counter of `cargo`'s sidecar proxy and adds up how many requests arrived with mTLS (`mutual_tls`) and how many arrived as plain text (`none`):
 
 ```sh
 plain_signals() {
@@ -59,11 +51,3 @@ plain_signals() {
     | awk '{sum[$1]+=$2} END {for (k in sum) print k, sum[k]}'
 }
 ```
-
-## The parts, in order
-
-1. [Count Plain-Text Requests To A Workload](./course-01-count-the-plain-signals.md): read the receiving proxy's counter, find which client sends plain text, and learn what a counter cannot prove.
-2. [Write Down The Current mTLS Mode](./course-02-write-down-where-you-stand.md): write `PERMISSIVE` as a file, run a short `STRICT` test, and roll back. Also the safe order for adding and removing policies.
-3. [Inject A Sidecar Into A Plain-Text Client](./course-03-bring-the-drifter-into-the-fleet.md): sidecar injection, why a label is not enough, and measuring again.
-4. [Switch The Namespace To STRICT mTLS](./course-04-switch-to-strict-for-good.md): the switch, proof on the proxy, the client-side `DestinationRule` trap, and the rollback plan.
-5. [Wrap-Up](./course-05-wrap-up.md): what you learned, the graded lab, and cleaning up.
