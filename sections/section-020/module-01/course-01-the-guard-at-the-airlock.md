@@ -24,7 +24,7 @@ flowchart TB
     G -->|"allowed"| A["the app"]
 ```
 
-The diagram shows four stages. The mTLS check is `PeerAuthentication`, the JWT check is `RequestAuthentication`, and the authorization check is `AuthorizationPolicy`. A request stopped at an early stage never reaches a later one.
+The diagram shows four stages. The mTLS check is `PeerAuthentication`, the JWT check is `RequestAuthentication`, and the authorization check is `AuthorizationPolicy`. A request stopped at an early stage never reaches a later one. For requests from outside the cluster, the ingress gateway's own proxy runs the same checks at the edge of the mesh.
 
 ### What the order means for you
 

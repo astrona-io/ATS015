@@ -79,7 +79,7 @@ The object you applied has a `selector` and one entry in `jwtRules`. This sectio
 
 ### Which workloads, and which issuers
 
-`selector` picks the workloads, exactly like other Istio security objects. With no `selector`, the object covers every workload in its namespace. In the root namespace (`istio-system`), it covers the whole mesh.
+`selector` picks the workloads, exactly like other Istio security objects. With no `selector`, the object covers every workload in its namespace. In the root namespace (`istio-system`), it covers the whole mesh. To check tokens at the ingress gateway, put the object in the gateway's namespace and select the gateway pods by their label, for example `istio: ingress`.
 
 `jwtRules` is a list. A workload can trust tokens from several issuers, one entry each. The proxy picks the entry whose `issuer` matches the token's `iss` claim.
 

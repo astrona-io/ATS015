@@ -192,7 +192,7 @@ The four policies and `allow-nothing` all live in the same namespace, and they n
 
 `allow-nothing` adds no rule anywhere. It only makes sure that every workload, including one deployed tomorrow, starts closed.
 
-On a real cluster, apply the narrow policies first and the allow-nothing policy last. Then the app never goes down while you work. To remove them, delete the allow-nothing policy first and the narrow policies after it.
+On a real cluster, apply the narrow policies first and the allow-nothing policy last, and remove them in the reverse order.
 
 ## Common pitfalls
 

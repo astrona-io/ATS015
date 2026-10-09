@@ -150,6 +150,14 @@ Everything except `tls` is what any HTTPS server on a gateway needs: port `443`,
 - `mode: MUTUAL` makes the gateway ask every client for a certificate, and check it.
 - `credentialName` names the secret in the gateway pod's namespace, `istio-ingress`.
 
+`MUTUAL` is one of three TLS modes for a gateway server. They differ in who decrypts the traffic, whether the client needs a certificate, and what the secret holds:
+
+| `tls.mode` | Gateway decrypts? | Client certificate? | Secret keys |
+| --- | --- | --- | --- |
+| `SIMPLE` | yes | no | `tls.crt`, `tls.key` |
+| `MUTUAL` | yes | yes, signed by the CA in `ca.crt` | `tls.crt`, `tls.key`, `ca.crt` |
+| `PASSTHROUGH` | no, it routes on SNI only | decided by the backend | no secret at the gateway |
+
 ## What changes in the handshake
 
 The **TLS handshake** is the first exchange of a TLS connection, where both sides agree on the encryption and send their certificates. `MUTUAL` adds one certificate request from the gateway, and one check on its side.

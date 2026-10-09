@@ -52,6 +52,16 @@ The pages use Istio's and Kubernetes' own terms, because those are the words you
 - The **sidecar proxy** (Envoy) is a proxy container that Istio adds to each pod. All traffic in and out of the pod passes through it.
 - **`istiod`** is Istio's control plane. It sends configuration and certificates to every proxy.
 
+Five Istio objects do the security work in this course. `istiod` turns each one into configuration for the Envoy proxies:
+
+| Object | What it does |
+| --- | --- |
+| `PeerAuthentication` | Sets whether a workload accepts only mTLS, only plain text, or both, on inbound connections |
+| `RequestAuthentication` | Validates the JWT on a request, if the request carries one |
+| `AuthorizationPolicy` | Allows or denies requests by caller, path, method or token claim |
+| `Gateway` (its `tls` block) | Sets TLS at the edge of the mesh: `SIMPLE`, `MUTUAL` or `PASSTHROUGH` |
+| `DestinationRule` (its `tls` block) | Sets the TLS the calling side sends: `ISTIO_MUTUAL`, `SIMPLE`, `MUTUAL` or `DISABLE` |
+
 ## The example app in your playground
 
 Every playground runs **the Starfleet**: the Istio Bookinfo sample app with space names. It runs in the namespace `starfleet`. The `bridge` is the web frontend, and it calls the `cargo` backend and three versions of the `scout` backend. You send your test requests from the `shuttle` client pod.

@@ -64,6 +64,8 @@ In your namespace `PeerAuthentication` is `STRICT`, so the `drifter` is cut off 
 
 So when "my `principals` rule denies everyone", check `PeerAuthentication` first, not the rule.
 
+A caller with no sidecar can never match `principals` or `namespaces`. To allow it in a `PERMISSIVE` namespace, match its address with `ipBlocks`, or give it a sidecar so it gets an identity.
+
 ## A whole namespace at once
 
 Sometimes the right caller is "every workload in this namespace", whatever its service account. The `namespaces` field does that. It reads the namespace from the same certificate, so it also needs mTLS.
