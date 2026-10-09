@@ -58,18 +58,18 @@ Each module has a landing page, ordered parts and a wrap-up. The landing page li
 | Module | Reader | Parts | Graded labs (environment name) |
 | --- | --- | --- | --- |
 | 010-01 | [Inspect Workload Identity And Certificates](sections/section-010/module-01/course.md) | 3 | [Prove A Workload Identity And Authorize On It](sections/section-010/module-01/labs/lab-01/README.md) (`ats-015-lab-010-01`) |
-| 010-02 | [Enforce mTLS With PeerAuthentication At Three Scopes](sections/section-010/module-02/course.md) | 6 | [Enforce mTLS At Three Scopes](sections/section-010/module-02/labs/lab-01/README.md) (`ats-015-lab-010-02`), [Allow Plain Text On One Port With portLevelMtls](sections/section-010/module-02/labs/lab-02/README.md) (`ats-015-lab-010-02-02`), [Fix A DestinationRule That Breaks STRICT mTLS](sections/section-010/module-02/labs/lab-03/README.md) (`ats-015-lab-010-02-03`) |
+| 010-02 | [Enforce mTLS With PeerAuthentication At Three Scopes](sections/section-010/module-02/course.md) | 6 | [Enforce mTLS At Three Scopes](sections/section-010/module-02/labs/lab-01/README.md) (`ats-015-lab-010-02`), [Open One Port With portLevelMtls](sections/section-010/module-02/labs/lab-02/README.md) (`ats-015-lab-010-02-02`), [Fix A DestinationRule That Breaks mTLS](sections/section-010/module-02/labs/lab-03/README.md) (`ats-015-lab-010-02-03`) |
 | 010-03 | [Migrate A Namespace From PERMISSIVE To STRICT mTLS](sections/section-010/module-03/course.md) | 4 | [Migrate A Namespace To STRICT mTLS](sections/section-010/module-03/labs/lab-01/README.md) (`ats-015-lab-010-03`) |
-| 020-01 | [Authorize HTTP Traffic Between Workloads](sections/section-020/module-01/course.md) | 6 | [Lock A Namespace Down With ALLOW Policies](sections/section-020/module-01/labs/lab-01/README.md) (`ats-015-lab-020-01`), [Fix Least-Privilege ALLOW Policies](sections/section-020/module-01/labs/lab-02/README.md) (`ats-015-lab-020-01-02`) |
+| 020-01 | [Authorize HTTP Traffic Between Workloads](sections/section-020/module-01/course.md) | 6 | [Lock A Namespace Down With ALLOW Policies](sections/section-020/module-01/labs/lab-01/README.md) (`ats-015-lab-020-01`), [Repair Broken AuthorizationPolicies](sections/section-020/module-01/labs/lab-02/README.md) (`ats-015-lab-020-01-02`) |
 | 020-02 | [DENY Policies And Evaluation Order](sections/section-020/module-02/course.md) | 6 | [Close A Path With DENY](sections/section-020/module-02/labs/lab-01/README.md) (`ats-015-lab-020-02`), [Make The Probe Read-Only](sections/section-020/module-02/labs/lab-02/README.md) (`ats-015-lab-020-02-02`) |
-| 030-01 | [Authenticate End Users With JWT](sections/section-030/module-01/course.md) | 4 | [Require A Valid End-User Token](sections/section-030/module-01/labs/lab-01/README.md) (`ats-015-lab-030-01`), [Take The Token From The Query String](sections/section-030/module-01/labs/lab-02/README.md) (`ats-015-lab-030-01-02`) |
+| 030-01 | [Authenticate End Users With JWT](sections/section-030/module-01/course.md) | 4 | [Require A Valid End-User Token](sections/section-030/module-01/labs/lab-01/README.md) (`ats-015-lab-030-01`), [Read A JWT From A Query Parameter](sections/section-030/module-01/labs/lab-02/README.md) (`ats-015-lab-030-01-02`) |
 | 030-02 | [Authorize On JWT Claims](sections/section-030/module-02/course.md) | 4 | [Authorize On A JWT Claim](sections/section-030/module-02/labs/lab-01/README.md) (`ats-015-lab-030-02`), [Fix The Claim Rule](sections/section-030/module-02/labs/lab-02/README.md) (`ats-015-lab-030-02-02`) |
-| 040-01 | [Terminate TLS At The Ingress Gateway](sections/section-040/module-01/course.md) | 4 | [Serve HTTPS At The Ingress Gateway](sections/section-040/module-01/labs/lab-01/README.md) (`ats-015-lab-040-01`), [Fix The Ingress Gateway's TLS Certificate](sections/section-040/module-01/labs/lab-02/README.md) (`ats-015-lab-040-01-02`) |
-| 040-02 | [Require Client Certificates At The Edge](sections/section-040/module-02/course.md) | 4 | [Require Client Certificates At The Edge](sections/section-040/module-02/labs/lab-01/README.md) (`ats-015-lab-040-02`), [Fix The CA Certificate On A MUTUAL Gateway](sections/section-040/module-02/labs/lab-02/README.md) (`ats-015-lab-040-02-02`) |
+| 040-01 | [Terminate TLS At The Ingress Gateway](sections/section-040/module-01/course.md) | 4 | [Serve HTTPS At The Ingress Gateway](sections/section-040/module-01/labs/lab-01/README.md) (`ats-015-lab-040-01`), [Fix A Broken HTTPS Gateway](sections/section-040/module-01/labs/lab-02/README.md) (`ats-015-lab-040-01-02`) |
+| 040-02 | [Require Client Certificates At The Edge](sections/section-040/module-02/course.md) | 4 | [Require Client Certificates At The Edge](sections/section-040/module-02/labs/lab-01/README.md) (`ats-015-lab-040-02`), [Fix The Trusted CA In A MUTUAL Gateway](sections/section-040/module-02/labs/lab-02/README.md) (`ats-015-lab-040-02-02`) |
 | 040-03 | [TLS Passthrough Instead Of Termination](sections/section-040/module-03/course.md) | 5 | [Route An Encrypted Stream By SNI](sections/section-040/module-03/labs/lab-01/README.md) (`ats-015-lab-040-03`), [Fix A Passthrough Gateway That Routes Nothing](sections/section-040/module-03/labs/lab-02/README.md) (`ats-015-lab-040-03-02`) |
 | 040-04 | [Originate TLS For External Services](sections/section-040/module-04/course.md) | 5 | [Originate TLS To An External Service](sections/section-040/module-04/labs/lab-01/README.md) (`ats-015-lab-040-04-01`) |
 | 050-01 | [Authorize By Source IP At The Ingress Gateway](sections/section-050/module-01/course.md) | 5 | [Block A Client Range At The Gateway](sections/section-050/module-01/labs/lab-01/README.md) (`ats-015-lab-050-01`), [Open One Path To One Network](sections/section-050/module-01/labs/lab-02/README.md) (`ats-015-lab-050-01-02`) |
-| 060-01 | [Authorization In Ambient Mode, L4 And L7](sections/section-060/module-01/course.md) | 5 | [Allow Only Known Identities At L4](sections/section-060/module-01/labs/lab-02/README.md) (`ats-015-lab-060-01-02`), [Enforce L4 And L7 Policy In Ambient Mode](sections/section-060/module-01/labs/lab-01/README.md) (`ats-015-lab-060-01`) |
+| 060-01 | [Authorization In Ambient Mode, L4 And L7](sections/section-060/module-01/course.md) | 5 | [Allow Callers By Identity With L4 Policy](sections/section-060/module-01/labs/lab-02/README.md) (`ats-015-lab-060-01-02`), [Enforce L4 And L7 Policy In Ambient Mode](sections/section-060/module-01/labs/lab-01/README.md) (`ats-015-lab-060-01`) |
 
 In 060-01 the labs are listed in the order you take them: `lab-02` comes before `lab-01`.
 
@@ -77,12 +77,12 @@ Each section ends with one capstone:
 
 | Section | Capstone | Environment name |
 | --- | --- | --- |
-| 010 | [Workload Identity And Mutual TLS Capstone](sections/section-010/capstone/labs/lab-01/README.md) | `ats-015-capstone-010` |
-| 020 | [Authorization Policy Capstone](sections/section-020/capstone/labs/lab-01/README.md) | `ats-015-capstone-020` |
-| 030 | [End-User Authentication Capstone](sections/section-030/capstone/labs/lab-01/README.md) | `ats-015-capstone-030` |
-| 040 | [Edge TLS Capstone](sections/section-040/capstone/labs/lab-01/README.md) | `ats-015-capstone-040` |
-| 050 | [Edge Authorization Capstone](sections/section-050/capstone/labs/lab-01/README.md) | `ats-015-capstone-050` |
-| 060 | [Ambient Authorization Capstone](sections/section-060/capstone/labs/lab-01/README.md) | `ats-015-capstone-060` |
+| 010 | [Capstone: Turn On Mesh-Wide mTLS Without Stranding A Caller](sections/section-010/capstone/labs/lab-01/README.md) | `ats-015-capstone-010` |
+| 020 | [Capstone: Deny By Default And Allow Two Calls](sections/section-020/capstone/labs/lab-01/README.md) | `ats-015-capstone-020` |
+| 030 | [Capstone: Require A Token And Split Access By Claim](sections/section-030/capstone/labs/lab-01/README.md) | `ats-015-capstone-030` |
+| 040 | [Capstone: Terminate And Pass Through TLS On One Gateway](sections/section-040/capstone/labs/lab-01/README.md) | `ats-015-capstone-040` |
+| 050 | [Capstone: Block Client IP Ranges At The Ingress Gateway](sections/section-050/capstone/labs/lab-01/README.md) | `ats-015-capstone-050` |
+| 060 | [Capstone: Enforce Request Rules Through A Waypoint](sections/section-060/capstone/labs/lab-01/README.md) | `ats-015-capstone-060` |
 
 ---
 

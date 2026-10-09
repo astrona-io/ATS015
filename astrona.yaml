@@ -44,10 +44,10 @@ modules:
         title: Mission Briefing
         path: sections/intro/README.md
       - type: reading
-        title: "Welcome, Astronaut"
+        title: "Welcome To The Course"
         path: sections/intro/course-01-welcome.md
       - type: reading
-        title: "Before Your First Launch"
+        title: "Get Your Machine Ready"
         path: sections/intro/course-02-before-your-first-launch.md
       - type: reading
         title: "How This Course Is Made"
@@ -69,13 +69,13 @@ modules:
         title: "Inspect Workload Identity And Certificates"
         path: sections/section-010/module-01/course.md
       - type: reading
-        title: "How A Ship Gets Its Badge"
+        title: "How A Workload Gets Its Certificate"
         path: sections/section-010/module-01/course-01-how-a-ship-gets-its-badge.md
       - type: reading
-        title: "Read The Badge A Ship Carries"
+        title: "Read A Workload's Certificate"
         path: sections/section-010/module-01/course-02-read-the-badge-a-ship-carries.md
       - type: reading
-        title: "From Badge To Guest List"
+        title: "Turn An Identity Into An AuthorizationPolicy Principal"
         path: sections/section-010/module-01/course-03-from-badge-to-guest-list.md
       - type: reading
         title: Question
@@ -102,7 +102,7 @@ modules:
           - name: "Debugging Envoy and istiod (proxy-config)"
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
+        title: "Wrap-Up: Workload Identity And Certificates"
         path: sections/section-010/module-01/course-04-wrap-up.md
 
       - type: reading
@@ -112,7 +112,7 @@ modules:
         title: "Two Callers, One Default"
         path: sections/section-010/module-02/course-01-two-callers-one-default.md
       - type: reading
-        title: "Require The Handshake With STRICT"
+        title: "Require mTLS With STRICT"
         path: sections/section-010/module-02/course-02-require-the-handshake.md
       - type: reading
         title: "Three Scopes, Narrowest Wins"
@@ -137,7 +137,7 @@ modules:
           - name: "Authentication policy task"
             url: https://istio.io/latest/docs/tasks/security/authentication/authn-policy/
       - type: reading
-        title: "Read The Mode Off The Ship"
+        title: "Read The mTLS Mode A Pod Uses"
         path: sections/section-010/module-02/course-04-read-the-mode-off-the-ship.md
       - type: reading
         title: "An Exception For One Port"
@@ -146,7 +146,7 @@ modules:
         title: Question
         path: sections/section-010/module-02/labs/lab-02/question.md
       - type: lab
-        title: "Open One Port For The Drifter Lab"
+        title: "Open One Port With portLevelMtls Lab"
         path: sections/section-010/module-02/labs/lab-02
         difficulty: intermediate
         estimated_duration: 15m
@@ -168,7 +168,7 @@ modules:
         title: Question
         path: sections/section-010/module-02/labs/lab-03/question.md
       - type: lab
-        title: "Fix The Broken Handshake Lab"
+        title: "Fix A DestinationRule That Breaks mTLS Lab"
         path: sections/section-010/module-02/labs/lab-03
         difficulty: intermediate
         estimated_duration: 15m
@@ -184,23 +184,23 @@ modules:
           - name: "PeerAuthentication reference"
             url: https://istio.io/latest/docs/reference/config/security/peer_authentication/
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
+        title: "Wrap-Up"
         path: sections/section-010/module-02/course-07-wrap-up.md
 
       - type: reading
         title: "Migrate A Namespace From PERMISSIVE To STRICT mTLS"
         path: sections/section-010/module-03/course.md
       - type: reading
-        title: "Count The Plain Signals"
+        title: "Count Plain-Text Requests To A Workload"
         path: sections/section-010/module-03/course-01-count-the-plain-signals.md
       - type: reading
-        title: "Write Down Where You Stand"
+        title: "Write Down The Current mTLS Mode"
         path: sections/section-010/module-03/course-02-write-down-where-you-stand.md
       - type: reading
-        title: "Bring The Drifter Into The Fleet"
+        title: "Inject A Sidecar Into A Plain-Text Client"
         path: sections/section-010/module-03/course-03-bring-the-drifter-into-the-fleet.md
       - type: reading
-        title: "Switch To STRICT For Good"
+        title: "Switch The Namespace To STRICT mTLS"
         path: sections/section-010/module-03/course-04-switch-to-strict-for-good.md
       - type: reading
         title: Question
@@ -227,14 +227,14 @@ modules:
           - name: "Sidecar injection"
             url: https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
+        title: "Wrap-Up"
         path: sections/section-010/module-03/course-05-wrap-up.md
 
       - type: reading
         title: Question
         path: sections/section-010/capstone/labs/lab-01/question.md
       - type: lab
-        title: "Turn On Mesh-Wide mTLS Without Stranding A Caller Capstone Lab"
+        title: "Capstone: Turn On Mesh-Wide mTLS Without Stranding A Caller"
         path: sections/section-010/capstone/labs/lab-01
         difficulty: advanced
         estimated_duration: 45m
@@ -269,16 +269,16 @@ modules:
         title: "Authorize HTTP Traffic Between Workloads"
         path: sections/section-020/module-01/course.md
       - type: reading
-        title: "The Guard At The Airlock"
+        title: "Where Authorization Is Enforced"
         path: sections/section-020/module-01/course-01-the-guard-at-the-airlock.md
       - type: reading
-        title: "Close The Airlock"
+        title: "Deny By Default With An Allow-Nothing Policy"
         path: sections/section-020/module-01/course-02-close-the-airlock.md
       - type: reading
-        title: "Write A Guest List Entry"
+        title: "Write An ALLOW Rule"
         path: sections/section-020/module-01/course-03-write-a-guest-list-entry.md
       - type: reading
-        title: "Name The Caller"
+        title: "Match The Caller By Identity"
         path: sections/section-020/module-01/course-04-name-the-caller.md
       - type: reading
         title: Question
@@ -303,16 +303,16 @@ modules:
           - name: "Istio security concepts: authorization"
             url: https://istio.io/latest/docs/concepts/security/#authorization
       - type: reading
-        title: "Least Privilege For The Whole Fleet"
+        title: "Least Privilege For Every Service"
         path: sections/section-020/module-01/course-05-least-privilege-for-the-fleet.md
       - type: reading
-        title: "Find Out Why The Guard Says No"
+        title: "Troubleshoot An Authorization Denial"
         path: sections/section-020/module-01/course-06-find-out-why-the-guard-says-no.md
       - type: reading
         title: Question
         path: sections/section-020/module-01/labs/lab-02/question.md
       - type: lab
-        title: "Repair The Fleet's Guest Lists Lab"
+        title: "Repair Broken AuthorizationPolicies Lab"
         path: sections/section-020/module-01/labs/lab-02
         difficulty: intermediate
         estimated_duration: 20m
@@ -333,23 +333,23 @@ modules:
           - name: "Security problems"
             url: https://istio.io/latest/docs/ops/common-problems/security-issues/
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
+        title: "Wrap-Up"
         path: sections/section-020/module-01/course-07-wrap-up.md
 
       - type: reading
         title: "DENY Policies And Evaluation Order"
         path: sections/section-020/module-02/course.md
       - type: reading
-        title: "The Guard Checks The Banned List First"
+        title: "DENY Is Checked Before ALLOW"
         path: sections/section-020/module-02/course-01-the-guard-checks-the-banned-list-first.md
       - type: reading
-        title: "A Guest List Cannot Overrule The Ban"
+        title: "An ALLOW Cannot Override A DENY"
         path: sections/section-020/module-02/course-02-a-guest-list-cannot-overrule-the-ban.md
       - type: reading
-        title: "Lock Everything With One Empty Rule"
+        title: "Deny All Traffic With One Empty Rule"
         path: sections/section-020/module-02/course-03-lock-everything-with-one-empty-rule.md
       - type: reading
-        title: "Close The Whole Path"
+        title: "Deny A Path With Prefix Matching"
         path: sections/section-020/module-02/course-04-close-the-whole-path.md
       - type: reading
         title: Question
@@ -372,7 +372,7 @@ modules:
           - name: "Explicit deny"
             url: https://istio.io/latest/docs/tasks/security/authorization/authz-deny/
       - type: reading
-        title: "Say It Out Loud: Negative Fields"
+        title: "Negative Fields In A DENY Policy"
         path: sections/section-020/module-02/course-05-say-it-out-loud-negative-fields.md
       - type: reading
         title: Question
@@ -397,14 +397,14 @@ modules:
         title: "AUDIT, And Choosing ALLOW Or DENY"
         path: sections/section-020/module-02/course-06-audit-and-choosing-allow-or-deny.md
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
+        title: "Wrap-Up"
         path: sections/section-020/module-02/course-07-wrap-up.md
 
       - type: reading
         title: Question
         path: sections/section-020/capstone/labs/lab-01/question.md
       - type: lab
-        title: "Authorization Policy Capstone"
+        title: "Capstone: Deny By Default And Allow Two Calls"
         path: sections/section-020/capstone/labs/lab-01
 
   - id: module-030
@@ -422,7 +422,7 @@ modules:
         title: "Authenticate End Users With JWT"
         path: sections/section-030/module-01/course.md
       - type: reading
-        title: "Two Identities On One Signal"
+        title: "Peer Identity And Request Identity"
         path: sections/section-030/module-01/course-01-two-identities-on-one-signal.md
       - type: reading
         title: "Check The Token With RequestAuthentication"
@@ -459,7 +459,7 @@ modules:
         title: Question
         path: sections/section-030/module-01/labs/lab-02/question.md
       - type: lab
-        title: "Take The Token From The Query String Lab"
+        title: "Read A JWT From A Query Parameter Lab"
         path: sections/section-030/module-01/labs/lab-02
         difficulty: intermediate
         estimated_duration: 20m
@@ -478,7 +478,7 @@ modules:
           - name: "Authorization with JWT task"
             url: https://istio.io/latest/docs/tasks/security/authorization/authz-jwt/
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
+        title: "Wrap-Up"
         path: sections/section-030/module-01/course-05-wrap-up.md
 
       - type: reading
@@ -549,7 +549,7 @@ modules:
         title: Question
         path: sections/section-030/capstone/labs/lab-01/question.md
       - type: lab
-        title: "End-User Authentication Capstone"
+        title: "Capstone: Require A Token And Split Access By Claim"
         path: sections/section-030/capstone/labs/lab-01
 
   - id: module-040
@@ -569,13 +569,13 @@ modules:
         title: "Terminate TLS At The Ingress Gateway"
         path: sections/section-040/module-01/course.md
       - type: reading
-        title: "Give The Gate Its Certificate"
+        title: "Create A TLS Certificate And Secret"
         path: sections/section-040/module-01/course-01-give-the-gate-its-certificate.md
       - type: reading
-        title: "Open The HTTPS Door"
+        title: "Configure An HTTPS Gateway Server"
         path: sections/section-040/module-01/course-02-open-the-https-door.md
       - type: reading
-        title: "Redirect And Rotate"
+        title: "Redirect HTTP And Rotate The Certificate"
         path: sections/section-040/module-01/course-03-redirect-and-rotate.md
       - type: reading
         title: Question
@@ -598,13 +598,13 @@ modules:
           - name: "Gateway reference (ServerTLSSettings)"
             url: https://istio.io/latest/docs/reference/config/networking/gateway/
       - type: reading
-        title: "When The Handshake Fails"
+        title: "Troubleshoot A Failed TLS Handshake"
         path: sections/section-040/module-01/course-04-when-the-handshake-fails.md
       - type: reading
         title: Question
         path: sections/section-040/module-01/labs/lab-02/question.md
       - type: lab
-        title: "Repair The Gate's Certificate Lab"
+        title: "Fix A Broken HTTPS Gateway Lab"
         path: sections/section-040/module-01/labs/lab-02
         difficulty: intermediate
         estimated_duration: 20m
@@ -623,17 +623,17 @@ modules:
           - name: "Debugging Envoy and istiod"
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
+        title: "Wrap-Up: Terminate TLS At The Ingress Gateway"
         path: sections/section-040/module-01/course-05-wrap-up.md
 
       - type: reading
         title: "Require Client Certificates At The Edge"
         path: sections/section-040/module-02/course.md
       - type: reading
-        title: "Issue The Fleet's Badges"
+        title: "Create A CA And Certificates With OpenSSL"
         path: sections/section-040/module-02/course-01-issue-the-fleet-badges.md
       - type: reading
-        title: "Make The Gate Ask For A Badge"
+        title: "Configure A MUTUAL TLS Gateway"
         path: sections/section-040/module-02/course-02-make-the-gate-ask-for-a-badge.md
       - type: reading
         title: Question
@@ -658,13 +658,13 @@ modules:
           - name: "Debugging Envoy and istiod"
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
-        title: "Turn Away Strangers And Prove It"
+        title: "Reject Untrusted Client Certificates And Prove It"
         path: sections/section-040/module-02/course-03-turn-away-strangers-and-prove-it.md
       - type: reading
         title: Question
         path: sections/section-040/module-02/labs/lab-02/question.md
       - type: lab
-        title: "Fix The Gate's Trusted Badge Office Lab"
+        title: "Fix The Trusted CA In A MUTUAL Gateway Lab"
         path: sections/section-040/module-02/labs/lab-02
         difficulty: intermediate
         estimated_duration: 20m
@@ -681,10 +681,10 @@ modules:
           - name: "Debugging Envoy and istiod"
             url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
       - type: reading
-        title: "Two Secret Layouts And What A Badge Proves"
+        title: "The Separate CA Secret And What A Client Certificate Proves"
         path: sections/section-040/module-02/course-04-two-secret-layouts-and-what-a-badge-proves.md
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
+        title: "Wrap-Up: Client Certificates At The Edge"
         path: sections/section-040/module-02/course-05-wrap-up.md
 
       - type: reading
@@ -694,10 +694,10 @@ modules:
         title: "What A Proxy Can See"
         path: sections/section-040/module-03/course-01-what-a-proxy-can-see.md
       - type: reading
-        title: "Open A Gate That Does Not Decrypt"
+        title: "Configure A Passthrough Gateway"
         path: sections/section-040/module-03/course-02-open-a-gate-that-does-not-decrypt.md
       - type: reading
-        title: "Prove Who Opened The Envelope"
+        title: "Prove Where TLS Ends"
         path: sections/section-040/module-03/course-03-prove-who-opened-the-envelope.md
       - type: reading
         title: Question
@@ -722,13 +722,13 @@ modules:
           - name: "VirtualService reference: TLSRoute"
             url: https://istio.io/latest/docs/reference/config/networking/virtual-service/#TLSRoute
       - type: reading
-        title: "When The Stream Has Nowhere To Go"
+        title: "Troubleshoot A Passthrough Setup"
         path: sections/section-040/module-03/course-04-when-the-stream-has-nowhere-to-go.md
       - type: reading
         title: Question
         path: sections/section-040/module-03/labs/lab-02/question.md
       - type: lab
-        title: "Fix The Gate That Routes Nothing Lab"
+        title: "Fix A Passthrough Gateway That Routes Nothing Lab"
         path: sections/section-040/module-03/labs/lab-02
         difficulty: intermediate
         estimated_duration: 20m
@@ -747,29 +747,29 @@ modules:
           - name: "VirtualService reference: TLSRoute"
             url: https://istio.io/latest/docs/reference/config/networking/virtual-service/#TLSRoute
       - type: reading
-        title: "One Gate, Two Modes"
+        title: "Termination And Passthrough On One Gateway"
         path: sections/section-040/module-03/course-05-one-gate-two-modes.md
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
+        title: "Wrap-Up: TLS Passthrough"
         path: sections/section-040/module-03/course-06-wrap-up.md
 
       - type: reading
         title: "Originate TLS For External Services"
         path: sections/section-040/module-04/course.md
       - type: reading
-        title: "Who Seals The Signal"
+        title: "Who Starts The TLS Connection"
         path: sections/section-040/module-04/course-01-who-seals-the-signal.md
       - type: reading
-        title: "Chart The Planet And Seal The Signal"
+        title: "Originate TLS With A ServiceEntry And A DestinationRule"
         path: sections/section-040/module-04/course-02-chart-the-planet-and-seal-the-signal.md
       - type: reading
-        title: "Check The Planet's ID Card"
+        title: "Verify The Server Certificate Name"
         path: sections/section-040/module-04/course-03-check-the-planets-id-card.md
       - type: reading
         title: Question
         path: sections/section-040/module-04/labs/lab-01/question.md
       - type: lab
-        title: "Seal The Signal To An Outside Planet Lab"
+        title: "Originate TLS To An External Service Lab"
         path: sections/section-040/module-04/labs/lab-01
         difficulty: intermediate
         estimated_duration: 20m
@@ -788,20 +788,20 @@ modules:
           - name: "DestinationRule reference"
             url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
       - type: reading
-        title: "A Seal On The Wrong Channel"
+        title: "Diagnose TLS Origination Failures"
         path: sections/section-040/module-04/course-04-a-seal-on-the-wrong-channel.md
       - type: reading
-        title: "Use What You Won"
+        title: "Add A Timeout And Mutual TLS To An External Service"
         path: sections/section-040/module-04/course-05-use-what-you-won.md
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
+        title: "Wrap-Up"
         path: sections/section-040/module-04/course-06-wrap-up.md
 
       - type: reading
         title: Question
         path: sections/section-040/capstone/labs/lab-01/question.md
       - type: lab
-        title: "Edge TLS Capstone"
+        title: "Capstone: Terminate And Pass Through TLS On One Gateway"
         path: sections/section-040/capstone/labs/lab-01
 
   - id: module-050
@@ -819,13 +819,13 @@ modules:
         title: "Authorize By Source IP At The Ingress Gateway"
         path: sections/section-050/module-01/course.md
       - type: reading
-        title: "Guard The Arrival Gate"
+        title: "Apply An AuthorizationPolicy To The Ingress Gateway"
         path: sections/section-050/module-01/course-01-guard-the-arrival-gate.md
       - type: reading
-        title: "Who Opened The Connection: ipBlocks"
+        title: "Match The Connection's Source With ipBlocks"
         path: sections/section-050/module-01/course-02-who-opened-the-connection.md
       - type: reading
-        title: "Trust The Right Number Of Relays"
+        title: "Set numTrustedProxies For X-Forwarded-For"
         path: sections/section-050/module-01/course-03-trust-the-right-number-of-relays.md
       - type: reading
         title: "Block A Client Range With remoteIpBlocks"
@@ -853,7 +853,7 @@ modules:
           - name: "Configuring gateway network topology"
             url: https://istio.io/latest/docs/ops/configuration/traffic-management/network-topologies/
       - type: reading
-        title: "One Path, One Network"
+        title: "Allow One Path From One Network Only"
         path: sections/section-050/module-01/course-05-one-path-one-network.md
       - type: reading
         title: Question
@@ -878,14 +878,14 @@ modules:
           - name: "Configuring gateway network topology"
             url: https://istio.io/latest/docs/ops/configuration/traffic-management/network-topologies/
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
+        title: "Wrap-Up"
         path: sections/section-050/module-01/course-06-wrap-up.md
 
       - type: reading
         title: Question
         path: sections/section-050/capstone/labs/lab-01/question.md
       - type: lab
-        title: "Edge Authorization Capstone"
+        title: "Capstone: Block Client IP Ranges At The Ingress Gateway"
         path: sections/section-050/capstone/labs/lab-01
 
   - id: module-060
@@ -912,7 +912,7 @@ modules:
         title: Question
         path: sections/section-060/module-01/labs/lab-02/question.md
       - type: lab
-        title: "Allow Only Known Ships At L4 Lab"
+        title: "Allow Callers By Identity With L4 Policy Lab"
         path: sections/section-060/module-01/labs/lab-02
         difficulty: beginner
         estimated_duration: 15m
@@ -929,7 +929,7 @@ modules:
           - name: "AuthorizationPolicy reference"
             url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
       - type: reading
-        title: "A Rule With Nowhere To Run"
+        title: "An L7 Rule With No Waypoint"
         path: sections/section-060/module-01/course-03-a-rule-with-nowhere-to-run.md
       - type: reading
         title: "Deploy A Waypoint"
@@ -957,16 +957,16 @@ modules:
           - name: "AuthorizationPolicy reference"
             url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
       - type: reading
-        title: "Ask Who Holds The Rule"
+        title: "Find Which Component Enforces A Rule"
         path: sections/section-060/module-01/course-05-ask-who-holds-the-rule.md
       - type: reading
-        title: "Wrap-Up: Mission Debrief"
+        title: "Wrap-Up"
         path: sections/section-060/module-01/course-06-wrap-up.md
 
       - type: reading
         title: Question
         path: sections/section-060/capstone/labs/lab-01/question.md
       - type: lab
-        title: "Ambient Authorization Capstone"
+        title: "Capstone: Enforce Request Rules Through A Waypoint"
         path: sections/section-060/capstone/labs/lab-01
         difficulty: advanced
