@@ -234,8 +234,24 @@ modules:
         title: Question
         path: sections/section-010/capstone/labs/lab-01/question.md
       - type: lab
-        title: "Workload Identity And Mutual TLS Capstone"
+        title: "Turn On Mesh-Wide mTLS Without Stranding A Caller Capstone Lab"
         path: sections/section-010/capstone/labs/lab-01
+        difficulty: advanced
+        estimated_duration: 45m
+        topic: mtls
+        task_kind: migration
+        tags: [peerauthentication, authorizationpolicy, mtls-strict, mtls-scopes, sidecar-injection, spiffe, principals, openssl]
+        learning_goals:
+          - Bring a plain-text caller into the mesh before requiring STRICT mTLS for the whole mesh
+          - Read a workload identity from its live certificate and allow only that principal
+          - Tell a 403 from the authorization policy apart from a reset connection
+        resources:
+          - name: "PeerAuthentication reference"
+            url: https://istio.io/latest/docs/reference/config/security/peer_authentication/
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+          - name: "Mutual TLS migration"
+            url: https://istio.io/latest/docs/tasks/security/authentication/mtls-migration/
 
   - id: module-020
     title: "Authorization Policy Fundamentals"

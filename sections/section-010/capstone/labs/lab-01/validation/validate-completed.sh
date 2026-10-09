@@ -25,6 +25,12 @@ settle_dataplane() {
 settle_dataplane
 
 say "--- check 1: a mesh-scoped STRICT policy exists ---"
+if kubectl -n istio-system get peerauthentication default >/dev/null 2>&1; then
+  say "OK: PeerAuthentication 'default' exists in istio-system."
+else
+  say "FAIL: no PeerAuthentication named 'default' in istio-system."
+  FAIL=1
+fi
 MESH=$(kubectl -n istio-system get peerauthentication -o json 2>/dev/null \
   | python3 -c "import sys,json;d=json.load(sys.stdin);print(' '.join(i['spec'].get('mtls',{}).get('mode','') for i in d.get('items',[]) if 'selector' not in i['spec']))" 2>/dev/null)
 case "$MESH" in
@@ -43,38 +49,58 @@ case "$C" in
      FAIL=1 ;;
 esac
 
+# A connection opened before the last change can keep the old rules for up to
+# about a minute. Retry the three calls for up to 90 seconds until they all
+# give the expected code, then judge the last round.
+from_outside() {
+  kubectl -n outside exec deploy/outside-client -- \
+    curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$@" 2>/dev/null
+}
+from_booking() {
+  kubectl -n identity-demo exec deploy/booking-service-v1 -c booking-service -- \
+    curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$@" 2>/dev/null
+}
+from_tester() {
+  kubectl -n identity-demo exec deploy/tester -- \
+    curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$@" 2>/dev/null
+}
+GOT_OUTSIDE=""; GOT_BOOKING=""; GOT_TESTER=""
+for i in $(seq 1 18); do
+  GOT_OUTSIDE=$(from_outside -X POST http://booking-service.identity-demo/book)
+  GOT_BOOKING=$(from_booking -X POST http://notification-service/notify)
+  GOT_TESTER=$(from_tester -X POST http://notification-service/notify)
+  [ "$GOT_OUTSIDE $GOT_BOOKING $GOT_TESTER" = "200 200 403" ] && break
+  sleep 5
+done
+
 say "--- check 3: the migrated caller still reaches booking-service ---"
-CODE=$(kubectl -n outside exec deploy/outside-client -- \
-  curl -s -o /dev/null -w '%{http_code}' --max-time 10 \
-  -X POST http://booking-service.identity-demo/book 2>/dev/null)
-if [ "$CODE" = "200" ]; then say "OK: outside-client -> booking-service -> 200"; else
-  say "FAIL: outside-client -> booking-service -> '${CODE:-no response}', expected 200."
+if [ "$GOT_OUTSIDE" = "200" ]; then say "OK: outside-client -> booking-service -> 200"; else
+  say "FAIL: outside-client -> booking-service -> '${GOT_OUTSIDE:-no response}', expected 200."
   say "      000 means it is still sending plaintext into a STRICT mesh."
   FAIL=1
 fi
 
 say "--- check 4: booking-sa may reach notification-service ---"
-CODE=$(kubectl -n identity-demo exec deploy/booking-service-v1 -c booking-service -- \
-  curl -s -o /dev/null -w '%{http_code}' --max-time 10 \
-  -X POST http://notification-service/notify 2>/dev/null)
-if [ "$CODE" = "200" ]; then say "OK: booking-service -> notification-service -> 200"; else
-  say "FAIL: booking-service -> notification-service -> '${CODE:-no response}', expected 200."
+if [ "$GOT_BOOKING" = "200" ]; then say "OK: booking-service -> notification-service -> 200"; else
+  say "FAIL: booking-service -> notification-service -> '${GOT_BOOKING:-no response}', expected 200."
   say "      403 usually means the principal string is wrong."
   FAIL=1
 fi
 
 say "--- check 5: another identity may not ---"
-CODE=$(kubectl -n identity-demo exec deploy/tester -- \
-  curl -s -o /dev/null -w '%{http_code}' --max-time 10 \
-  -X POST http://notification-service/notify 2>/dev/null)
-if [ "$CODE" = "403" ]; then say "OK: tester -> notification-service -> 403"; else
-  say "FAIL: tester -> notification-service -> '${CODE:-no response}', expected 403."
+if [ "$GOT_TESTER" = "403" ]; then say "OK: tester -> notification-service -> 403"; else
+  say "FAIL: tester -> notification-service -> '${GOT_TESTER:-no response}', expected 403."
   say "      200 means no ALLOW policy selects notification-service, or the rule is too wide."
   FAIL=1
 fi
 
 say "--- check 6: the rule is identity-based ---"
 POL=$(kubectl -n identity-demo get authorizationpolicy -o yaml 2>/dev/null)
+NPOL=$(kubectl -n identity-demo get authorizationpolicy -o name 2>/dev/null | wc -l | tr -d ' ')
+if [ "$NPOL" -lt 1 ]; then
+  say "FAIL: no AuthorizationPolicy exists in identity-demo."
+  FAIL=1
+fi
 if printf '%s' "$POL" | grep -q 'principals' && ! printf '%s' "$POL" | grep -q 'spiffe://'; then
   say "OK: an AuthorizationPolicy matches on principals, without the spiffe:// scheme."
 else
