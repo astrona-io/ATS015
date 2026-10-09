@@ -10,8 +10,8 @@ Three modules, one per `Gateway` TLS mode. Module 1 is `SIMPLE` — ordinary ser
 
 ## What You Will Master
 
-- `credentialName` naming a secret in the **gateway pod's** namespace, normally `istio-system`, not the application's.
-- The port block that a TLS listener depends on: `protocol: HTTPS` on `443` with a name beginning `https`.
+- `credentialName` naming a Secret in the **gateway pod's** namespace (`istio-ingress` in the playgrounds, `istio-system` with an `istioctl` install), not the application's.
+- The port block that a TLS listener depends on: `protocol: HTTPS` on `443`. The port `name` is only a label.
 - `kubectl create secret tls` for `SIMPLE`, and why `MUTUAL` needs `create secret generic` with `tls.crt`, `tls.key` **and** `ca.crt`.
 - `tls.httpsRedirect` on a port-80 listener, and why the `tls` block belongs there at all.
 - What a client rejected during a TLS handshake observes, and why it is never an HTTP status.
@@ -26,20 +26,27 @@ Three modules, one per `Gateway` TLS mode. Module 1 is `SIMPLE` — ordinary ser
 
 ### 1. Terminate TLS At The Ingress Gateway
 *   **Module Reader:** **[Module 1: Terminate TLS At The Ingress Gateway](./module-01/course.md)**
-    Deep-dive parts, in reading order:
-    1. [How a gateway gets its certificate](./module-01/course-01-how-a-gateway-gets-its-certificate.md)
-    2. [The TLS listener](./module-01/course-02-the-tls-listener.md)
-    3. [Verifying, redirecting and rotating](./module-01/course-03-verifying-redirecting-and-rotating.md)
-*   **Hands-on Playground:** `sections/section-040/module-01/playground` — namespace `tls-demo`, the `demo` profile's ingress gateway, `openssl` on the PATH, and no `Gateway`, `VirtualService` or secret.
+    Parts, in reading order:
+    1. [Give The Gate Its Certificate](./module-01/course-01-give-the-gate-its-certificate.md)
+    2. [Open The HTTPS Door](./module-01/course-02-open-the-https-door.md)
+    3. [Redirect And Rotate](./module-01/course-03-redirect-and-rotate.md)
+    4. [When The Handshake Fails](./module-01/course-04-when-the-handshake-fails.md)
+    5. [Wrap-Up: Mission Debrief](./module-01/course-05-wrap-up.md)
+*   **Hands-on Playground:** `sections/section-040/module-01/playground`: the Starfleet on the planet `starfleet`, Istio 1.30.5 installed with Helm, and the ingress gateway `istio-ingress` on its own planet `istio-ingress`. `astrona run` keeps two port forwards open: `127.0.0.1:8080` to the gateway's port `80` and `127.0.0.1:8443` to its port `443`. No certificate, Secret, `Gateway` or `VirtualService` yet: you make them.
     ```bash
     astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-040/module-01/playground
     ```
-*   **Graded lab:** **[Serve HTTPS At The Ingress Gateway](./module-01/labs/lab-01/)** — read the
-    [exam question](./module-01/labs/lab-01/docs/exam-question.md), solve it, then
-    ```bash
-    astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-040/module-01/labs/lab-01
-    astrona submit -c .
-    ```
+*   **Graded labs:** two missions, each right after the part it tests.
+    *   **[Serve HTTPS At The Ingress Gateway](./module-01/labs/lab-01/README.md)**: read the [task](./module-01/labs/lab-01/question.md), solve it, then
+        ```bash
+        astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-040/module-01/labs/lab-01
+        astrona submit -c sections/section-040/module-01/labs/lab-01
+        ```
+    *   **[Repair The Gate's Certificate](./module-01/labs/lab-02/README.md)**: read the [task](./module-01/labs/lab-02/question.md), solve it, then
+        ```bash
+        astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-040/module-01/labs/lab-02
+        astrona submit -c sections/section-040/module-01/labs/lab-02
+        ```
 
 ### 2. Require Client Certificates At The Edge
 *   **Module Reader:** **[Module 2: Require Client Certificates At The Edge](./module-02/course.md)**

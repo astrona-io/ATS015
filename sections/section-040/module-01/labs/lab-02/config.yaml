@@ -1,0 +1,49 @@
+metadata:
+  name: "ats-015-lab-040-01-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+# Port forward: astrona keeps it running on 127.0.0.1 (astrona port-forward list).
+runtime:
+  type: kind
+  portForwards:
+    - name: ingress-https
+      resource: svc/istio-ingress
+      namespace: istio-ingress
+      hostPort: 8443
+      targetPort: 443
+      scheme: https
+      description: "Ingress gateway HTTPS – use --resolve starfleet.example.com:8443:127.0.0.1"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base, istiod and the ingress gateway in istio-ingress) with Helm"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-040-01-02-workloads"
+      description: "Creates the starfleet namespace with the Starfleet (bridge, cargo, scout v1-v3, navcom), the shuttle client and mesh-wide access logs"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+    - name: "lab-040-01-02-fault"
+      description: "Makes a test CA and a server certificate for starfleet.example.com, stores the CA in the ConfigMap starfleet-ca, and applies the broken starting state: the TLS Secret in starfleet instead of istio-ingress, and a Gateway that serves the wrong host name"
+      type: "file"
+      source: "bootstrap/03-seed-fault.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-repaired-certificate"
+      description: "Confirms the starfleet-credential Secret is in istio-ingress and signed by the lab CA, the Gateway serves starfleet.example.com with SIMPLE TLS from that Secret, the gateway proxy holds it as ACTIVE, istioctl analyze reports no IST0101 for the Gateway, and live HTTPS signals that trust only the lab CA reach the bridge"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

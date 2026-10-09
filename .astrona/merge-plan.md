@@ -140,7 +140,7 @@ Work on exactly one module at a time. Read `CLAUDE.md` first, all of it.
 | 030-01 Authenticate End Users With JWT | done | new-data 03-jwt 01, 02, c1, c2 merged (README, PRACTICE, bootstrap left for 030-02); Starfleet playground, 4 parts + wrap-up checked on 1.30.5 (istiod inlines the JWKS as `localJwks`, DENY TCP-port warning shown, waits now "about a minute"); lab-01 converted (own app, now Helm), new lab-02 (fromParams + DENY); both astrona test PASS |
 | 030-02 Authorize On JWT Claims | done | new-data 03-jwt 03, c3, c4, PRACTICE merged; Starfleet playground with `probe-jwt` RequestAuthentication, 4 parts + wrap-up checked on 1.30.5 (claim names show under `payload` in proxy-config, not `request.auth.claims`); lab-01 converted (own app, now Helm, grader retries), new lab-02 (claim typo + public path); both astrona test PASS |
 | 030 capstone | todo | |
-| 040-01 Terminate TLS At The Ingress Gateway | todo | new-data 04-ingress-https |
+| 040-01 Terminate TLS At The Ingress Gateway | done | new-data 04-ingress-https 01, 02, c2 merged (README, PRACTICE, config, bootstrap left for 040-02); Starfleet playground with Helm gateway, 4 parts + wrap-up checked on 1.30.5 (wrong-namespace Secret and wrong SNI both give curl exit 35, not 56; port forward restarts after a failed handshake); lab-01 converted (own app, grader retries 90 s), new lab-02 (Secret in wrong namespace + wrong host, IST0101 + IST0132); both astrona test PASS |
 | 040-02 Require Client Certificates At The Edge | todo | new-data 04-ingress-https |
 | 040-03 TLS Passthrough Instead Of Termination | todo | |
 | 040-04 Originate TLS For External Services (new) | todo | new-data 05-egress |

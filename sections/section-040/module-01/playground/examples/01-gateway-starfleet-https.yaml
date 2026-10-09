@@ -1,0 +1,37 @@
+# HTTPS on the ingress gateway for starfleet.example.com (TLS termination).
+# The gateway shows the certificate from Secret "starfleet-credential",
+# decrypts the request, and forwards it into the mesh (with Istio mTLS).
+# Plain HTTP on port 80 is redirected to HTTPS.
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: starfleet-gateway
+  namespace: starfleet
+spec:
+  # Ingress gateway pods (Helm chart: istio: ingress, istioctl: istio: ingressgateway).
+  selector:
+    istio: ingress
+  servers:
+  # HTTPS server.
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    hosts:
+    - starfleet.example.com
+    tls:
+      # SIMPLE = normal one-way TLS: the server shows a certificate, the client does not.
+      mode: SIMPLE
+      # Kubernetes TLS Secret (tls.crt + tls.key). Must be in the SAME
+      # namespace as the gateway POD (istio-ingress), not as this resource.
+      credentialName: starfleet-credential
+  # HTTP server that only redirects to HTTPS.
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - starfleet.example.com
+    tls:
+      # Answer every HTTP request with 301 to the https:// URL.
+      httpsRedirect: true

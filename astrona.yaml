@@ -552,20 +552,62 @@ modules:
         title: "Terminate TLS At The Ingress Gateway"
         path: sections/section-040/module-01/course.md
       - type: reading
-        title: "How a gateway gets its certificate"
-        path: sections/section-040/module-01/course-01-how-a-gateway-gets-its-certificate.md
+        title: "Give The Gate Its Certificate"
+        path: sections/section-040/module-01/course-01-give-the-gate-its-certificate.md
       - type: reading
-        title: "The TLS listener"
-        path: sections/section-040/module-01/course-02-the-tls-listener.md
+        title: "Open The HTTPS Door"
+        path: sections/section-040/module-01/course-02-open-the-https-door.md
       - type: reading
-        title: "Verifying, redirecting and rotating"
-        path: sections/section-040/module-01/course-03-verifying-redirecting-and-rotating.md
+        title: "Redirect And Rotate"
+        path: sections/section-040/module-01/course-03-redirect-and-rotate.md
       - type: reading
         title: Question
         path: sections/section-040/module-01/labs/lab-01/question.md
       - type: lab
         title: "Serve HTTPS At The Ingress Gateway Lab"
         path: sections/section-040/module-01/labs/lab-01
+        difficulty: beginner
+        estimated_duration: 20m
+        topic: edge-tls
+        task_kind: build
+        tags: [gateway, ingress-gateway, tls-termination, credential-name, https-redirect, virtualservice, proxy-config]
+        learning_goals:
+          - Store a TLS certificate as a Secret in the namespace the ingress gateway pod reads from
+          - Serve one host over HTTPS with a SIMPLE TLS Gateway server and a bound VirtualService
+          - Redirect plain HTTP on port 80 to HTTPS with httpsRedirect
+        resources:
+          - name: "Secure gateways task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/ingress/secure-ingress/
+          - name: "Gateway reference (ServerTLSSettings)"
+            url: https://istio.io/latest/docs/reference/config/networking/gateway/
+      - type: reading
+        title: "When The Handshake Fails"
+        path: sections/section-040/module-01/course-04-when-the-handshake-fails.md
+      - type: reading
+        title: Question
+        path: sections/section-040/module-01/labs/lab-02/question.md
+      - type: lab
+        title: "Repair The Gate's Certificate Lab"
+        path: sections/section-040/module-01/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: edge-tls
+        task_kind: troubleshooting
+        tags: [gateway, ingress-gateway, tls-termination, credential-name, sni, ist0101, istioctl-analyze, proxy-config]
+        learning_goals:
+          - Find a TLS Secret in the wrong namespace from a WARMING secret in the gateway proxy and IST0101
+          - Find a Gateway that serves the wrong host name from IST0132 and the Gateway hosts
+          - Prove the repaired gateway serves the right certificate to a client that trusts only the lab CA
+        resources:
+          - name: "Secure gateways task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/ingress/secure-ingress/
+          - name: "IST0101 ReferencedResourceNotFound"
+            url: https://istio.io/latest/docs/reference/config/analysis/ist0101/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-040/module-01/course-05-wrap-up.md
 
       - type: reading
         title: "Require Client Certificates At The Edge"

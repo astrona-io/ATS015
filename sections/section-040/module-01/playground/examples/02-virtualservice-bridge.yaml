@@ -1,0 +1,30 @@
+# Route requests arriving at starfleet-gateway to the bridge.
+# TLS is handled by the Gateway, so the VirtualService looks the same for HTTP
+# and HTTPS.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: bridge
+  namespace: starfleet
+spec:
+  hosts:
+  - starfleet.example.com
+  gateways:
+  - starfleet-gateway
+  http:
+  - match:
+    - uri:
+        exact: /productpage
+    - uri:
+        prefix: /static
+    - uri:
+        exact: /login
+    - uri:
+        exact: /logout
+    - uri:
+        prefix: /api/v1/products
+    route:
+    - destination:
+        host: bridge
+        port:
+          number: 9080
