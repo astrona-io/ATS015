@@ -1,12 +1,12 @@
 # Solution Walkthrough
 
-Mission debrief, astronaut. Two small objects do the whole job. The `RequestAuthentication` says where to find the token (`fromParams`), and the `DENY` policy refuses every signal that arrives without a valid one.
+Two small objects do the whole job. The `RequestAuthentication` says where to find the token (`fromParams`), and the `DENY` policy refuses every request that arrives without a valid one.
 
 ---
 
 ## Step 1: Get the token and a helper
 
-Download the demo token and define a helper that sends one signal from the shuttle and prints its status code:
+Download the demo token and define a helper that sends one request from the `shuttle` pod and prints its status code:
 
 ```sh
 TOKEN=$(curl -s https://raw.githubusercontent.com/istio/istio/release-1.30/security/tools/jwt/samples/demo.jwt)
@@ -87,13 +87,13 @@ Warning: configured AuthorizationPolicy will deny all traffic to TCP ports under
 authorizationpolicy.security.istio.io/probe-require-jwt created
 ```
 
-The warning is expected. A request principal only exists on HTTP signals, so on a plain TCP channel this `DENY` rule would refuse everything. The probe only speaks HTTP, so nothing breaks here.
+The warning is expected. A request principal only exists on HTTP requests, so on a plain TCP port this `DENY` rule would refuse everything. The probe only speaks HTTP, so nothing breaks here.
 
-`notRequestPrincipals: ["*"]` matches every signal with no request principal, that is, every signal without a valid token. `DENY` refuses those. Unlike an `ALLOW` policy, it does not switch the probe to "only what is on the list", so the `ALLOW` policies other teams add later keep working.
+`notRequestPrincipals: ["*"]` matches every request with no request principal, that is, every request without a valid token. `DENY` refuses those. Unlike an `ALLOW` policy, it does not switch the probe to "only what is on the list", so the `ALLOW` policies other teams add later keep working.
 
 ## Step 4: Prove all four
 
-Wait about a minute: the proxies keep old connections open for a while, and those still follow the old rules. Then send the four signals:
+Wait about a minute: the proxies keep old connections open for a while, and those still follow the old rules. Then send the four requests:
 
 ```sh
 check_once "$PROBE?token=$TOKEN"
@@ -109,7 +109,7 @@ check_once $PROBE
 403
 ```
 
-The header token gets `403`, not `200` and not `401`. The proxy never read it, so it attached no request principal, and the `DENY` policy refused the signal. A `401` only appears when a token was read and found false, as with `?token=bad`.
+The header token gets `403`, not `200` and not `401`. The proxy never read it, so it attached no request principal, and the `DENY` policy refused the request. A `401` only appears when a token was read and found invalid, as with `?token=bad`.
 
 Now submit:
 
@@ -121,7 +121,7 @@ astrona submit -c sections/section-030/module-01/labs/lab-02
 
 ## Common Mistakes
 
-- **Writing `requestPrincipals` under `DENY`.** That refuses every signal that **has** a valid token: the opposite of the task. Use `notRequestPrincipals`.
+- **Writing `requestPrincipals` under `DENY`.** That refuses every request that **has** a valid token: the opposite of the task. Use `notRequestPrincipals`.
 - **Adding an `ALLOW` policy as well.** The task asks for the `DENY` form only, and the grader checks that no `ALLOW` policy exists.
 - **Expecting the header token to still work.** With `fromParams` set, the header is ignored, and the grader checks that a token in the header gets `403`.
 - **Testing too fast.** Right after `kubectl apply`, old connections can still follow the old rules. If the header token still gets `200`, wait and send it again.

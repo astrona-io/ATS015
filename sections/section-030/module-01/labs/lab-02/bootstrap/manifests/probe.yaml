@@ -6,7 +6,7 @@
 #   /hostname       name of the pod that answered
 #   /status/503     always return 503 (for retries)
 #   /delay/3        wait 3 seconds (for timeouts)
-# In this playground it is the ship you protect with a token: /headers shows
+# In this playground it is the workload you protect with a token: /headers shows
 # which headers (for example Authorization) reached the probe.
 apiVersion: v1
 kind: ServiceAccount

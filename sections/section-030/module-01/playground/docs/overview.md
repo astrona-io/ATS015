@@ -2,35 +2,35 @@
 
 > Declared in [`../config.yaml`](../config.yaml) under `metadata.docs.guide`.
 
-This is a **playground**, not a lab: your training solar system, astronaut. It
-starts a fresh cluster, installs Istio and the Starfleet, and then waits. There
-is no task, no `astrona submit` and no pass or fail. Explore, break things,
-`astrona destroy`, start over.
+This is a **playground**, not a lab: a clean environment for practice. It
+starts a fresh cluster, installs Istio and the Starfleet sample app, and then
+waits. There is no task, no `astrona submit` and no pass or fail. Explore,
+break things, `astrona destroy`, start over.
 
 ## What's in the box
 
 - A single-node `kind` Kubernetes cluster. `kubectl` is already pointed at it.
 - **Istio 1.30.5**, installed with Helm (`istio-base` and `istiod` only, no
-  gateways). `istiod` is mission control: it sends every proxy its orders. In
-  this module it also downloads the signing keys that tokens are checked
-  against.
-- Mesh-wide **access logs**, so every proxy writes one line per request. This
-  is the ship's flight log, and you read it with
+  gateways). `istiod` is Istio's control plane: it sends configuration and
+  certificates to every proxy. In this module it also downloads the signing
+  keys that tokens are checked against.
+- Mesh-wide **access logs**, so every proxy writes one line per request. You
+  read them with
   `kubectl logs -n starfleet deploy/probe-v1 -c istio-proxy`.
-- Namespace **`starfleet`** (the planet you work on), labelled
+- Namespace **`starfleet`** (the namespace you work in), labelled
   `istio-injection=enabled`, with:
   - **The Starfleet** (the Istio docs' Bookinfo sample with space names):
     `bridge`, `cargo`, `navcom` and `scout` v1, v2 and v3. They are the rest of
-    the fleet; nothing in this module protects them.
-  - **`probe`** v1 and v2 behind one Service on port `8000`. This is the ship
-    you protect with a token. `/headers` sends back the headers that reached
-    it, so you can see whether the `Authorization` header arrived.
-  - **`shuttle`**, your client pod inside the mesh. You send every test signal
-    from it with the `curl` command.
-- Every pod (spaceship) shows `2/2`: the app plus its `istio-proxy` sidecar,
-  the communications officer that every signal in or out goes through.
+    the sample app; nothing in this module protects them.
+  - **`probe`** v1 and v2 behind one Service on port `8000`. This is the
+    workload you protect with a token. `/headers` sends back the headers that
+    reached it, so you can see whether the `Authorization` header arrived.
+  - **`shuttle`**, your client pod inside the mesh. You send every test
+    request from it with the `curl` command.
+- Every pod shows `2/2`: the app plus its `istio-proxy` sidecar, the Envoy
+  proxy that all inbound and outbound traffic of the pod passes through.
 - **No `RequestAuthentication` and no `AuthorizationPolicy`.** Writing them is
-  the point of the module, so every signal is let in.
+  the point of the module, so every request is allowed.
 
 The cluster needs **outbound internet**. You download the sample token from
 `raw.githubusercontent.com`, and `istiod` downloads the matching keys from the
@@ -39,8 +39,8 @@ same place. Without it, every token is rejected.
 ## Helpers
 
 Paste this once in each new terminal. It downloads Istio's sample token and
-defines `check_status`, which sends 3 signals from the shuttle and prints the
-status code of each. Any `curl` options you give it are passed on.
+defines `check_status`, which sends 3 requests from the `shuttle` pod and prints
+the status code of each. Any `curl` options you give it are passed on.
 
 ```sh
 SAMPLES_URL=https://raw.githubusercontent.com/istio/istio/release-1.30/security/tools/jwt/samples
@@ -67,7 +67,7 @@ happens. The module's parts show the full YAML for every step.
 - Decode the token's middle part
   (`echo "$TOKEN" | cut -d. -f2 | base64 -d`) and read `iss`, `sub` and `exp`
   before any rule exists.
-- Apply only the `RequestAuthentication` and send a signal with no token. It
+- Apply only the `RequestAuthentication` and send a request with no token. It
   still gets `200`. This is the behaviour worth being surprised by once.
 - Add a trailing slash to the `issuer` and watch every token start failing
   with `401`.

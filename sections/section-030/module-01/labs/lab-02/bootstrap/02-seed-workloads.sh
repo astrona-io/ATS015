@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Creates the planet `starfleet` (sidecar injection on), mesh-wide access logs,
+# Creates the namespace `starfleet` (sidecar injection on), mesh-wide access logs,
 # the echo probe (v1 and v2 behind one Service on port 8000) and the shuttle
 # client. Creates NONE of the objects the task asks for.
 # astrona runs this script with KUBECONFIG pointed at the lab cluster.

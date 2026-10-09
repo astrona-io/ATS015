@@ -1,8 +1,8 @@
-# Check end-user tokens (JWTs) on signals to the probe.
+# Check end-user tokens (JWTs) on requests to the probe.
 # Uses Istio's sample issuer and keys, so the sample tokens from the Istio
 # repository work.
-# A signal WITH a token: the token must be valid, otherwise HTTP 401.
-# A signal WITHOUT a token: still allowed! RequestAuthentication only checks
+# A request WITH a token: the token must be valid, otherwise HTTP 401.
+# A request WITHOUT a token: still allowed! RequestAuthentication only checks
 # tokens that are present. To require one, add an AuthorizationPolicy (02).
 apiVersion: security.istio.io/v1
 kind: RequestAuthentication

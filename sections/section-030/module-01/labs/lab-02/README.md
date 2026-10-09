@@ -2,11 +2,11 @@
 estimated_duration: 3m
 ---
 
-# Take The Token From The Query String
+# Read A JWT From A Query Parameter
 
-Welcome to a build mission, astronaut. On the planet `starfleet`, an old ground station can only send its token in the address, as `?token=...`. The probe must read the token from there and nowhere else, and refuse every signal without a valid token.
+This is a build lab. In the namespace `starfleet`, an old ground station can only send its token in the URL, as `?token=...`. The probe must read the token from there and nowhere else, and refuse every request without a valid token.
 
-Your job is to write a `RequestAuthentication` with `fromParams`, require the token with a `DENY` policy that uses `notRequestPrincipals`, and prove which signals get `200`, `401` and `403`.
+Your job is to write a `RequestAuthentication` with `fromParams`, require the token with a `DENY` policy that uses `notRequestPrincipals`, and prove which requests get `200`, `401` and `403`.
 
 ## Launching the Lab
 

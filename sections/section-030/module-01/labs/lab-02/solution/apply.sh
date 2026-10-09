@@ -22,7 +22,7 @@ spec:
     - token
 YAML
 
-# 2. "Token required" written as DENY: refuse every signal without a valid
+# 2. "Token required" written as DENY: refuse every request without a valid
 #    request principal. No ALLOW policy, so nothing else is refused.
 kubectl apply -f - <<'YAML'
 apiVersion: security.istio.io/v1

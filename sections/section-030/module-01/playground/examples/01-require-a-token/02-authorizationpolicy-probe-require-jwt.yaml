@@ -1,6 +1,6 @@
-# Require a valid JWT for every signal to the probe.
+# Require a valid JWT for every request to the probe.
 # requestPrincipals is "<iss>/<sub>" of a validated token. "*" = any valid
-# token, so only signals WITHOUT a valid token are denied (HTTP 403).
+# token, so only requests WITHOUT a valid token are denied (HTTP 403).
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:

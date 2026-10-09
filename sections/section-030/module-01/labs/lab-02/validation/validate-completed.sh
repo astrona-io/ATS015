@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Grading for ats-015-lab-030-01-02 - take the token from the query string.
+# Grading for ats-015-lab-030-01-02 - read a JWT from a query parameter.
 # Confirms that the probe's RequestAuthentication checks the demo issuer and
 # reads the token only from the `token` query parameter, that a DENY policy
 # with notRequestPrincipals requires a token and no ALLOW policy selects the
-# probe, and - the part that matters - that real signals from the shuttle get:
+# probe, and - the part that matters - that real requests from the shuttle get:
 #   ?token=<demo token>                 -> 200
 #   Authorization: Bearer <demo token>  -> 403 (the header is not read)
 #   ?token=bad                          -> 401
@@ -50,12 +50,12 @@ allow_policies=$(kubectl get authorizationpolicy -A \
   | grep -E '^(starfleet|istio-system)/' | grep -E '=(ALLOW)?$' || true)
 [[ -z "$allow_policies" ]] || fail "an ALLOW AuthorizationPolicy exists ($allow_policies). The task asks for the DENY form only"
 
-# --- 3. live signals ------------------------------------------------------------
+# --- 3. live requests -----------------------------------------------------------
 TOKEN=$(curl -s --max-time 20 \
   https://raw.githubusercontent.com/istio/istio/release-1.30/security/tools/jwt/samples/demo.jwt)
 [[ -n "${TOKEN:-}" ]] || fail "could not download the demo token - this lab needs outbound internet access"
 
-status() {  # $@ = curl args; prints the HTTP status code of one signal from the shuttle
+status() {  # $@ = curl args; prints the HTTP status code of one request from the shuttle
   kubectl -n "$NS" exec deploy/shuttle -- \
     curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$@" 2>/dev/null
 }

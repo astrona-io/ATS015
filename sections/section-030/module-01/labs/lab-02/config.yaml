@@ -29,7 +29,7 @@ testing:
 validation:
   scripts:
     - name: "verify-token-in-query"
-      description: "Confirms the probe's RequestAuthentication reads the token only from the token query parameter, the token is required by a DENY policy with notRequestPrincipals and no ALLOW policy selects the probe, then sends real signals: query token 200, header token 403, bad query token 401, no token 403"
+      description: "Confirms the probe's RequestAuthentication reads the token only from the token query parameter, the token is required by a DENY policy with notRequestPrincipals and no ALLOW policy selects the probe, then sends real requests: query token 200, header token 403, bad query token 401, no token 403"
       type: "file"
       source: "validation/validate-completed.sh"
 
