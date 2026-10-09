@@ -18,32 +18,4 @@ An `AuthorizationPolicy` uses the identity in its `principals` field. Between tw
 
 In short: read the identity in the certificate, and you know what the rule must say.
 
-## Check yourself
-
-Try to answer each question before you open the answer.
-
-<details>
-<summary>1. Two Deployments both run without a <code>serviceAccountName</code>. Can an <code>AuthorizationPolicy</code> allow one and deny the other by identity?</summary>
-
-No. Both run as `default`, so both have the same identity, `.../sa/default`. Give each Deployment its own service account if a rule must tell them apart.
-</details>
-
-<details>
-<summary>2. <code>istioctl proxy-config secret</code> shows two rows. Which one holds the workload's identity?</summary>
-
-`default`. It is the workload's own certificate, with the SPIFFE name in its SAN. `ROOTCA` is the root certificate the proxy uses to check the certificates of other workloads.
-</details>
-
-<details>
-<summary>3. Your rule lists <code>spiffe://cluster.local/ns/starfleet/sa/shuttle</code>. What happens to requests from <code>shuttle</code>?</summary>
-
-They get `403`. Istio adds `spiffe://` itself, so the proxy looks for `spiffe://spiffe://...`. The object is accepted and `istioctl analyze` stays quiet. Write `cluster.local/ns/starfleet/sa/shuttle`.
-</details>
-
-## Clean up
-
-When you are done with this module, remove the playground. It always starts clean the next time you run it.
-
-```sh
-astrona destroy ats-015-playground-010-01
-```
+When you are done, remove the playground with `astrona destroy ats-015-playground-010-01`.
