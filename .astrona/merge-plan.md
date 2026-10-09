@@ -147,7 +147,7 @@ Work on exactly one module at a time. Read `CLAUDE.md` first, all of it.
 | 040 capstone | todo | |
 | 050-01 Authorize By Source IP At The Ingress Gateway | done | no new-data; Starfleet playground with Helm gateway, 5 parts + wrap-up checked on 1.30.5 (istiod Helm value `meshConfig.defaultConfig.gatewayTopology.numTrustedProxies` gives `xffNumTrustedHops` after upgrade + gateway restart and at first install; gateway `podAnnotations` also work; N=2 with one relay trusts the forged entry; unset = header ignored; ALLOW on one path closes the rest; middle `*` in paths is literal); lab-01 converted (own app, demo profile, grader retries 90 s), new lab-02 (DENY + notRemoteIpBlocks, istioctl pinned); both astrona test PASS |
 | 050 capstone | todo | |
-| 060-01 Authorization In Ambient Mode, L4 And L7 | todo | |
+| 060-01 Authorization In Ambient Mode, L4 And L7 | done | Verified on Istio 1.30.5 ambient: selector ALLOW with methods and no waypoint makes ztunnel drop the rule ("rules": []) and refuse every caller; both labs pass astrona test |
 | 060 capstone | todo | |
 | README.md, section READMEs final pass | todo | |
 | Delete `new-data/` | todo | |

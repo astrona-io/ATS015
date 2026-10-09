@@ -1,129 +1,164 @@
-# Part 1 — The ambient dataplane
+# The Ambient Dataplane
 
-> Prerequisite: [the module landing page](./course.md). Next: [Part 2 — What ztunnel can enforce](./course-02-what-ztunnel-can-enforce.md).
-
-Every rule in this module is a consequence of how ambient mode moves traffic. This part is that mechanism: what replaces the sidecar, what it carries, how a pod's traffic reaches it without the pod being changed, and what "enrolled" means as an observable fact.
+Astronaut, in sidecar mode every ship had its own communications officer on board. In ambient mode the ships fly without one. Every rule in this module follows from what replaces that officer, so this part shows you the new layout first, and then lets you see it on your own planet.
 
 ## Two layers instead of one
 
-In sidecar mode a single proxy in each pod did everything: mTLS, L4 handling, and HTTP parsing for routing, telemetry and policy. You paid for all of it on every workload, whether or not the workload needed L7.
+In sidecar mode, one proxy in each pod did everything: the secret handshake (mutual TLS), the connection handling, and reading HTTP for routing and policy. Every ship paid for all of it, even when it needed only a part. Ambient mode splits that work into two layers that you switch on separately.
 
-Ambient splits that into two layers you adopt separately:
+### ztunnel: the relay station on every node
 
-```text
-   ┌──────────────────────────── node ────────────────────────────┐
-   │                                                              │
-   │   pod A            pod B            pod C                    │
-   │   (no sidecar)     (no sidecar)     (no sidecar)              │
-   │      │                 │                │                    │
-   │      └─── redirected ──┴────────────────┘                    │
-   │                    │                                         │
-   │              ┌─────▼──────┐                                  │
-   │              │  ztunnel   │  DaemonSet, one per node         │
-   │              │            │  mTLS over HBONE, L4 policy      │
-   │              └─────┬──────┘  does NOT parse HTTP             │
-   └────────────────────┼─────────────────────────────────────────┘
-                        │
-                 optional, per namespace or service
-                        │
-                 ┌──────▼───────┐
-                 │   waypoint   │  an Envoy, deployed only where asked
-                 │              │  parses HTTP: L7 policy, routing,
-                 └──────────────┘  L7 telemetry
+**ztunnel** (short for "zero-trust tunnel") runs once on every node, as a DaemonSet. Think of a node as a space station where many ships dock. ztunnel is the station's shared relay: every signal a docked ship sends or receives passes through it.
+
+ztunnel does two jobs. It does the mutual TLS for every ship, so both sides prove who they are. And it enforces rules about the connection. It does **not** read HTTP. It sees connections, not requests: the outside of the signal capsule, never the message inside.
+
+### The waypoint: a checkpoint you add where you need it
+
+A **waypoint** is a full Envoy proxy that runs as its own Deployment. Think of it as a checkpoint ship parked in front of a beacon. Every signal to that beacon stops there, and the checkpoint opens the capsule and reads the request: the method, the path, the headers.
+
+You only get a waypoint where you create one, for a whole namespace or for one service. It is created as a Gateway API `Gateway` object, which is why the playground has the Gateway API CRDs (Custom Resource Definitions, the extra object types Kubernetes learns about).
+
+```mermaid
+flowchart TB
+    A["shuttle"] -->|"plain signal"| Z1["ztunnel (node)"]
+    Z1 -->|"HBONE, mutual TLS"| W["waypoint (optional)"]
+    W -->|"HBONE, mutual TLS"| Z2["ztunnel (node)"]
+    Z2 -->|"plain signal"| B["probe"]
 ```
 
-**ztunnel** — zero-trust tunnel — runs once per node as a DaemonSet. It establishes mutual TLS between workloads and enforces connection-level policy. It deliberately does not parse HTTP: it sees connections, not requests.
+A signal leaves the `shuttle` as plain traffic. The ztunnel on the shuttle's node wraps it in a secure tunnel and sends it on, through a waypoint only if the destination has one. The ztunnel on the receiving node unwraps it and hands it to the `probe`. Without a waypoint, the two ztunnels talk to each other directly.
 
-**A waypoint** is a full Envoy, deployed per namespace or per service, and only when something needs L7. It is an ordinary Deployment fronted by a Gateway API `Gateway`, which is why [Part 3](./course-03-waypoints-and-l7-policy.md) creates one with a Gateway API object rather than an Istio-specific one.
+The idea is that you pay for reading HTTP only where you need it. For security work, this adds one question you must ask before you write any policy: **is there a waypoint in this signal's path?** Nothing in the policy object asks it for you.
 
-The design goal is that you pay for L7 where you need it instead of everywhere. The consequence for security work is that **"is there a waypoint in this path?" becomes a question you must ask before writing any policy** — and nothing in the policy object will ask it for you.
+## HBONE: the sealed tunnel
 
-## HBONE
+ztunnel does not send raw connections between nodes. It wraps each one in **HBONE** (HTTP-Based Overlay Network Environment). That is a tunnel built with the HTTP/2 `CONNECT` method, inside mutual TLS, on port `15008`. Think of it as a sealed tube between two relay stations.
 
-ztunnel does not forward raw TCP between nodes. It wraps a connection in **HBONE** — HTTP-Based Overlay Network Environment — which is a CONNECT-style tunnel over HTTP/2, inside mutual TLS, on port `15008`.
+### What the tunnel carries
 
-```text
-   pod A ──plain TCP──▶ ztunnel(A) ══ mTLS + HTTP/2 CONNECT ══▶ ztunnel(B) ──plain TCP──▶ pod B
-                          │                                        │
-                   presents A's cert                        verifies it, and
-                   (SPIFFE identity,                        learns A's identity
-                    from section 010)                        for policy decisions
+```mermaid
+sequenceDiagram
+    participant S as shuttle
+    participant ZA as ztunnel A
+    participant ZB as ztunnel B
+    participant P as probe
+    S->>ZA: plain TCP
+    ZA->>ZB: mutual TLS, HTTP/2 CONNECT
+    Note over ZA,ZB: certificate shows the shuttle's identity
+    ZB->>P: plain TCP
 ```
 
-Two things follow, and the second is the one people do not expect:
+ztunnel A shows the shuttle's certificate on the tunnel. ztunnel B checks it, and so learns exactly who is calling before any byte reaches the probe.
 
-- **Identity works exactly as in sidecar mode.** The certificates are the same SPIFFE ones from [section 010](../../section-010/module-01/course-01-how-identity-is-issued.md), issued to the same service accounts, and presented on the HBONE connection. So `principals` and `namespaces` rules are fully available at L4 — no waypoint required. That is worth saying twice, because "L7 needs a waypoint" is often over-generalised into "anything useful needs a waypoint".
-- **The tunnel is HTTP/2, but the payload is opaque to it.** ztunnel is not parsing the application's HTTP; it is using HTTP/2 CONNECT as the tunnelling mechanism. The inner stream is bytes as far as ztunnel is concerned — the same distinction as a passthrough gateway in [section 040](../../section-040/module-03/course-01-what-a-proxy-can-see.md).
+Two facts follow from this, and the second one surprises people:
 
-## How traffic gets redirected
+- **Identity works exactly as in sidecar mode.** The certificates are the same ones, issued for the same service accounts. So rules on `principals` and `namespaces` work at L4, with no waypoint. "HTTP rules need a waypoint" often gets stretched into "every useful rule needs a waypoint". That is wrong.
+- **The tunnel uses HTTP/2, but ztunnel does not read your HTTP.** HTTP/2 `CONNECT` is only the tube. The traffic inside it is just bytes to ztunnel.
 
-A sidecar was in the pod, so `iptables` rules inside the pod's network namespace captured its traffic. Ambient has no sidecar, so redirection happens outside the pod, set up by the **istio-cni** component when a pod is enrolled:
+## How traffic reaches ztunnel without a sidecar
 
-```text
-   namespace labelled istio.io/dataplane-mode=ambient
-        │
-        ▼
-   istio-cni (a DaemonSet) notices pods in that namespace
-        │
-        ▼
-   installs redirection for each pod's traffic to the node's ztunnel
-        │
-        ▼
-   the POD IS NOT MODIFIED — no new container, no new spec, no restart
+A sidecar lived inside the pod, so rules inside the pod caught its traffic. Ambient mode has no sidecar, so the redirect has to be set up from outside the pod. That job belongs to **istio-cni**, a DaemonSet that acts like a docking crew: it reroutes each enrolled ship's antenna to the station's relay.
+
+### Enrolment is a label, not an injection
+
+```mermaid
+flowchart TB
+    L["namespace label: ambient"] -->|"watched by"| C["istio-cni"]
+    C -->|"redirects pod traffic"| Z["ztunnel"]
+    C -->|"no change"| P["running pods"]
 ```
 
-That last line is the practical difference from [section 010](../../section-010/module-03/course-02-exceptions-and-meshing.md)'s migration. Sidecar injection is a mutating admission webhook that rewrites the pod spec, so it only applies to pods created afterwards and existing pods need a restart. Ambient enrolment changes node-level networking, so **labelling a namespace enrols its running pods immediately**, with no restart and no disruption.
+You label a namespace `istio.io/dataplane-mode=ambient`. istio-cni notices the pods there and sends their traffic to the ztunnel on their node. The pods themselves are not touched: no new container, no change to the pod spec, no restart.
 
-That is the headline operational advantage of ambient mode, and it is why enrolment is a precondition in this playground rather than an exercise: there is nothing to watch happen.
+That is the big difference from sidecar injection. Injection rewrites the pod spec when a pod is created, so pods that are already running need a restart. Ambient enrolment changes the node's networking instead, so **labelling a namespace enrols the pods that are already running**, straight away. In this playground, the `starfleet` namespace was labelled when it was created.
 
-## Confirming enrolment
+## See it in your playground
 
-"Enrolled" is not a pod-visible fact — there is no extra container to look for. The observable is what ztunnel knows about, and which protocol it is using for each workload.
+"Enrolled" is not something you can see inside a pod: there is no extra container to look for. What you can see is the label on the planet, the ships with one container each, and what ztunnel knows about them.
 
-> [!TIP]
-> **Try it — confirm the workloads are enrolled, and that no waypoint exists**
->
-> ```sh
-> kubectl -n ambient-authz get pods -o custom-columns='POD:.metadata.name,CONTAINERS:.spec.containers[*].name'
-> istioctl ztunnel-config workload --namespace ambient-authz
-> kubectl -n ambient-authz get gateway
-> ```
->
-> Expect something like:
->
-> ```text
-> POD                              CONTAINERS
-> notification-service-v1-...      notification-service
-> other-client-...                 other-client
-> tester-...                       tester
->
-> NAMESPACE      POD NAME                    ADDRESS      NODE              WAYPOINT  PROTOCOL
-> ambient-authz  notification-service-v1-…   10.244.0.12  kind-control-…    None      HBONE
-> ambient-authz  other-client-…              10.244.0.13  kind-control-…    None      HBONE
-> ambient-authz  tester-…                    10.244.0.14  kind-control-…    None      HBONE
->
-> No resources found in ambient-authz namespace.
-> ```
->
-> Three things in one screen. **One container per pod** — no `istio-proxy` anywhere, unlike every earlier module. **`PROTOCOL: HBONE`** — ztunnel is carrying this traffic and doing mTLS for it, which is the real meaning of "enrolled". **`WAYPOINT: None`** and an empty `get gateway` — no L7 layer exists yet, which is the starting condition the next two parts depend on.
+<!-- astrona:playground:renew -->
 
-`istioctl ztunnel-config` is the ambient counterpart of `istioctl proxy-config`, and the `workload` subcommand is its equivalent of "what does this proxy know about". [Part 4](./course-04-tooling-and-carrying-across.md) covers the rest of the family.
+### Check the planet's label
 
-> *ztunnel carries mTLS over HBONE and never parses HTTP, so identity is fully available at L4 while anything about a request needs a separate waypoint.*
+Show the labels on the `starfleet` namespace:
+
+```sh
+kubectl get namespace starfleet --show-labels
+```
+
+```text
+NAME        STATUS   AGE   LABELS
+starfleet   Active   64s   istio.io/dataplane-mode=ambient,kubernetes.io/metadata.name=starfleet
+```
+
+The label `istio.io/dataplane-mode=ambient` is the whole enrolment. There is no `istio-injection` label.
+
+### Count the containers
+
+List the ships:
+
+```sh
+kubectl get pods -n starfleet
+```
+
+```text
+NAME                         READY   STATUS    RESTARTS   AGE
+bridge-v1-bc4dc4fcc-fzm64    1/1     Running   0          64s
+cargo-v1-6f787f8bd5-h2bpn    1/1     Running   0          64s
+navcom-v1-7467bbc689-jrmws   1/1     Running   0          64s
+probe-v1-7888d6c6d5-n4ctm    1/1     Running   0          64s
+probe-v2-58767cc46-wh5wl     1/1     Running   0          64s
+scout-v1-85bf65868-jkgpc     1/1     Running   0          64s
+scout-v2-866c98b568-89pcs    1/1     Running   0          64s
+scout-v3-668c6dfc68-h9rcp    1/1     Running   0          64s
+shuttle-7b5db664c-hmlqb      1/1     Running   0          64s
+```
+
+Every ship shows `1/1`. There is no `istio-proxy` container anywhere, and yet every ship is in the mesh.
+
+### Ask ztunnel what it knows
+
+`istioctl ztunnel-config workload` lists every workload that the ztunnels know about. Keep the header line and the `starfleet` lines:
+
+```sh
+istioctl ztunnel-config workload | grep -E "NAMESPACE|starfleet"
+```
+
+```text
+NAMESPACE          POD NAME                                                              ADDRESS     NODE                                          WAYPOINT PROTOCOL
+starfleet          bridge-v1-bc4dc4fcc-fzm64                                             10.244.0.12 astro-ats-015-playground-060-01-control-plane None     HBONE
+starfleet          cargo-v1-6f787f8bd5-h2bpn                                             10.244.0.8  astro-ats-015-playground-060-01-control-plane None     HBONE
+starfleet          navcom-v1-7467bbc689-jrmws                                            10.244.0.9  astro-ats-015-playground-060-01-control-plane None     HBONE
+starfleet          probe-v1-7888d6c6d5-n4ctm                                             10.244.0.15 astro-ats-015-playground-060-01-control-plane None     HBONE
+starfleet          probe-v2-58767cc46-wh5wl                                              10.244.0.16 astro-ats-015-playground-060-01-control-plane None     HBONE
+starfleet          scout-v1-85bf65868-jkgpc                                              10.244.0.10 astro-ats-015-playground-060-01-control-plane None     HBONE
+starfleet          scout-v2-866c98b568-89pcs                                             10.244.0.11 astro-ats-015-playground-060-01-control-plane None     HBONE
+starfleet          scout-v3-668c6dfc68-h9rcp                                             10.244.0.13 astro-ats-015-playground-060-01-control-plane None     HBONE
+starfleet          shuttle-7b5db664c-hmlqb                                               10.244.0.14 astro-ats-015-playground-060-01-control-plane None     HBONE
+```
+
+Read two columns. **`PROTOCOL: HBONE`** means ztunnel carries this ship's traffic through the sealed tunnel and does the mutual TLS for it. That is what "enrolled" really means. **`WAYPOINT: None`** means no checkpoint stands in front of any ship yet.
+
+### Look for a waypoint
+
+A waypoint is a Gateway API `Gateway`, so list those:
+
+```sh
+kubectl get gateway -n starfleet
+```
+
+```text
+No resources found in starfleet namespace.
+```
+
+Nothing yet. With no waypoint, only ztunnel stands between the ships, and only L4 rules can be enforced. The next parts build on exactly this starting point.
 
 ## Common pitfalls
 
 > [!WARNING]
-> **Looking for a sidecar container.** Ambient pods keep their original container count; enrollment is a label, not an injection.
->
-> **Expecting L7 authorization to work immediately.** ztunnel enforces at L4 only; anything matching on paths or methods needs a waypoint.
->
-> **Assuming policies carry over unchanged from sidecar mode.** They apply, but which of them can be *enforced* depends on what is in the path.
->
-> **Forgetting ztunnel is shared.** It is one per node, serving every enrolled pod on it.
+> - **Looking for a sidecar container.** Ambient pods keep their own container count. Enrolment is a namespace label, not an injection.
+> - **Restarting pods after enrolment.** Not needed. istio-cni redirects running pods as soon as the namespace has the label.
+> - **Expecting HTTP rules to work right away.** ztunnel works at L4 only. A rule on methods or paths needs a waypoint.
+> - **Thinking identity needs a waypoint.** ztunnel does the mutual TLS, so it knows every caller's identity.
 
-## Reference
-
-- [Istio ambient mode architecture](https://istio.io/latest/docs/ambient/architecture/) — ztunnel, waypoints, istio-cni and how they fit together.
-- [HBONE](https://istio.io/latest/docs/ambient/architecture/hbone/) — the tunnel protocol, its port, and what it carries.
-- [Adding workloads to ambient](https://istio.io/latest/docs/ambient/usage/add-workloads/) — the namespace label and what enrolment does to running pods.
+> *ztunnel carries mutual TLS over HBONE and never reads HTTP, so identity is always available at L4, while anything inside the request needs a waypoint.*

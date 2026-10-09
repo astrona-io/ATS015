@@ -1,5 +1,5 @@
 metadata:
-  name: "ats-015-lab-060-01"
+  name: "ats-015-lab-060-01-02"
   docs:
     solution: "solution.md"
     question: "question.md"
@@ -10,8 +10,8 @@ bootstrap:
       description: "Installs the Gateway API CRDs and Istio 1.30.5 in ambient mode (istio-base, istiod, istio-cni, ztunnel) with Helm"
       type: "file"
       source: "bootstrap/01-install-istio.sh"
-    - name: "lab-060-01-workloads"
-      description: "Creates namespace ambient-authz enrolled in ambient mode and mesh-wide access logs, with notification-service-v1, tester (tester-sa) and other-client (other-sa). No waypoint and no AuthorizationPolicy"
+    - name: "lab-060-01-02-workloads"
+      description: "Creates the starfleet namespace enrolled in ambient mode, with the Starfleet (bridge, cargo, scout v1-v3, navcom) and the shuttle client. No AuthorizationPolicy and no waypoint"
       type: "file"
       source: "bootstrap/02-seed-workloads.sh"
 
@@ -24,8 +24,8 @@ testing:
 
 validation:
   scripts:
-    - name: "verify-waypoint-policy"
-      description: "Confirms a programmed waypoint Gateway exists, traffic is enrolled through it with istio.io/use-waypoint, an AuthorizationPolicy uses targetRefs, and live calls give other-client POST 403, tester POST 200 and tester GET 403"
+    - name: "verify-l4-identity-rules"
+      description: "Confirms cargo-l4 and navcom-l4 are selector-based ALLOW policies with L4 fields only, no waypoint exists, the shuttle's connections to cargo and navcom are closed (000), the bridge still reaches cargo, the scouts still get ratings from navcom, and the shuttle still reaches scout"
       type: "file"
       source: "validation/validate-completed.sh"
 

@@ -1,0 +1,18 @@
+# L4 rule: only the bridge (service account starfleet-bridge) may connect to
+# cargo. Every field is about the connection, so ztunnel enforces it alone.
+# A refused caller sees a closed connection (curl prints 000), not a 403.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: cargo-l4
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: cargo
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals:
+        - cluster.local/ns/starfleet/sa/starfleet-bridge

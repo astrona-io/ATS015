@@ -1,0 +1,10 @@
+# The namespace for this lab, enrolled in AMBIENT mode.
+# istio.io/dataplane-mode=ambient puts every pod here in the mesh with no
+# sidecar: istio-cni redirects their traffic to the ztunnel on the node.
+# No waypoint and no use-waypoint label: adding them is the task.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ambient-authz
+  labels:
+    istio.io/dataplane-mode: ambient

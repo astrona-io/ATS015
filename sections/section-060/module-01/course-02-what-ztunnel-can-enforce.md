@@ -1,130 +1,176 @@
-# Part 2 — What ztunnel can enforce
+# What ztunnel Can Enforce
 
-> Prerequisite: [Part 1 — The ambient dataplane](./course-01-the-ambient-dataplane.md). Next: [Part 3 — Waypoints and L7 policy](./course-03-waypoints-and-l7-policy.md).
+Astronaut, ztunnel ends the HBONE tunnel, so it sees the caller's certificate and the connection's addresses and ports. It sees nothing of the request inside. That one fact splits the fields of an `AuthorizationPolicy` into two groups. This part is about the group ztunnel can handle alone, and about the way an L4 refusal looks to the caller.
 
-ztunnel terminates the HBONE tunnel, so it sees the peer certificate and the connection's addresses and ports — and nothing about the request inside. That one sentence partitions `AuthorizationPolicy`'s fields into two sets. This part is the set ztunnel can handle alone.
+## Lock the supply ship to the flagship
 
-## The L4 field set
+Start with a real rule. The supply ship `cargo` should only answer the flagship `bridge`. Every other ship, including your `shuttle`, should be refused.
 
-Everything decidable from the connection:
+<!-- astrona:playground:renew -->
 
-| Field | Available at L4 | Why |
-| --- | --- | --- |
-| `from.source.principals` | **yes** | read from the peer certificate on the HBONE connection |
-| `from.source.namespaces` | **yes** | derived from the same identity |
-| `from.source.ipBlocks` | **yes** | the connection's source address |
-| `to.operation.ports` | **yes** | the destination port |
-| `to.operation.methods` | no | needs the parsed request |
-| `to.operation.paths` | no | needs the parsed request |
-| `to.operation.hosts` | no | needs the `Host` header |
-| `from.source.requestPrincipals` | no | needs a validated JWT |
-| `when: request.headers[…]`, `request.auth.*` | no | needs the parsed request |
+### Write the rule
 
-The dividing line is exactly the one from [section 020](../../section-020/module-01/course-01-how-a-request-is-authorized.md)'s pipeline: stage 1 (transport) inputs are available, stage 2 and 3 (HTTP, JWT) inputs are not. ztunnel implements stage 1 and stage 4's connection-level half, and stops.
+The rule names the bridge's identity. That identity comes from its service account, `starfleet-bridge`.
 
-Worth noticing how familiar that set is. It is the same list that survives in passthrough mode at a gateway ([section 040](../../section-040/module-03/course-03-what-passthrough-costs.md)), for the same reason: no key to the payload, or no intention of parsing it. Three different situations in this course, one identical capability boundary.
-
-## Identity does not need a waypoint
-
-This is the half of the story that gets lost. Because ztunnel does mTLS over HBONE with the ordinary mesh certificates, `principals` rules are fully enforceable with no L7 layer anywhere:
+Save this as `authorizationpolicy-cargo-l4.yaml`:
 
 ```yaml
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: cargo-l4
+  namespace: starfleet
 spec:
   selector:
     matchLabels:
-      app: notification-service
+      app: cargo
   action: ALLOW
   rules:
-    - from:
-        - source:
-            principals:
-              - cluster.local/ns/ambient-authz/sa/tester-sa
+  - from:
+    - source:
+        principals:
+        - cluster.local/ns/starfleet/sa/starfleet-bridge
 ```
 
-Note this one uses a label `selector` — the same form as every policy in [section 020](../../section-020/README.md). For ztunnel-level L4 policy on workloads, that is the right attachment, and [Part 3](./course-03-waypoints-and-l7-policy.md) explains when it is not.
+Apply it:
 
-The identity string is unchanged from [section 010](../../section-010/module-01/course-03-principals-rotation-trust-domain.md): `<trust-domain>/ns/<namespace>/sa/<service-account>`, no `spiffe://`. Nothing about ambient mode changes how identity is issued, named or matched — only where it is checked.
-
-The playground's two clients exist to make that visible: `tester` runs as `tester-sa`, `other-client` as `other-sa`, and they are otherwise identical `curl` pods.
-
-> [!TIP]
-> **Try it — identity-based L4 policy, no waypoint**
->
-> ```sh
-> kubectl apply -f - <<'YAML'
-> apiVersion: security.istio.io/v1
-> kind: AuthorizationPolicy
-> metadata:
->   name: notification-l4
->   namespace: ambient-authz
-> spec:
->   selector:
->     matchLabels:
->       app: notification-service
->   action: ALLOW
->   rules:
->     - from:
->         - source:
->             principals:
->               - cluster.local/ns/ambient-authz/sa/tester-sa
-> YAML
->
-> sleep 3
-> kubectl -n ambient-authz exec deploy/tester -- \
->   curl -s -o /dev/null -w 'tester:       %{http_code}\n' --max-time 5 -X POST http://notification-service/notify
-> kubectl -n ambient-authz exec deploy/other-client -- \
->   curl -s -o /dev/null -w 'other-client: %{http_code}\n' --max-time 5 -X POST http://notification-service/notify
-> ```
->
-> Expect something like:
->
-> ```text
-> tester:       200
-> other-client: 000
-> ```
->
-> A `WAYPOINT: None` workload, from [Part 1](./course-01-the-ambient-dataplane.md), and the policy is enforced anyway — because everything this rule needs was available on the HBONE connection. `other-client` is refused for having the wrong service account, exactly as it would be in sidecar mode.
-
-## An L4 denial is a connection error
-
-Look at that `000` again. In sidecar mode an authorization denial is always `403`, because the rejection happens in an HTTP filter that can write a response. ztunnel has no HTTP layer, so it refuses the **connection**:
+```sh
+kubectl apply -f authorizationpolicy-cargo-l4.yaml
+```
 
 ```text
-   sidecar mode                        ambient, L4 denial (ztunnel)
-   ────────────                        ────────────────────────────
-   connection accepted                 connection refused
-   request parsed                      nothing parsed
-   RBAC filter says no                 ztunnel says no
-   403 "RBAC: access denied"           connection reset  →  curl reports 000
+authorizationpolicy.security.istio.io/cargo-l4 created
 ```
 
-That gives ambient mode a **three-way** failure vocabulary, where earlier sections had two:
+The policy uses a label `selector`, exactly as in sidecar mode. It points at the `cargo` pods, and the ztunnel in front of those pods enforces it.
 
-| What you see | Refused by | Layer |
+### Test it from the shuttle
+
+Send a signal from the shuttle straight to `cargo`:
+
+```sh
+kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" --max-time 5 http://cargo:9080/details/0
+```
+
+```text
+000
+command terminated with exit code 56
+```
+
+`curl` prints `000` because no HTTP answer came back at all, and `kubectl exec` adds the line about exit code 56: `curl` saw the connection being cut. If you still get `200`, wait about a minute and send the signal again. A new rule takes up to a minute to reach live traffic, because connections that are already open keep the old rule.
+
+The shuttle runs as the service account `shuttle`, not `starfleet-bridge`, so it is refused. And no waypoint exists. ztunnel enforced the rule on its own, because everything the rule needs was on the tunnel: the caller's identity.
+
+### Test it through the bridge
+
+Now ask the bridge for the item. The bridge's product API at `/api/v1/products/0` signals `cargo` behind the scenes, with the bridge's own identity:
+
+```sh
+kubectl exec -n starfleet deploy/shuttle -- curl -s -o /dev/null -w "%{http_code}\n" http://bridge:9080/api/v1/products/0
+```
+
+```text
+200
+```
+
+`200`: the flagship still reaches the supply ship. The same `cargo` pod refused one caller and served another, based only on who was calling.
+
+## The L4 field set
+
+The test above worked because a `principals` rule needs nothing from inside the request. Here is the full list of what ztunnel can and cannot check.
+
+### What ztunnel can and cannot read
+
+| Field | ztunnel can enforce it | Why |
 | --- | --- | --- |
-| `000` / connection reset | ztunnel, or edge TLS, or `STRICT` `PeerAuthentication` | transport |
-| `403` | a waypoint's RBAC filter | HTTP |
-| `404` / anything else | nothing — the application answered | — |
+| `from.source.principals` | **yes** | read from the caller's certificate on the tunnel |
+| `from.source.namespaces` | **yes** | part of the same identity |
+| `from.source.ipBlocks` | **yes** | the connection's source address |
+| `to.operation.ports` | **yes** | the destination port of the connection |
+| `to.operation.methods` | no | needs the HTTP request |
+| `to.operation.paths` | no | needs the HTTP request |
+| `to.operation.hosts` | no | needs the `Host` header |
+| `from.source.requestPrincipals` | no | needs a checked JSON Web Token (JWT) |
+| `when` on `request.headers[...]` or `request.auth.*` | no | needs the HTTP request |
 
-So in an ambient namespace, the status code tells you *which component* made the decision before you read a single policy. `000` means an L4 rule fired and a waypoint was not involved; `403` means a waypoint was in the path and its L7 rule fired. That is a genuinely useful diagnostic and the reason this part insists on the distinction now, before [Part 3](./course-03-waypoints-and-l7-policy.md) introduces a second source of denials.
+The rule of thumb: if you can decide it from the outside of the capsule (who, from where, to which channel), ztunnel can do it. If you must open the capsule, you need a waypoint.
 
-One practical consequence: **a client cannot tell an L4 denial from the service being down.** Both are connection failures. Where a caller needs to distinguish "you are not allowed" from "try again later", an L7 rule behind a waypoint gives them a `403` to act on, and that alone is sometimes reason enough to deploy one.
+One detail about `ports`: ztunnel sees the port the connection reaches on the pod. For the `probe`, that is the container port `8080`, not the Service port `8000`.
 
-> *ztunnel enforces everything decidable from the connection — including identity — and refuses at the transport, so an L4 denial arrives as `000` rather than `403`.*
+## An L4 denial is a refused connection
+
+Look at that `000` again. In sidecar mode a refused request always got a `403`, because the proxy read the request and wrote an HTTP answer. ztunnel has no HTTP layer, so it cannot write an answer. It closes the **connection** instead.
+
+### Two ways to say no
+
+```mermaid
+flowchart TB
+    R["signal arrives"] --> Q{"who refuses?"}
+    Q -->|"ztunnel, L4"| C["connection reset: curl shows 000"]
+    Q -->|"waypoint, L7"| F["HTTP 403 RBAC: access denied"]
+```
+
+ztunnel can only drop the connection, so `curl` prints `000`. A waypoint reads HTTP, so it answers with a `403` and the text `RBAC: access denied` (RBAC is role-based access control, Envoy's name for its authorization filter).
+
+That gives you a quick way to read failures in an ambient namespace:
+
+| What the caller sees | Who refused | Layer |
+| --- | --- | --- |
+| `000`, connection reset | ztunnel | L4 |
+| `403` | a waypoint | L7 |
+| any other answer | nobody: the app answered | none |
+
+The status code tells you which component decided before you read a single policy. One side effect: **a caller cannot tell an L4 refusal from a ship that is down.** Both look like a broken connection. If a caller must know "you are not allowed" from "try later", it needs an L7 rule on a waypoint, which answers `403`.
+
+### Read ztunnel's flight log
+
+ztunnel writes a log line for every connection it closes. Read the last lines from the ztunnel pods and keep the ones about refusals:
+
+```sh
+kubectl logs -n istio-system ds/ztunnel --tail=20 | grep -i "policy"
+```
+
+```text
+2026-10-09T11:39:41.876395Z	error	access	connection complete	src.addr=10.244.0.14:58564 src.workload="shuttle-7b5db664c-hmlqb" src.namespace="starfleet" src.identity="spiffe://cluster.local/ns/starfleet/sa/shuttle" dst.addr=10.244.0.8:15008 dst.hbone_addr=10.244.0.8:9080 dst.service="cargo.starfleet.svc.cluster.local" dst.workload="cargo-v1-6f787f8bd5-h2bpn" dst.namespace="starfleet" dst.identity="spiffe://cluster.local/ns/starfleet/sa/starfleet-cargo" direction="inbound" bytes_sent=0 bytes_recv=0 duration="0ms" error="connection closed due to policy rejection: allow policies exist, but none allowed"
+```
+
+The line names the caller's identity (`src.identity`), the ship it tried to reach (`dst.workload`) and the reason (`error=...`). The words "allow policies exist, but none allowed" mean an `ALLOW` policy selects `cargo` and no rule in it matched the shuttle. This is how you prove an L4 refusal came from a policy, and not from a ship that is down. If the playground has more than one node, `ds/ztunnel` reads only one ztunnel pod; this playground has one node.
 
 ## Common pitfalls
 
 > [!WARNING]
-> **Writing an L7 rule and expecting ztunnel to apply it.** It cannot parse HTTP. The rule is accepted and silently unenforced.
->
-> **Reading a policy as enforced because it exists.** In ambient the question is always *where* it is enforced, and by what.
->
-> **Assuming identity is unavailable without a sidecar.** ztunnel does mTLS and carries identity; it is the L7 attributes it lacks.
->
-> **Testing L4 policy with an HTTP-shaped test.** A 403 and a dropped connection mean different layers refused you.
+> - **Expecting a `403` from an L4 refusal.** ztunnel closes the connection. `curl` shows `000` and exits with an error.
+> - **Thinking identity needs a waypoint.** `principals` and `namespaces` come from the certificate on the tunnel. ztunnel enforces them alone.
+> - **Using the Service port in a `ports` rule.** ztunnel sees the pod's port, for example `8080` for the probe, not `8000`.
+> - **Reading a policy as enforced because it exists.** In ambient mode, always ask which component enforces it.
 
-## Reference
+> *ztunnel enforces everything you can decide from the connection, identity included, and it refuses by closing the connection, so an L4 denial shows as `000`, not `403`.*
 
-- [Ambient L4 authorization policy](https://istio.io/latest/docs/ambient/usage/l4-policy/) — which fields ztunnel supports and how it behaves without a waypoint.
-- [AuthorizationPolicy `Source`](https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source) — the field definitions, for checking which side of the L4/L7 line a rule sits on.
-- [Istio ambient architecture](https://istio.io/latest/docs/ambient/architecture/) — what ztunnel terminates and what it deliberately does not inspect.
+## Your mission: Allow Only Known Ships At L4
+
+You can now write an identity rule that ztunnel enforces with no waypoint, and read the refused connection it gives. Now prove it in a graded mission: lock two ships of the Starfleet so that only the right callers can reach them, using L4 rules alone.
+
+The mission runs in its own training solar system, so first pause your playground. Nothing in it is lost:
+
+```sh
+astrona stop ats-015-playground-060-01
+```
+
+Then start the mission:
+
+```sh
+astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-060/module-01/labs/lab-02
+```
+
+Read the task in [`question.md`](./labs/lab-02/question.md) and solve it on your own first. When you think you are done, send it for grading:
+
+```sh
+astrona submit -c sections/section-060/module-01/labs/lab-02
+```
+
+When the mission is done, remove it and wake your playground up again:
+
+```sh
+astrona destroy ats-015-lab-060-01-02
+astrona start ats-015-playground-060-01
+```

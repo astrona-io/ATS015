@@ -876,7 +876,7 @@ modules:
     title: "Authorization In Ambient Mode"
     description: >
       How the ztunnel/waypoint split decides which AuthorizationPolicy fields
-      are enforced, and which are accepted and silently ignored.
+      are enforced, which are ignored, and which make ztunnel refuse every caller.
 
     content:
       - type: reading
@@ -887,23 +887,65 @@ modules:
         title: "Authorization In Ambient Mode, L4 And L7"
         path: sections/section-060/module-01/course.md
       - type: reading
-        title: "The ambient dataplane"
+        title: "The Ambient Dataplane"
         path: sections/section-060/module-01/course-01-the-ambient-dataplane.md
       - type: reading
-        title: "What ztunnel can enforce"
+        title: "What ztunnel Can Enforce"
         path: sections/section-060/module-01/course-02-what-ztunnel-can-enforce.md
       - type: reading
-        title: "Waypoints and L7 policy"
-        path: sections/section-060/module-01/course-03-waypoints-and-l7-policy.md
+        title: Question
+        path: sections/section-060/module-01/labs/lab-02/question.md
+      - type: lab
+        title: "Allow Only Known Ships At L4 Lab"
+        path: sections/section-060/module-01/labs/lab-02
+        difficulty: beginner
+        estimated_duration: 15m
+        topic: ambient
+        task_kind: build
+        tags: [authorizationpolicy, ambient, ztunnel, l4-policy, principals, connection-reset, ztunnel-config]
+        learning_goals:
+          - Write identity-only ALLOW policies that ztunnel enforces with no waypoint
+          - Recognise an L4 refusal as a closed connection instead of a 403
+          - Keep the allowed callers working while every other ship is refused
+        resources:
+          - name: "Ambient L4 authorization policy"
+            url: https://istio.io/latest/docs/ambient/usage/l4-policy/
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
       - type: reading
-        title: "Tooling, and carrying sidecar knowledge across"
-        path: sections/section-060/module-01/course-04-tooling-and-carrying-across.md
+        title: "A Rule With Nowhere To Run"
+        path: sections/section-060/module-01/course-03-a-rule-with-nowhere-to-run.md
+      - type: reading
+        title: "Deploy A Waypoint"
+        path: sections/section-060/module-01/course-04-deploy-a-waypoint.md
       - type: reading
         title: Question
         path: sections/section-060/module-01/labs/lab-01/question.md
       - type: lab
         title: "Enforce L4 And L7 Policy In Ambient Mode Lab"
         path: sections/section-060/module-01/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: ambient
+        task_kind: build
+        tags: [authorizationpolicy, ambient, waypoint, l7-policy, target-refs, methods, rbac-403, access-log]
+        learning_goals:
+          - Deploy a waypoint and send a service's traffic through it with istio.io/use-waypoint
+          - Attach one L7 policy with targetRefs that enforces both identity and method
+          - Tell a waypoint refusal (403) from a ztunnel refusal (closed connection)
+        resources:
+          - name: "Use waypoint proxies"
+            url: https://istio.io/latest/docs/ambient/usage/waypoint/
+          - name: "Ambient L7 features"
+            url: https://istio.io/latest/docs/ambient/usage/l7-features/
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+      - type: reading
+        title: "Ask Who Holds The Rule"
+        path: sections/section-060/module-01/course-05-ask-who-holds-the-rule.md
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-060/module-01/course-06-wrap-up.md
 
       - type: reading
         title: Question

@@ -1,0 +1,24 @@
+# L7 rule: only the shuttle, and only GET, may reach the probe.
+# It attaches with targetRefs to the probe Service, so the probe's waypoint
+# holds it. With no waypoint (or no istio.io/use-waypoint label on the
+# Service), it is accepted and ignored. With the waypoint in the path, a POST
+# gets 403.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: probe-l7
+  namespace: starfleet
+spec:
+  targetRefs:
+  - kind: Service
+    group: ""
+    name: probe
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals:
+        - cluster.local/ns/starfleet/sa/shuttle
+    to:
+    - operation:
+        methods: ["GET"]
