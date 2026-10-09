@@ -1,4 +1,4 @@
-# Before Your First Launch
+# Get Your Machine Ready
 
 Every playground and lab in this course runs on your own machine, in a small Kubernetes cluster. A tool called `astrona` builds it for you, sets it up, grades your work and removes it again. This page gets your machine ready.
 
@@ -15,11 +15,11 @@ These are the tools for every section, plus two extra needs for some of them.
 - **`helm`:** the playgrounds install Istio with it.
 - **The astrona command-line tool.**
 - **`jq`:** reads the JSON that `kubectl` and `istioctl` print, so you can pick out one field.
-- **`openssl`:** reads the certificate (the ID badge) each ship carries, and makes test certificates for the sections on TLS at the edge. Most macOS and Linux machines already have it.
+- **`openssl`:** reads the certificate each workload carries (the signed file that proves its identity), and makes test certificates for the sections on TLS at the edge. Most macOS and Linux machines already have it.
 
 ### Extra needs for some sections
 
-- **Outbound internet:** the JWT section downloads demo tokens and their keys from `raw.githubusercontent.com`. The module that adds TLS to signals leaving the mesh calls `httpbin.org`. Without outbound internet, those steps fail with network errors that have nothing to do with Istio.
+- **Outbound internet:** the JWT section downloads demo tokens and their keys from `raw.githubusercontent.com`. The module that adds TLS to requests leaving the mesh calls `httpbin.org`. Without outbound internet, those steps fail with network errors that have nothing to do with Istio.
 
 ### Let astrona check your machine
 
@@ -49,7 +49,7 @@ Labs from the course catalog are tied to your Astrona account:
 astrona login
 ```
 
-### Launch
+### Start a playground or lab
 
 Each module page and lab page shows the exact `astrona run` command for its playground or lab. It looks like this:
 
@@ -61,13 +61,13 @@ When the cluster is ready, `kubectl` already points at it.
 
 ### Pause and wake up a playground
 
-When a part sends you on a mission, pause the playground first. Pausing frees your machine's memory but keeps everything you built:
+When a part sends you to a lab, pause the playground first. Pausing frees your machine's memory but keeps everything you built:
 
 ```sh
 astrona stop <name>
 ```
 
-When the mission is done, wake the playground up again and carry on where you left off:
+When the lab is done, wake the playground up again and carry on where you left off:
 
 ```sh
 astrona start <name>
@@ -75,7 +75,7 @@ astrona start <name>
 
 ### Submit a lab for grading
 
-The grader checks the live cluster. It sends real signals and reads the proxy's configuration, so your work has to actually work, not only exist. Each lab page shows the exact command:
+The grader checks the live cluster. It sends real requests and reads the proxy's configuration, so your work has to actually work, not only exist. Each lab page shows the exact command:
 
 ```sh
 astrona submit -c sections/section-010/module-01/labs/lab-01
@@ -100,7 +100,7 @@ astrona list
 > [!WARNING]
 > **Run one environment at a time.** Each playground and lab is a whole cluster. Two running at once slow your machine down, and it is easy to send a command to the wrong one. Pause or destroy the playground before you start the lab.
 
-## When a launch goes wrong
+## When a start goes wrong
 
 Ask `astrona` what is wrong before you try anything else:
 
