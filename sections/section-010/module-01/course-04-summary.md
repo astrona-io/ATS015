@@ -18,4 +18,4 @@ An `AuthorizationPolicy` uses the identity in its `principals` field. Between tw
 
 In short: read the identity in the certificate, and you know what the rule must say.
 
-When you are done, remove the playground with `astrona destroy ats-015-playground-010-01`.
+<!-- astrona:playground:destroy -->
