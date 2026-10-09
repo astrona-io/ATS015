@@ -14,10 +14,11 @@ These are the tools for every section, plus two extra needs for some of them.
 - **`istioctl`:** Istio's own command-line tool. You use it in almost every module.
 - **`helm`:** the playgrounds install Istio with it.
 - **The astrona command-line tool.**
+- **`jq`:** reads the JSON that `kubectl` and `istioctl` print, so you can pick out one field.
+- **`openssl`:** reads the certificate (the ID badge) each ship carries, and makes test certificates for the sections on TLS at the edge. Most macOS and Linux machines already have it.
 
 ### Extra needs for some sections
 
-- **`openssl`:** the sections on TLS at the edge use it to make test certificates and to open TLS connections by hand. Most macOS and Linux machines already have it.
 - **Outbound internet:** the JWT section downloads demo tokens and their keys from `raw.githubusercontent.com`. The module that adds TLS to signals leaving the mesh calls `httpbin.org`. Without outbound internet, those steps fail with network errors that have nothing to do with Istio.
 
 ### Let astrona check your machine
