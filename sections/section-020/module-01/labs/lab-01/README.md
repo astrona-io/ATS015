@@ -1,43 +1,31 @@
+---
+estimated_duration: 3m
+---
+
 # Lock A Namespace Down With ALLOW Policies
 
-- **ID:** LAB015-020-01
-- **Slug:** ats-015-lab-020-01
-- **Author:** Paris Nakita Kejser
-- **Type:** Astrona hands-on lab — graded
+Welcome to a lockdown mission, astronaut. On the planet `authz-demo`, mTLS is `STRICT`, so every caller's ID badge is checked. But no guard stands at any airlock yet, so every call gets through, including a test pod calling the notification service directly.
 
-Create deny-by-default for a namespace, then reopen exactly two calls — one by namespace, one by workload identity.
+Your job is to close the whole namespace with `AuthorizationPolicy` objects, then reopen exactly the two calls the app's design needs: one by namespace, one by exact identity.
 
-## Run it
+This mission runs on a small app of its own, not the Starfleet: `booking-service`, `notification-service` and a `tester` client.
 
-```sh
-astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-020/module-01/labs/lab-01
-astrona submit -c .
+## Launching the Lab
+
+Run this command to start the cluster:
+
+```bash
+astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-020/module-01/labs/lab-01
+```
+
+When you think you have finished, send it for grading:
+
+```bash
+astrona submit -c sections/section-020/module-01/labs/lab-01
+```
+
+When you are done, remove the lab:
+
+```bash
 astrona destroy ats-015-lab-020-01
 ```
-
-`astrona destroy` takes the environment name (`metadata.name` = `ats-015-lab-020-01`), not the
-config path.
-
-## Prove it (authors / CI)
-
-```sh
-astrona test -c . --junit-xml=report.xml
-```
-
-`astrona test` bootstraps the lab, applies `solution/`, submits it, and tears down —
-proving a learner who does everything right passes.
-
-## Layout
-
-| Path | Purpose |
-| --- | --- |
-| `config.yaml` | Lab definition (bootstrap / testing / validation / teardown) |
-| `docs/prerequisites.md` | What to know and have installed first |
-| `docs/exam-question.md` | The formal, self-contained task |
-| `docs/case-study.md` | The same task as a scenario, with hints instead of an answer |
-| `docs/step-by-step-guide.md` | Full walkthrough, including the answer |
-| `manifests/` | Starting state applied at bootstrap |
-| `bootstrap/setup.sh` | Istio install and pre-work — never the graded objects |
-| `solution/` | Reference end state (CI only; learners do not see it during a run) |
-| `validate.sh` | Behavioural grading |
-| `teardown/dump-logs.sh` | State capture before teardown |

@@ -1,0 +1,21 @@
+# Case 3: the navcom guest list with a typo in the selector (navcomm).
+# The object is accepted, but it selects no pod, so it never reaches navcom's
+# proxy. navcom is then covered only by allow-nothing, and the scouts lose
+# their star ratings. istioctl analyze reports the empty selector.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: navcom-allow-scout
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: navcomm
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/starfleet/sa/starfleet-scout"]
+    to:
+    - operation:
+        methods: ["GET"]

@@ -253,23 +253,72 @@ modules:
         title: "Authorize HTTP Traffic Between Workloads"
         path: sections/section-020/module-01/course.md
       - type: reading
-        title: "How a request gets authorized"
-        path: sections/section-020/module-01/course-01-how-a-request-is-authorized.md
+        title: "The Guard At The Airlock"
+        path: sections/section-020/module-01/course-01-the-guard-at-the-airlock.md
       - type: reading
-        title: "Default-deny and the allow-nothing policy"
-        path: sections/section-020/module-01/course-02-default-deny-and-allow-nothing.md
+        title: "Close The Airlock"
+        path: sections/section-020/module-01/course-02-close-the-airlock.md
       - type: reading
-        title: "Rule anatomy: from, to, when"
-        path: sections/section-020/module-01/course-03-rule-anatomy.md
+        title: "Write A Guest List Entry"
+        path: sections/section-020/module-01/course-03-write-a-guest-list-entry.md
       - type: reading
-        title: "Identity rules, union semantics and debugging"
-        path: sections/section-020/module-01/course-04-identity-union-and-debugging.md
+        title: "Name The Caller"
+        path: sections/section-020/module-01/course-04-name-the-caller.md
       - type: reading
         title: Question
         path: sections/section-020/module-01/labs/lab-01/question.md
       - type: lab
         title: "Lock A Namespace Down With ALLOW Policies Lab"
         path: sections/section-020/module-01/labs/lab-01
+        difficulty: beginner
+        estimated_duration: 20m
+        topic: authorization
+        task_kind: build
+        tags: [authorizationpolicy, default-deny, allow-nothing, principals, namespaces, methods, paths, rbac-403]
+        learning_goals:
+          - Close a namespace with an allow-nothing policy
+          - Reopen one call by namespace and one by exact workload identity, each limited to one method and path
+          - Prove each rule with calls that are allowed and calls that get 403
+        resources:
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+          - name: "Authorization for HTTP traffic"
+            url: https://istio.io/latest/docs/tasks/security/authorization/authz-http/
+          - name: "Istio security concepts: authorization"
+            url: https://istio.io/latest/docs/concepts/security/#authorization
+      - type: reading
+        title: "Least Privilege For The Whole Fleet"
+        path: sections/section-020/module-01/course-05-least-privilege-for-the-fleet.md
+      - type: reading
+        title: "Find Out Why The Guard Says No"
+        path: sections/section-020/module-01/course-06-find-out-why-the-guard-says-no.md
+      - type: reading
+        title: Question
+        path: sections/section-020/module-01/labs/lab-02/question.md
+      - type: lab
+        title: "Repair The Fleet's Guest Lists Lab"
+        path: sections/section-020/module-01/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: authorization
+        task_kind: troubleshooting
+        tags: [authorizationpolicy, allow-nothing, principals, rbac-403, proxy-config, istioctl-analyze, access-log]
+        learning_goals:
+          - Find a policy that never reached its workload with proxy-config and istioctl analyze
+          - Find a rule that names the wrong service account from the receiver's access log
+          - Repair both without opening any call outside the call map
+        resources:
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+          - name: "istioctl analyze messages"
+            url: https://istio.io/latest/docs/reference/config/analysis/
+          - name: "Security problems"
+            url: https://istio.io/latest/docs/ops/common-problems/security-issues/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-020/module-01/course-07-wrap-up.md
 
       - type: reading
         title: "DENY Policies And Evaluation Order"

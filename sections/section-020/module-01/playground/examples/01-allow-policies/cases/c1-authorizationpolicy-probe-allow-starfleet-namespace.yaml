@@ -1,0 +1,17 @@
+# Case 1: allow every ship from the planet starfleet (any service account),
+# instead of one principal. Also needs mTLS (the namespace comes from the
+# certificate, not from the caller's address).
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: probe-allow-starfleet-ns
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: probe
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        namespaces: ["starfleet"]

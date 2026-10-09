@@ -1,0 +1,37 @@
+metadata:
+  name: "ats-015-lab-020-01-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base and istiod) with Helm"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-020-01-02-workloads"
+      description: "Creates the starfleet namespace with the Starfleet (bridge, cargo, scout v1-v3, navcom), the shuttle client, mesh-wide access logs and a STRICT PeerAuthentication"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+    - name: "lab-020-01-02-fault"
+      description: "Applies the starting state: allow-nothing plus least-privilege policies for the fleet, where scout-allow-bridge names the wrong service account and navcom-allow-scout selects a label no pod has"
+      type: "file"
+      source: "bootstrap/03-seed-fault.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-guest-lists"
+      description: "Confirms the fleet and the STRICT PeerAuthentication are unchanged, allow-nothing is still empty, scout-allow-bridge and navcom-allow-scout select their own ships and name exactly the right service account, navcom's proxy holds its policy, the bridge page shows reviews and stars with no errors, and the shuttle gets 403 from cargo, scout and navcom"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

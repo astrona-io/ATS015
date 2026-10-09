@@ -1,0 +1,11 @@
+# Deny everything on the planet starfleet (the "zero trust" starting point).
+# Empty spec = no selector (every ship in the namespace), action ALLOW, no rules.
+# An ALLOW policy with no rules matches nothing, so nothing is allowed:
+# every signal to every ship in starfleet gets HTTP 403.
+# (Careful: "rules: [{}]" is the opposite – one empty rule matches everything.)
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-nothing
+  namespace: starfleet
+spec: {}

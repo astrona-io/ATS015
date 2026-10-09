@@ -134,7 +134,7 @@ Work on exactly one module at a time. Read `CLAUDE.md` first, all of it.
 | 010-02 Enforce mTLS With PeerAuthentication At Three Scopes | done | new-data 01-mtls merged; Starfleet playground, 6 parts + wrap-up checked on 1.30.5; lab-01 converted (own app, now Helm), new lab-02 (portLevelMtls) and lab-03 (503 UC); all three astrona test PASS |
 | 010-03 Migrate A Namespace From PERMISSIVE To STRICT mTLS | done | new-data README order-to-apply merged; Starfleet playground, 4 parts + wrap-up checked on 1.30.5 (native sidecar shown in INIT column); port exception cut to one sentence (010-02 owns it), draft lab-02 dropped; lab-01 kept (own app, demo profile), astrona test PASS; leftover files to delete listed in the 010-03 commit message |
 | 010 capstone | todo | |
-| 020-01 Authorize HTTP Traffic Between Workloads | todo | new-data 02-authorization |
+| 020-01 Authorize HTTP Traffic Between Workloads | done | new-data 02-authorization ALLOW parts merged (DENY files, README and bootstrap left for 020-02); Starfleet playground, 6 parts + wrap-up checked on 1.30.5 (from_fortio now prints `Code NNN`, port-forward bypasses the bridge guard noted); lab-01 converted (own app, demo profile, grader now retries), new lab-02 (repair guest lists); both astrona test PASS |
 | 020-02 DENY Policies And Evaluation Order | todo | new-data 02-authorization |
 | 020 capstone | todo | |
 | 030-01 Authenticate End Users With JWT | todo | new-data 03-jwt |

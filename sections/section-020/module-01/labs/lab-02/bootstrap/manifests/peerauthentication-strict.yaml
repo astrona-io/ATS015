@@ -1,0 +1,12 @@
+# The precondition for this lab: STRICT mTLS on the planet starfleet.
+# Every ship must do the secret handshake (mTLS) before it may dock. So every
+# caller that gets in has a checked ID badge, and `principals` rules in an
+# AuthorizationPolicy have a real name to compare. Do not change or remove it.
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: starfleet
+spec:
+  mtls:
+    mode: STRICT

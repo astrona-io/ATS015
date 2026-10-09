@@ -1,0 +1,81 @@
+# Open the Starfleet again under allow-nothing, with least privilege:
+# each ship may only be called by the ship that really needs it.
+#
+#   anyone ──▶ bridge ──▶ cargo
+#                    └──▶ scout ──▶ navcom
+#
+# Four policies in one file; kubectl applies them top to bottom.
+---
+# bridge: anyone may call it (it is the front page), GET only.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: bridge-allow-get
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: bridge
+  action: ALLOW
+  rules:
+  # No "from": any source with a valid handshake (STRICT mTLS still applies).
+  - to:
+    - operation:
+        methods: ["GET"]
+---
+# cargo: only the bridge.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: cargo-allow-bridge
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: cargo
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/starfleet/sa/starfleet-bridge"]
+    to:
+    - operation:
+        methods: ["GET"]
+---
+# scout: only the bridge.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: scout-allow-bridge
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: scout
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/starfleet/sa/starfleet-bridge"]
+    to:
+    - operation:
+        methods: ["GET"]
+---
+# navcom: only the scout.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: navcom-allow-scout
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: navcom
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/starfleet/sa/starfleet-scout"]
+    to:
+    - operation:
+        methods: ["GET"]

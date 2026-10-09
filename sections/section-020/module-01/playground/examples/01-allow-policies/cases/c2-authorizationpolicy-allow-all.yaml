@@ -1,0 +1,11 @@
+# Case 2: "rules: [{}]" = one empty rule = matches EVERY signal.
+# Together with allow-nothing, everything is allowed again.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-all
+  namespace: starfleet
+spec:
+  action: ALLOW
+  rules:
+  - {}
