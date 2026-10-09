@@ -2,9 +2,7 @@
 
 Every security rule in this course eventually matches on one string — a workload's mesh identity. This section is where that string comes from, how you make a workload prove it, and how to turn the proof on in a cluster that is already running without breaking the callers who were not ready.
 
-Three modules, in dependency order. Module 1 opens a certificate and reads the identity out of it, because a policy written against an identity you assumed rather than checked is the most common failure in the whole domain. Module 2 makes that identity mandatory with `PeerAuthentication`, at each of its three scopes. Module 3 is the procedure for doing so on a live namespace: measure, write down, mesh, enforce.
-
-**Curriculum item covered:** Configuring Authentication (mTLS, JWT)
+The process follows a clear dependency order. First, open a certificate and verify the identity it contains, because enforcing a policy against an assumed rather than verified identity is one of the most common failure points in this domain. Next, use `PeerAuthentication` to make that identity mandatory at each of its three scopes. Finally, apply the procedure to a live namespace: measure, document, mesh, and enforce.
 
 ---
 
@@ -21,4 +19,4 @@ Three modules, in dependency order. Module 1 opens a certificate and reads the i
 
 ---
 
-<!-- astrona:playground -->
+<!-- astrona:playground:environment-explain -->
