@@ -1,0 +1,37 @@
+metadata:
+  name: "ats-015-lab-010-03-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base and istiod) with Helm"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-010-03-02-workloads"
+      description: "Creates the starfleet namespace with the Starfleet, the shuttle client, probe v1/v2 and mesh-wide access logs, and the outpost namespace without injection with the drifter client"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+    - name: "lab-010-03-02-fault"
+      description: "Applies the starting state: starfleet STRICT, and a probe PeerAuthentication whose port exception names the Service port 8000 instead of the container port 8080"
+      type: "file"
+      source: "bootstrap/03-seed-fault.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-port-exception"
+      description: "Confirms starfleet stays STRICT, the probe policy keeps the workload STRICT and sets container port 8080 to PERMISSIVE, the drifter stays outside the mesh, and live signals show the drifter reaching the probe while cargo still refuses it"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

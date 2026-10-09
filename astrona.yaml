@@ -1,380 +1,971 @@
-# Course manifest for ATS015 — Securing Workloads (Istio Certified Associate).
+# Course manifest for ATS015 - Securing Workloads (Istio Certified Associate).
 #
-# Each module is a reading landing page (course.md), ordered deep-dive parts
-# (course-0N-*.md), an ungraded playground, and a graded lab. Each section ends
-# with a capstone lab combining its modules.
+# One entry per section under `modules:`. Each section lists, in order: its
+# README, then for each module the landing page (course.md), its parts
+# (course-0N-*.md), and right after the part a lab tests, the lab's
+# question.md reading and the `type: lab` entry. The module's wrap-up page
+# comes last. The section capstone closes the section. Playgrounds are not
+# listed: the landing page's playground marker shows them.
 #
 # Every `path:` is relative to this file.
 
 training:
   id: ATS015
-  title: Securing Workloads
+  title: "ICA: Securing Workloads"
   description: >
-    Course material for the Securing Workloads domain of the Istio Certified
-    Associate exam: workload identity, mutual TLS, authorization policy,
-    end-user JWT authentication, edge TLS, and authorization in ambient mode.
+    Training material covering the Istio Certified Associate (ICA) Securing
+    Workloads domain: workload identity, mutual TLS, authorization policy,
+    end-user JWT authentication, TLS at the edge of the mesh (ingress and
+    egress), and authorization in ambient mode. Each module pairs a layered
+    reader with an ungraded hands-on playground that runs the Starfleet (the
+    Istio docs' Bookinfo sample with space names) and graded practice labs.
+    Each section closes with an integration capstone.
+    Built and verified against Istio 1.30.5.
 
   certification:
     name: Istio Certified Associate
     code: ICA
-    provider: CNCF
+    provider: CNCF / Linux Foundation
     domain: Securing Workloads
     weight: 25
 
-  environment:
-    istio: "1.30.5"
-    runtime: kind
+modules:
 
-sections:
-  - id: section-010
-    title: Workload Identity And Mutual TLS
-    curriculum_item: Configuring Authentication (mTLS, JWT)
+  - id: module-intro
+    title: "Mission Briefing"
     description: >
-      Where a workload's mesh identity comes from, how to make it
-      mandatory with PeerAuthentication, and how to migrate a live
-      namespace to STRICT mTLS without breaking its callers.
-    readme: sections/section-010/README.md
-    modules:
-      - id: module-01
-        title: Inspect Workload Identity And Certificates
-        content:
-          - type: reading
-            title: "Module 1: Inspect Workload Identity And Certificates"
-            path: sections/section-010/module-01/course.md
-          - type: reading
-            title: "Module 1.1: How a workload gets its identity"
-            path: sections/section-010/module-01/course-01-how-identity-is-issued.md
-          - type: reading
-            title: "Module 1.2: Reading the certificate a proxy holds"
-            path: sections/section-010/module-01/course-02-reading-the-certificate.md
-          - type: reading
-            title: "Module 1.3: From SAN to policy principal"
-            path: sections/section-010/module-01/course-03-principals-rotation-trust-domain.md
-          - type: playground
-            title: "Module 1 playground"
-            path: sections/section-010/module-01/playground
-          - type: lab
-            title: "Module 1 lab: Prove A Workload Identity And Authorize On It"
-            path: sections/section-010/module-01/labs/lab-01
-            difficulty: intermediate
-      - id: module-02
-        title: Enforce mTLS With PeerAuthentication At Three Scopes
-        content:
-          - type: reading
-            title: "Module 2: Enforce mTLS With PeerAuthentication At Three Scopes"
-            path: sections/section-010/module-02/course.md
-          - type: reading
-            title: "Module 2.1: Modes, and what they do to the inbound listener"
-            path: sections/section-010/module-02/course-01-modes-and-the-inbound-listener.md
-          - type: reading
-            title: "Module 2.2: The three scopes and how precedence resolves"
-            path: sections/section-010/module-02/course-02-scopes-and-precedence.md
-          - type: reading
-            title: "Module 2.3: Proving what is in effect"
-            path: sections/section-010/module-02/course-03-proving-what-is-in-effect.md
-          - type: playground
-            title: "Module 2 playground"
-            path: sections/section-010/module-02/playground
-          - type: lab
-            title: "Module 2 lab: Enforce mTLS At Three Scopes"
-            path: sections/section-010/module-02/labs/lab-01
-            difficulty: intermediate
-      - id: module-03
-        title: Migrate A Namespace From PERMISSIVE To STRICT mTLS
-        content:
-          - type: reading
-            title: "Module 3: Migrate A Namespace From PERMISSIVE To STRICT mTLS"
-            path: sections/section-010/module-03/course.md
-          - type: reading
-            title: "Module 3.1: Measuring before you change anything"
-            path: sections/section-010/module-03/course-01-measuring-with-telemetry.md
-          - type: reading
-            title: "Module 3.2: Exceptions, and moving callers into the mesh"
-            path: sections/section-010/module-03/course-02-exceptions-and-meshing.md
-          - type: reading
-            title: "Module 3.3: Enforcing, verifying and rolling back"
-            path: sections/section-010/module-03/course-03-enforcing-and-rolling-back.md
-          - type: playground
-            title: "Module 3 playground"
-            path: sections/section-010/module-03/playground
-          - type: lab
-            title: "Module 3 lab: Migrate A Namespace To STRICT mTLS"
-            path: sections/section-010/module-03/labs/lab-01
-            difficulty: intermediate
-    capstone:
+      Start here. What this course trains you to do, how it is laid out, how
+      to get your machine ready with the astrona command-line tool, how the
+      content is written and checked, who maintains it, and how to report a
+      mistake.
+
+    content:
+      - type: reading
+        title: Mission Briefing
+        path: sections/intro/README.md
+      - type: reading
+        title: "Welcome, Astronaut"
+        path: sections/intro/course-01-welcome.md
+      - type: reading
+        title: "Before Your First Launch"
+        path: sections/intro/course-02-before-your-first-launch.md
+      - type: reading
+        title: "How This Course Is Made"
+        path: sections/intro/course-03-how-this-course-is-made.md
+
+  - id: module-010
+    title: "Workload Identity And Mutual TLS"
+    description: >
+      Where a workload's mesh identity comes from, how to make it mandatory
+      with PeerAuthentication, and how to migrate a live namespace to STRICT
+      mTLS without breaking its callers.
+
+    content:
+      - type: reading
+        title: Section Overview
+        path: sections/section-010/README.md
+
+      - type: reading
+        title: "Inspect Workload Identity And Certificates"
+        path: sections/section-010/module-01/course.md
+      - type: reading
+        title: "How A Ship Gets Its Badge"
+        path: sections/section-010/module-01/course-01-how-a-ship-gets-its-badge.md
+      - type: reading
+        title: "Read The Badge A Ship Carries"
+        path: sections/section-010/module-01/course-02-read-the-badge-a-ship-carries.md
+      - type: reading
+        title: "From Badge To Guest List"
+        path: sections/section-010/module-01/course-03-from-badge-to-guest-list.md
+      - type: reading
+        title: Question
+        path: sections/section-010/module-01/labs/lab-01/question.md
       - type: lab
-        title: "Workload Identity And Mutual TLS Capstone"
+        title: "Prove A Workload Identity And Authorize On It Lab"
+        path: sections/section-010/module-01/labs/lab-01
+        difficulty: beginner
+        estimated_duration: 20m
+        topic: identity
+        task_kind: build
+        tags: [spiffe, certificates, principals, authorizationpolicy, peerauthentication, mtls-strict, proxy-config, openssl]
+        learning_goals:
+          - Read a workload's SPIFFE identity from its live certificate with istioctl and openssl
+          - Require STRICT mutual TLS for a whole namespace with a PeerAuthentication
+          - Write an AuthorizationPolicy that allows exactly one principal and prove it with a 200 and a 403
+        resources:
+          - name: "Istio security concepts"
+            url: https://istio.io/latest/docs/concepts/security/
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+          - name: "PeerAuthentication reference"
+            url: https://istio.io/latest/docs/reference/config/security/peer_authentication/
+          - name: "Debugging Envoy and istiod (proxy-config)"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-010/module-01/course-04-wrap-up.md
+
+      - type: reading
+        title: "Enforce mTLS With PeerAuthentication At Three Scopes"
+        path: sections/section-010/module-02/course.md
+      - type: reading
+        title: "Two Callers, One Default"
+        path: sections/section-010/module-02/course-01-two-callers-one-default.md
+      - type: reading
+        title: "Require The Handshake With STRICT"
+        path: sections/section-010/module-02/course-02-require-the-handshake.md
+      - type: reading
+        title: "Three Scopes, Narrowest Wins"
+        path: sections/section-010/module-02/course-03-three-scopes-narrowest-wins.md
+      - type: reading
+        title: Question
+        path: sections/section-010/module-02/labs/lab-01/question.md
+      - type: lab
+        title: "Enforce mTLS At Three Scopes Lab"
+        path: sections/section-010/module-02/labs/lab-01
+        difficulty: beginner
+        estimated_duration: 20m
+        topic: mtls
+        task_kind: build
+        tags: [peerauthentication, mtls-strict, mtls-permissive, mtls-scopes, connection-reset]
+        learning_goals:
+          - Place a PeerAuthentication at mesh, namespace and workload scope
+          - Predict that the narrowest policy decides and prove it with a plain-text caller
+        resources:
+          - name: "PeerAuthentication reference"
+            url: https://istio.io/latest/docs/reference/config/security/peer_authentication/
+          - name: "Authentication policy task"
+            url: https://istio.io/latest/docs/tasks/security/authentication/authn-policy/
+      - type: reading
+        title: "Read The Mode Off The Ship"
+        path: sections/section-010/module-02/course-04-read-the-mode-off-the-ship.md
+      - type: reading
+        title: "An Exception For One Port"
+        path: sections/section-010/module-02/course-05-an-exception-for-one-port.md
+      - type: reading
+        title: Question
+        path: sections/section-010/module-02/labs/lab-02/question.md
+      - type: lab
+        title: "Open One Port For The Drifter Lab"
+        path: sections/section-010/module-02/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 15m
+        topic: mtls
+        task_kind: build
+        tags: [peerauthentication, port-level-mtls, mtls-strict, mtls-scopes, connection-reset]
+        learning_goals:
+          - Open one container port of a workload with portLevelMtls while the mesh stays STRICT
+          - Prove that only the chosen workload accepts plain text and meshed callers still use mTLS
+        resources:
+          - name: "PeerAuthentication reference"
+            url: https://istio.io/latest/docs/reference/config/security/peer_authentication/
+          - name: "Mutual TLS migration"
+            url: https://istio.io/latest/docs/tasks/security/authentication/mtls-migration/
+      - type: reading
+        title: "Client And Server Must Agree"
+        path: sections/section-010/module-02/course-06-client-and-server-must-agree.md
+      - type: reading
+        title: Question
+        path: sections/section-010/module-02/labs/lab-03/question.md
+      - type: lab
+        title: "Fix The Broken Handshake Lab"
+        path: sections/section-010/module-02/labs/lab-03
+        difficulty: intermediate
+        estimated_duration: 15m
+        topic: mtls
+        task_kind: troubleshooting
+        tags: [destinationrule, peerauthentication, mtls-strict, 503-uc, access-log]
+        learning_goals:
+          - Read a 503 UC in the caller's access log as a client and server mTLS mismatch
+          - Fix a DestinationRule tls mode without weakening the server's STRICT policy
+        resources:
+          - name: "DestinationRule ClientTLSSettings"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/#ClientTLSSettings
+          - name: "PeerAuthentication reference"
+            url: https://istio.io/latest/docs/reference/config/security/peer_authentication/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-010/module-02/course-07-wrap-up.md
+
+      - type: reading
+        title: "Migrate A Namespace From PERMISSIVE To STRICT mTLS"
+        path: sections/section-010/module-03/course.md
+      - type: reading
+        title: "Count The Plain Signals"
+        path: sections/section-010/module-03/course-01-count-the-plain-signals.md
+      - type: reading
+        title: "Write Down Where You Stand"
+        path: sections/section-010/module-03/course-02-write-down-where-you-stand.md
+      - type: reading
+        title: "Bring The Drifter Into The Fleet"
+        path: sections/section-010/module-03/course-03-bring-the-drifter-into-the-fleet.md
+      - type: reading
+        title: "Switch To STRICT For Good"
+        path: sections/section-010/module-03/course-04-switch-to-strict-for-good.md
+      - type: reading
+        title: Question
+        path: sections/section-010/module-03/labs/lab-01/question.md
+      - type: lab
+        title: "Migrate A Namespace To STRICT mTLS Lab"
+        path: sections/section-010/module-03/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: mtls
+        task_kind: migration
+        tags: [peerauthentication, sidecar-injection, mtls-permissive, mtls-strict, connection-reset, proxy-config]
+        learning_goals:
+          - Prove from the receiving proxy's counters that plain signals still arrive
+          - Bring an unmeshed caller into the mesh by labelling its namespace and restarting it
+          - Switch a namespace to STRICT mTLS in an order that breaks no caller
+        resources:
+          - name: "Mutual TLS migration"
+            url: https://istio.io/latest/docs/tasks/security/authentication/mtls-migration/
+          - name: "PeerAuthentication reference"
+            url: https://istio.io/latest/docs/reference/config/security/peer_authentication/
+          - name: "Istio standard metrics"
+            url: https://istio.io/latest/docs/reference/config/metrics/
+          - name: "Sidecar injection"
+            url: https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-010/module-03/course-05-wrap-up.md
+
+      - type: reading
+        title: Question
+        path: sections/section-010/capstone/labs/lab-01/question.md
+      - type: lab
+        title: "Turn On Mesh-Wide mTLS Without Stranding A Caller Capstone Lab"
         path: sections/section-010/capstone/labs/lab-01
         difficulty: advanced
-  - id: section-020
-    title: Authorization Policy Fundamentals
-    curriculum_item: Configuring Authorization
+        estimated_duration: 45m
+        topic: mtls
+        task_kind: migration
+        tags: [peerauthentication, authorizationpolicy, mtls-strict, mtls-scopes, sidecar-injection, spiffe, principals, openssl]
+        learning_goals:
+          - Bring a plain-text caller into the mesh before requiring STRICT mTLS for the whole mesh
+          - Read a workload identity from its live certificate and allow only that principal
+          - Tell a 403 from the authorization policy apart from a reset connection
+        resources:
+          - name: "PeerAuthentication reference"
+            url: https://istio.io/latest/docs/reference/config/security/peer_authentication/
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+          - name: "Mutual TLS migration"
+            url: https://istio.io/latest/docs/tasks/security/authentication/mtls-migration/
+
+  - id: module-020
+    title: "Authorization Policy Fundamentals"
     description: >
       How an AuthorizationPolicy decision is made, how default-deny is
       created, the anatomy of a rule, and the fixed CUSTOM/DENY/ALLOW
       evaluation order.
-    readme: sections/section-020/README.md
-    modules:
-      - id: module-01
-        title: Authorize HTTP Traffic Between Workloads
-        content:
-          - type: reading
-            title: "Module 1: Authorize HTTP Traffic Between Workloads"
-            path: sections/section-020/module-01/course.md
-          - type: reading
-            title: "Module 1.1: How a request gets authorized"
-            path: sections/section-020/module-01/course-01-how-a-request-is-authorized.md
-          - type: reading
-            title: "Module 1.2: Default-deny and the allow-nothing policy"
-            path: sections/section-020/module-01/course-02-default-deny-and-allow-nothing.md
-          - type: reading
-            title: "Module 1.3: Rule anatomy: from, to, when"
-            path: sections/section-020/module-01/course-03-rule-anatomy.md
-          - type: reading
-            title: "Module 1.4: Identity rules, union semantics and debugging"
-            path: sections/section-020/module-01/course-04-identity-union-and-debugging.md
-          - type: playground
-            title: "Module 1 playground"
-            path: sections/section-020/module-01/playground
-          - type: lab
-            title: "Module 1 lab: Lock A Namespace Down With ALLOW Policies"
-            path: sections/section-020/module-01/labs/lab-01
-            difficulty: intermediate
-      - id: module-02
-        title: DENY Policies And Evaluation Order
-        content:
-          - type: reading
-            title: "Module 2: DENY Policies And Evaluation Order"
-            path: sections/section-020/module-02/course.md
-          - type: reading
-            title: "Module 2.1: The evaluation pipeline"
-            path: sections/section-020/module-02/course-01-the-evaluation-pipeline.md
-          - type: reading
-            title: "Module 2.2: Writing DENY rules"
-            path: sections/section-020/module-02/course-02-writing-deny-rules.md
-          - type: reading
-            title: "Module 2.3: AUDIT, and choosing between ALLOW and DENY"
-            path: sections/section-020/module-02/course-03-audit-and-design.md
-          - type: playground
-            title: "Module 2 playground"
-            path: sections/section-020/module-02/playground
-          - type: lab
-            title: "Module 2 lab: Close A Path With DENY"
-            path: sections/section-020/module-02/labs/lab-01
-            difficulty: intermediate
-    capstone:
+
+    content:
+      - type: reading
+        title: Section Overview
+        path: sections/section-020/README.md
+
+      - type: reading
+        title: "Authorize HTTP Traffic Between Workloads"
+        path: sections/section-020/module-01/course.md
+      - type: reading
+        title: "The Guard At The Airlock"
+        path: sections/section-020/module-01/course-01-the-guard-at-the-airlock.md
+      - type: reading
+        title: "Close The Airlock"
+        path: sections/section-020/module-01/course-02-close-the-airlock.md
+      - type: reading
+        title: "Write A Guest List Entry"
+        path: sections/section-020/module-01/course-03-write-a-guest-list-entry.md
+      - type: reading
+        title: "Name The Caller"
+        path: sections/section-020/module-01/course-04-name-the-caller.md
+      - type: reading
+        title: Question
+        path: sections/section-020/module-01/labs/lab-01/question.md
+      - type: lab
+        title: "Lock A Namespace Down With ALLOW Policies Lab"
+        path: sections/section-020/module-01/labs/lab-01
+        difficulty: beginner
+        estimated_duration: 20m
+        topic: authorization
+        task_kind: build
+        tags: [authorizationpolicy, default-deny, allow-nothing, principals, namespaces, methods, paths, rbac-403]
+        learning_goals:
+          - Close a namespace with an allow-nothing policy
+          - Reopen one call by namespace and one by exact workload identity, each limited to one method and path
+          - Prove each rule with calls that are allowed and calls that get 403
+        resources:
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+          - name: "Authorization for HTTP traffic"
+            url: https://istio.io/latest/docs/tasks/security/authorization/authz-http/
+          - name: "Istio security concepts: authorization"
+            url: https://istio.io/latest/docs/concepts/security/#authorization
+      - type: reading
+        title: "Least Privilege For The Whole Fleet"
+        path: sections/section-020/module-01/course-05-least-privilege-for-the-fleet.md
+      - type: reading
+        title: "Find Out Why The Guard Says No"
+        path: sections/section-020/module-01/course-06-find-out-why-the-guard-says-no.md
+      - type: reading
+        title: Question
+        path: sections/section-020/module-01/labs/lab-02/question.md
+      - type: lab
+        title: "Repair The Fleet's Guest Lists Lab"
+        path: sections/section-020/module-01/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: authorization
+        task_kind: troubleshooting
+        tags: [authorizationpolicy, allow-nothing, principals, rbac-403, proxy-config, istioctl-analyze, access-log]
+        learning_goals:
+          - Find a policy that never reached its workload with proxy-config and istioctl analyze
+          - Find a rule that names the wrong service account from the receiver's access log
+          - Repair both without opening any call outside the call map
+        resources:
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+          - name: "istioctl analyze messages"
+            url: https://istio.io/latest/docs/reference/config/analysis/
+          - name: "Security problems"
+            url: https://istio.io/latest/docs/ops/common-problems/security-issues/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-020/module-01/course-07-wrap-up.md
+
+      - type: reading
+        title: "DENY Policies And Evaluation Order"
+        path: sections/section-020/module-02/course.md
+      - type: reading
+        title: "The Guard Checks The Banned List First"
+        path: sections/section-020/module-02/course-01-the-guard-checks-the-banned-list-first.md
+      - type: reading
+        title: "A Guest List Cannot Overrule The Ban"
+        path: sections/section-020/module-02/course-02-a-guest-list-cannot-overrule-the-ban.md
+      - type: reading
+        title: "Lock Everything With One Empty Rule"
+        path: sections/section-020/module-02/course-03-lock-everything-with-one-empty-rule.md
+      - type: reading
+        title: "Close The Whole Path"
+        path: sections/section-020/module-02/course-04-close-the-whole-path.md
+      - type: reading
+        title: Question
+        path: sections/section-020/module-02/labs/lab-01/question.md
+      - type: lab
+        title: "Close A Path With DENY Lab"
+        path: sections/section-020/module-02/labs/lab-01
+        difficulty: beginner
+        estimated_duration: 15m
+        topic: authorization
+        task_kind: build
+        tags: [authorizationpolicy, deny-policy, paths, evaluation-order, rbac-403]
+        learning_goals:
+          - Ban a path and everything beneath it with a DENY policy that uses a prefix match
+          - Prove that an ALLOW policy for the same path cannot reopen it, because DENY is checked first
+          - Keep a service's normal call working next to the ban
+        resources:
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+          - name: "Explicit deny"
+            url: https://istio.io/latest/docs/tasks/security/authorization/authz-deny/
+      - type: reading
+        title: "Say It Out Loud: Negative Fields"
+        path: sections/section-020/module-02/course-05-say-it-out-loud-negative-fields.md
+      - type: reading
+        title: Question
+        path: sections/section-020/module-02/labs/lab-02/question.md
+      - type: lab
+        title: "Make The Probe Read-Only Lab"
+        path: sections/section-020/module-02/labs/lab-02
+        difficulty: beginner
+        estimated_duration: 15m
+        topic: authorization
+        task_kind: build
+        tags: [authorizationpolicy, deny-policy, methods, evaluation-order, rbac-403, access-log]
+        learning_goals:
+          - Write a DENY policy with notMethods that refuses every method except GET for every caller
+          - Prove with live requests from two callers that an open ALLOW policy cannot let writes through
+        resources:
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+          - name: "Authorization for HTTP traffic"
+            url: https://istio.io/latest/docs/tasks/security/authorization/authz-http/
+      - type: reading
+        title: "AUDIT, And Choosing ALLOW Or DENY"
+        path: sections/section-020/module-02/course-06-audit-and-choosing-allow-or-deny.md
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-020/module-02/course-07-wrap-up.md
+
+      - type: reading
+        title: Question
+        path: sections/section-020/capstone/labs/lab-01/question.md
       - type: lab
         title: "Authorization Policy Capstone"
         path: sections/section-020/capstone/labs/lab-01
-        difficulty: advanced
-  - id: section-030
-    title: End-User Authentication With JWT
-    curriculum_item: Configuring Authentication (mTLS, JWT)
+
+  - id: module-030
+    title: "End-User Authentication With JWT"
     description: >
-      Validating end-user tokens with RequestAuthentication, requiring
-      them with requestPrincipals, and authorizing on what the token
-      claims.
-    readme: sections/section-030/README.md
-    modules:
-      - id: module-01
-        title: Authenticate End Users With JWT
-        content:
-          - type: reading
-            title: "Module 1: Authenticate End Users With JWT"
-            path: sections/section-030/module-01/course.md
-          - type: reading
-            title: "Module 1.1: Two identities on one request"
-            path: sections/section-030/module-01/course-01-two-identities-and-the-filter.md
-          - type: reading
-            title: "Module 1.2: RequestAuthentication and the key set"
-            path: sections/section-030/module-01/course-02-requestauthentication-and-jwks.md
-          - type: reading
-            title: "Module 1.3: Requiring a token"
-            path: sections/section-030/module-01/course-03-requiring-a-token.md
-          - type: playground
-            title: "Module 1 playground"
-            path: sections/section-030/module-01/playground
-          - type: lab
-            title: "Module 1 lab: Require A Valid End-User Token"
-            path: sections/section-030/module-01/labs/lab-01
-            difficulty: intermediate
-      - id: module-02
-        title: Authorize On JWT Claims
-        content:
-          - type: reading
-            title: "Module 2: Authorize On JWT Claims"
-            path: sections/section-030/module-02/course.md
-          - type: reading
-            title: "Module 2.1: Claims as request attributes"
-            path: sections/section-030/module-02/course-01-claims-as-attributes.md
-          - type: reading
-            title: "Module 2.2: when conditions and how they match"
-            path: sections/section-030/module-02/course-02-when-conditions.md
-          - type: reading
-            title: "Module 2.3: Designing and debugging claim rules"
-            path: sections/section-030/module-02/course-03-designing-and-debugging.md
-          - type: playground
-            title: "Module 2 playground"
-            path: sections/section-030/module-02/playground
-          - type: lab
-            title: "Module 2 lab: Authorize On A JWT Claim"
-            path: sections/section-030/module-02/labs/lab-01
-            difficulty: intermediate
-    capstone:
+      Validating end-user tokens with RequestAuthentication, requiring them
+      with requestPrincipals, and authorizing on what the token claims.
+
+    content:
+      - type: reading
+        title: Section Overview
+        path: sections/section-030/README.md
+
+      - type: reading
+        title: "Authenticate End Users With JWT"
+        path: sections/section-030/module-01/course.md
+      - type: reading
+        title: "Two Identities On One Signal"
+        path: sections/section-030/module-01/course-01-two-identities-on-one-signal.md
+      - type: reading
+        title: "Check The Token With RequestAuthentication"
+        path: sections/section-030/module-01/course-02-check-the-token.md
+      - type: reading
+        title: "Require A Token"
+        path: sections/section-030/module-01/course-03-require-a-token.md
+      - type: reading
+        title: Question
+        path: sections/section-030/module-01/labs/lab-01/question.md
+      - type: lab
+        title: "Require A Valid End-User Token Lab"
+        path: sections/section-030/module-01/labs/lab-01
+        difficulty: beginner
+        estimated_duration: 20m
+        topic: jwt
+        task_kind: build
+        tags: [requestauthentication, authorizationpolicy, jwt, jwks, request-principals, jwt-401, rbac-403]
+        learning_goals:
+          - Check end-user tokens on one workload with a RequestAuthentication
+          - Make a token required with requestPrincipals in an ALLOW AuthorizationPolicy
+          - Tell a 401 from the token check apart from a 403 from the policy
+        resources:
+          - name: "RequestAuthentication reference"
+            url: https://istio.io/latest/docs/reference/config/security/request_authentication/
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+          - name: "Authentication policy task"
+            url: https://istio.io/latest/docs/tasks/security/authentication/authn-policy/
+      - type: reading
+        title: "Other Token Places And The DENY Form"
+        path: sections/section-030/module-01/course-04-other-token-places-and-deny.md
+      - type: reading
+        title: Question
+        path: sections/section-030/module-01/labs/lab-02/question.md
+      - type: lab
+        title: "Take The Token From The Query String Lab"
+        path: sections/section-030/module-01/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: jwt
+        task_kind: build
+        tags: [requestauthentication, authorizationpolicy, jwt, deny-policy, request-principals, jwt-401, rbac-403]
+        learning_goals:
+          - Read the end-user token from a query parameter with fromParams
+          - Require a token with a DENY policy that uses notRequestPrincipals
+          - Explain why a token in the ignored header gets 403 and not 401
+        resources:
+          - name: "RequestAuthentication reference"
+            url: https://istio.io/latest/docs/reference/config/security/request_authentication/
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+          - name: "Authorization with JWT task"
+            url: https://istio.io/latest/docs/tasks/security/authorization/authz-jwt/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-030/module-01/course-05-wrap-up.md
+
+      - type: reading
+        title: "Authorize On JWT Claims"
+        path: sections/section-030/module-02/course.md
+      - type: reading
+        title: "Read What The Token Says"
+        path: sections/section-030/module-02/course-01-read-what-the-token-says.md
+      - type: reading
+        title: "Require A Claim"
+        path: sections/section-030/module-02/course-02-require-a-claim.md
+      - type: reading
+        title: "One Rule Per Role"
+        path: sections/section-030/module-02/course-03-one-rule-per-role.md
+      - type: reading
+        title: Question
+        path: sections/section-030/module-02/labs/lab-01/question.md
+      - type: lab
+        title: "Authorize On A JWT Claim Lab"
+        path: sections/section-030/module-02/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 15m
+        topic: jwt
+        task_kind: build
+        tags: [authorizationpolicy, requestauthentication, jwt-claims, when-conditions, request-principals, rbac-403]
+        learning_goals:
+          - Gate one path on a group claim with a when condition on request.auth.claims[groups]
+          - Require a valid token in every rule with requestPrincipals, so a request without a token is refused everywhere
+        resources:
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+          - name: "Authorization policy conditions"
+            url: https://istio.io/latest/docs/reference/config/security/conditions/
+          - name: "Authorization with JWT"
+            url: https://istio.io/latest/docs/tasks/security/authorization/authz-jwt/
+      - type: reading
+        title: "Debug A Claim Rule"
+        path: sections/section-030/module-02/course-04-debug-a-claim-rule.md
+      - type: reading
+        title: Question
+        path: sections/section-030/module-02/labs/lab-02/question.md
+      - type: lab
+        title: "Fix The Claim Rule Lab"
+        path: sections/section-030/module-02/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: jwt
+        task_kind: troubleshooting
+        tags: [authorizationpolicy, jwt-claims, when-conditions, request-principals, paths, proxy-config, rbac-403]
+        learning_goals:
+          - Find a claim name that no token carries by comparing the proxy's rule with a decoded token
+          - Make one path public by giving it its own rule without a from block
+          - Prove each path answers the right callers with live signals
+        resources:
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+          - name: "Authorization policy conditions"
+            url: https://istio.io/latest/docs/reference/config/security/conditions/
+          - name: "Authorization with JWT"
+            url: https://istio.io/latest/docs/tasks/security/authorization/authz-jwt/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
+        title: "Wrap-Up"
+        path: sections/section-030/module-02/course-05-wrap-up.md
+
+      - type: reading
+        title: Question
+        path: sections/section-030/capstone/labs/lab-01/question.md
       - type: lab
         title: "End-User Authentication Capstone"
         path: sections/section-030/capstone/labs/lab-01
-        difficulty: advanced
-  - id: section-040
-    title: Securing Edge Traffic With TLS
-    curriculum_item: Securing Edge Traffic with TLS
+
+  - id: module-040
+    title: "Securing Edge Traffic With TLS"
     description: >
-      The three Gateway TLS modes: terminating with SIMPLE, requiring
-      client certificates with MUTUAL, and forwarding an encrypted
-      stream with PASSTHROUGH.
-    readme: sections/section-040/README.md
-    modules:
-      - id: module-01
-        title: Terminate TLS At The Ingress Gateway
-        content:
-          - type: reading
-            title: "Module 1: Terminate TLS At The Ingress Gateway"
-            path: sections/section-040/module-01/course.md
-          - type: reading
-            title: "Module 1.1: How a gateway gets its certificate"
-            path: sections/section-040/module-01/course-01-how-a-gateway-gets-its-certificate.md
-          - type: reading
-            title: "Module 1.2: The TLS listener"
-            path: sections/section-040/module-01/course-02-the-tls-listener.md
-          - type: reading
-            title: "Module 1.3: Verifying, redirecting and rotating"
-            path: sections/section-040/module-01/course-03-verifying-redirecting-and-rotating.md
-          - type: playground
-            title: "Module 1 playground"
-            path: sections/section-040/module-01/playground
-          - type: lab
-            title: "Module 1 lab: Serve HTTPS At The Ingress Gateway"
-            path: sections/section-040/module-01/labs/lab-01
-            difficulty: intermediate
-      - id: module-02
-        title: Require Client Certificates At The Edge
-        content:
-          - type: reading
-            title: "Module 2: Require Client Certificates At The Edge"
-            path: sections/section-040/module-02/course.md
-          - type: reading
-            title: "Module 2.1: Building the PKI"
-            path: sections/section-040/module-02/course-01-building-the-pki.md
-          - type: reading
-            title: "Module 2.2: The credential secret and the validation context"
-            path: sections/section-040/module-02/course-02-secret-and-validation-context.md
-          - type: reading
-            title: "Module 2.3: Handshake failures, and what a certificate proves"
-            path: sections/section-040/module-02/course-03-handshake-failures-and-identity.md
-          - type: playground
-            title: "Module 2 playground"
-            path: sections/section-040/module-02/playground
-          - type: lab
-            title: "Module 2 lab: Require Client Certificates At The Edge"
-            path: sections/section-040/module-02/labs/lab-01
-            difficulty: intermediate
-      - id: module-03
-        title: TLS Passthrough Instead Of Termination
-        content:
-          - type: reading
-            title: "Module 3: TLS Passthrough Instead Of Termination"
-            path: sections/section-040/module-03/course.md
-          - type: reading
-            title: "Module 3.1: What a proxy can see in a TLS stream"
-            path: sections/section-040/module-03/course-01-what-a-proxy-can-see.md
-          - type: reading
-            title: "Module 3.2: Configuring passthrough"
-            path: sections/section-040/module-03/course-02-configuring-passthrough.md
-          - type: reading
-            title: "Module 3.3: What passthrough costs"
-            path: sections/section-040/module-03/course-03-what-passthrough-costs.md
-          - type: playground
-            title: "Module 3 playground"
-            path: sections/section-040/module-03/playground
-          - type: lab
-            title: "Module 3 lab: Route An Encrypted Stream By SNI"
-            path: sections/section-040/module-03/labs/lab-01
-            difficulty: intermediate
-    capstone:
+      The three Gateway TLS modes: terminating with SIMPLE, requiring client
+      certificates with MUTUAL, and forwarding an encrypted stream with
+      PASSTHROUGH. Then the way out: the sidecar originates TLS for an
+      outside HTTPS service.
+
+    content:
+      - type: reading
+        title: Section Overview
+        path: sections/section-040/README.md
+
+      - type: reading
+        title: "Terminate TLS At The Ingress Gateway"
+        path: sections/section-040/module-01/course.md
+      - type: reading
+        title: "Give The Gate Its Certificate"
+        path: sections/section-040/module-01/course-01-give-the-gate-its-certificate.md
+      - type: reading
+        title: "Open The HTTPS Door"
+        path: sections/section-040/module-01/course-02-open-the-https-door.md
+      - type: reading
+        title: "Redirect And Rotate"
+        path: sections/section-040/module-01/course-03-redirect-and-rotate.md
+      - type: reading
+        title: Question
+        path: sections/section-040/module-01/labs/lab-01/question.md
+      - type: lab
+        title: "Serve HTTPS At The Ingress Gateway Lab"
+        path: sections/section-040/module-01/labs/lab-01
+        difficulty: beginner
+        estimated_duration: 20m
+        topic: edge-tls
+        task_kind: build
+        tags: [gateway, ingress-gateway, tls-termination, credential-name, https-redirect, virtualservice, proxy-config]
+        learning_goals:
+          - Store a TLS certificate as a Secret in the namespace the ingress gateway pod reads from
+          - Serve one host over HTTPS with a SIMPLE TLS Gateway server and a bound VirtualService
+          - Redirect plain HTTP on port 80 to HTTPS with httpsRedirect
+        resources:
+          - name: "Secure gateways task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/ingress/secure-ingress/
+          - name: "Gateway reference (ServerTLSSettings)"
+            url: https://istio.io/latest/docs/reference/config/networking/gateway/
+      - type: reading
+        title: "When The Handshake Fails"
+        path: sections/section-040/module-01/course-04-when-the-handshake-fails.md
+      - type: reading
+        title: Question
+        path: sections/section-040/module-01/labs/lab-02/question.md
+      - type: lab
+        title: "Repair The Gate's Certificate Lab"
+        path: sections/section-040/module-01/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: edge-tls
+        task_kind: troubleshooting
+        tags: [gateway, ingress-gateway, tls-termination, credential-name, sni, ist0101, istioctl-analyze, proxy-config]
+        learning_goals:
+          - Find a TLS Secret in the wrong namespace from a WARMING secret in the gateway proxy and IST0101
+          - Find a Gateway that serves the wrong host name from IST0132 and the Gateway hosts
+          - Prove the repaired gateway serves the right certificate to a client that trusts only the lab CA
+        resources:
+          - name: "Secure gateways task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/ingress/secure-ingress/
+          - name: "IST0101 ReferencedResourceNotFound"
+            url: https://istio.io/latest/docs/reference/config/analysis/ist0101/
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-040/module-01/course-05-wrap-up.md
+
+      - type: reading
+        title: "Require Client Certificates At The Edge"
+        path: sections/section-040/module-02/course.md
+      - type: reading
+        title: "Issue The Fleet's Badges"
+        path: sections/section-040/module-02/course-01-issue-the-fleet-badges.md
+      - type: reading
+        title: "Make The Gate Ask For A Badge"
+        path: sections/section-040/module-02/course-02-make-the-gate-ask-for-a-badge.md
+      - type: reading
+        title: Question
+        path: sections/section-040/module-02/labs/lab-01/question.md
+      - type: lab
+        title: "Require Client Certificates At The Edge Lab"
+        path: sections/section-040/module-02/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: edge-tls
+        task_kind: build
+        tags: [gateway, ingress-gateway, mutual-tls-gateway, credential-name, virtualservice, proxy-config]
+        learning_goals:
+          - Build a gateway secret with tls.crt, tls.key and ca.crt in the gateway pod's namespace
+          - Configure a Gateway server with tls.mode MUTUAL that refuses clients without a certificate
+          - Prove from the gateway listener that a client certificate is required
+        resources:
+          - name: "Secure gateways: mutual TLS ingress gateway"
+            url: https://istio.io/latest/docs/tasks/traffic-management/ingress/secure-ingress/#configure-a-mutual-tls-ingress-gateway
+          - name: "Gateway reference (ServerTLSSettings)"
+            url: https://istio.io/latest/docs/reference/config/networking/gateway/#ServerTLSSettings
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
+        title: "Turn Away Strangers And Prove It"
+        path: sections/section-040/module-02/course-03-turn-away-strangers-and-prove-it.md
+      - type: reading
+        title: Question
+        path: sections/section-040/module-02/labs/lab-02/question.md
+      - type: lab
+        title: "Fix The Gate's Trusted Badge Office Lab"
+        path: sections/section-040/module-02/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: edge-tls
+        task_kind: troubleshooting
+        tags: [gateway, ingress-gateway, mutual-tls-gateway, certificates, tls-handshake-failure, openssl, proxy-config]
+        learning_goals:
+          - Find which certificate authority a MUTUAL gateway trusts from its secret and its proxy
+          - Replace the CA in the gateway secret so only clients from the right CA get in
+          - Prove that a client from another CA and a client without a certificate are refused
+        resources:
+          - name: "Secure gateways: mutual TLS ingress gateway"
+            url: https://istio.io/latest/docs/tasks/traffic-management/ingress/secure-ingress/#configure-a-mutual-tls-ingress-gateway
+          - name: "Debugging Envoy and istiod"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+      - type: reading
+        title: "Two Secret Layouts And What A Badge Proves"
+        path: sections/section-040/module-02/course-04-two-secret-layouts-and-what-a-badge-proves.md
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-040/module-02/course-05-wrap-up.md
+
+      - type: reading
+        title: "TLS Passthrough Instead Of Termination"
+        path: sections/section-040/module-03/course.md
+      - type: reading
+        title: "What A Proxy Can See"
+        path: sections/section-040/module-03/course-01-what-a-proxy-can-see.md
+      - type: reading
+        title: "Open A Gate That Does Not Decrypt"
+        path: sections/section-040/module-03/course-02-open-a-gate-that-does-not-decrypt.md
+      - type: reading
+        title: "Prove Who Opened The Envelope"
+        path: sections/section-040/module-03/course-03-prove-who-opened-the-envelope.md
+      - type: reading
+        title: Question
+        path: sections/section-040/module-03/labs/lab-01/question.md
+      - type: lab
+        title: "Route An Encrypted Stream By SNI Lab"
+        path: sections/section-040/module-03/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 15m
+        topic: edge-tls
+        task_kind: build
+        tags: [gateway, virtualservice, tls-passthrough, sni, ingress-gateway, proxy-config]
+        learning_goals:
+          - Expose a backend through the ingress gateway with a TLS PASSTHROUGH server and no credential
+          - Route an encrypted stream with a VirtualService tls block that matches sniHosts
+          - Prove from the served certificate and the gateway's routes that the backend ended TLS
+        resources:
+          - name: "Ingress gateway without TLS termination"
+            url: https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-sni-passthrough/
+          - name: "Gateway reference: ServerTLSSettings"
+            url: https://istio.io/latest/docs/reference/config/networking/gateway/#ServerTLSSettings
+          - name: "VirtualService reference: TLSRoute"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/#TLSRoute
+      - type: reading
+        title: "When The Stream Has Nowhere To Go"
+        path: sections/section-040/module-03/course-04-when-the-stream-has-nowhere-to-go.md
+      - type: reading
+        title: Question
+        path: sections/section-040/module-03/labs/lab-02/question.md
+      - type: lab
+        title: "Fix The Gate That Routes Nothing Lab"
+        path: sections/section-040/module-03/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: edge-tls
+        task_kind: troubleshooting
+        tags: [gateway, virtualservice, tls-passthrough, sni, connection-reset, proxy-config, openssl]
+        learning_goals:
+          - Find a passthrough setup that routes nothing from the gateway's listener instead of the status code
+          - Replace an http block with a tls block that matches sniHosts, and align the Gateway hosts with it
+          - Prove the repaired host returns 200 with the backend's own certificate
+        resources:
+          - name: "Ingress gateway without TLS termination"
+            url: https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-sni-passthrough/
+          - name: "Debugging Envoy and istiod (proxy-config)"
+            url: https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/
+          - name: "VirtualService reference: TLSRoute"
+            url: https://istio.io/latest/docs/reference/config/networking/virtual-service/#TLSRoute
+      - type: reading
+        title: "One Gate, Two Modes"
+        path: sections/section-040/module-03/course-05-one-gate-two-modes.md
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-040/module-03/course-06-wrap-up.md
+
+      - type: reading
+        title: "Originate TLS For External Services"
+        path: sections/section-040/module-04/course.md
+      - type: reading
+        title: "Who Seals The Signal"
+        path: sections/section-040/module-04/course-01-who-seals-the-signal.md
+      - type: reading
+        title: "Chart The Planet And Seal The Signal"
+        path: sections/section-040/module-04/course-02-chart-the-planet-and-seal-the-signal.md
+      - type: reading
+        title: "Check The Planet's ID Card"
+        path: sections/section-040/module-04/course-03-check-the-planets-id-card.md
+      - type: reading
+        title: Question
+        path: sections/section-040/module-04/labs/lab-01/question.md
+      - type: lab
+        title: "Seal The Signal To An Outside Planet Lab"
+        path: sections/section-040/module-04/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: egress-tls
+        task_kind: build
+        tags: [serviceentry, destinationrule, tls-origination, external-services, access-log, proxy-config]
+        learning_goals:
+          - Let the sidecar originate TLS with a ServiceEntry targetPort and a DestinationRule in SIMPLE mode
+          - Make the sidecar check the server's certificate name with subjectAltNames
+          - Prove from the server's answer, the access log and proxy-config that only port 80 is sealed
+        resources:
+          - name: "Egress TLS origination task"
+            url: https://istio.io/latest/docs/tasks/traffic-management/egress/egress-tls-origination/
+          - name: "ServiceEntry reference"
+            url: https://istio.io/latest/docs/reference/config/networking/service-entry/
+          - name: "DestinationRule reference"
+            url: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+      - type: reading
+        title: "A Seal On The Wrong Channel"
+        path: sections/section-040/module-04/course-04-a-seal-on-the-wrong-channel.md
+      - type: reading
+        title: "Use What You Won"
+        path: sections/section-040/module-04/course-05-use-what-you-won.md
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-040/module-04/course-06-wrap-up.md
+
+      - type: reading
+        title: Question
+        path: sections/section-040/capstone/labs/lab-01/question.md
       - type: lab
         title: "Edge TLS Capstone"
         path: sections/section-040/capstone/labs/lab-01
-        difficulty: advanced
-  - id: section-050
-    title: Authorization At The Edge
-    curriculum_item: Configuring Authorization
+
+  - id: module-050
+    title: "Authorization At The Edge"
     description: >
-      Applying an AuthorizationPolicy to the ingress gateway, and
-      choosing correctly between the connection peer and the forwarded
-      client address.
-    readme: sections/section-050/README.md
-    modules:
-      - id: module-01
-        title: Authorize By Source IP At The Ingress Gateway
-        content:
-          - type: reading
-            title: "Module 1: Authorize By Source IP At The Ingress Gateway"
-            path: sections/section-050/module-01/course.md
-          - type: reading
-            title: "Module 1.1: Authorizing at the gateway, and the connection peer"
-            path: sections/section-050/module-01/course-01-authorizing-at-the-gateway.md
-          - type: reading
-            title: "Module 1.2: X-Forwarded-For and trusted proxies"
-            path: sections/section-050/module-01/course-02-trusting-x-forwarded-for.md
-          - type: reading
-            title: "Module 1.3: Verifying, and where address rules fit"
-            path: sections/section-050/module-01/course-03-verifying-and-design.md
-          - type: playground
-            title: "Module 1 playground"
-            path: sections/section-050/module-01/playground
-          - type: lab
-            title: "Module 1 lab: Block A Client Range At The Gateway"
-            path: sections/section-050/module-01/labs/lab-01
-            difficulty: intermediate
-    capstone:
+      Applying an AuthorizationPolicy to the ingress gateway, and choosing
+      correctly between the connection peer and the forwarded client address.
+
+    content:
+      - type: reading
+        title: Section Overview
+        path: sections/section-050/README.md
+
+      - type: reading
+        title: "Authorize By Source IP At The Ingress Gateway"
+        path: sections/section-050/module-01/course.md
+      - type: reading
+        title: "Guard The Arrival Gate"
+        path: sections/section-050/module-01/course-01-guard-the-arrival-gate.md
+      - type: reading
+        title: "Who Opened The Connection: ipBlocks"
+        path: sections/section-050/module-01/course-02-who-opened-the-connection.md
+      - type: reading
+        title: "Trust The Right Number Of Relays"
+        path: sections/section-050/module-01/course-03-trust-the-right-number-of-relays.md
+      - type: reading
+        title: "Block A Client Range With remoteIpBlocks"
+        path: sections/section-050/module-01/course-04-block-a-client-range.md
+      - type: reading
+        title: Question
+        path: sections/section-050/module-01/labs/lab-01/question.md
+      - type: lab
+        title: "Block A Client Range At The Gateway Lab"
+        path: sections/section-050/module-01/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 15m
+        topic: edge-authorization
+        task_kind: build
+        tags: [authorizationpolicy, ingress-gateway, remote-ip-blocks, num-trusted-proxies, deny-policy, rbac-403, proxy-config]
+        learning_goals:
+          - Write an AuthorizationPolicy in the gateway's namespace that selects the ingress gateway pod
+          - Refuse a client range by its forwarded address with remoteIpBlocks while every other client still gets through
+          - Prove from the gateway listener that it trusts one proxy hop
+        resources:
+          - name: "AuthorizationPolicy Source reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source
+          - name: "Ingress gateway authorization"
+            url: https://istio.io/latest/docs/tasks/security/authorization/authz-ingress/
+          - name: "Configuring gateway network topology"
+            url: https://istio.io/latest/docs/ops/configuration/traffic-management/network-topologies/
+      - type: reading
+        title: "One Path, One Network"
+        path: sections/section-050/module-01/course-05-one-path-one-network.md
+      - type: reading
+        title: Question
+        path: sections/section-050/module-01/labs/lab-02/question.md
+      - type: lab
+        title: "Open One Path To One Network Lab"
+        path: sections/section-050/module-01/labs/lab-02
+        difficulty: intermediate
+        estimated_duration: 15m
+        topic: edge-authorization
+        task_kind: build
+        tags: [authorizationpolicy, ingress-gateway, remote-ip-blocks, paths, deny-policy, num-trusted-proxies, access-log]
+        learning_goals:
+          - Open one path at the ingress gateway to one network with a DENY rule and notRemoteIpBlocks
+          - Keep every other path open by avoiding an ALLOW policy on the shared gateway
+          - Show that a forged X-Forwarded-For entry in front of the trusted one is ignored
+        resources:
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+          - name: "Ingress gateway authorization"
+            url: https://istio.io/latest/docs/tasks/security/authorization/authz-ingress/
+          - name: "Configuring gateway network topology"
+            url: https://istio.io/latest/docs/ops/configuration/traffic-management/network-topologies/
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-050/module-01/course-06-wrap-up.md
+
+      - type: reading
+        title: Question
+        path: sections/section-050/capstone/labs/lab-01/question.md
       - type: lab
         title: "Edge Authorization Capstone"
         path: sections/section-050/capstone/labs/lab-01
-        difficulty: advanced
-  - id: section-060
-    title: Authorization In Ambient Mode
-    curriculum_item: Configuring Authorization
+
+  - id: module-060
+    title: "Authorization In Ambient Mode"
     description: >
-      How the ztunnel/waypoint split decides which AuthorizationPolicy
-      fields are enforced, and which are accepted and silently ignored.
-    readme: sections/section-060/README.md
-    modules:
-      - id: module-01
-        title: Authorization In Ambient Mode, L4 And L7
-        content:
-          - type: reading
-            title: "Module 1: Authorization In Ambient Mode, L4 And L7"
-            path: sections/section-060/module-01/course.md
-          - type: reading
-            title: "Module 1.1: The ambient dataplane"
-            path: sections/section-060/module-01/course-01-the-ambient-dataplane.md
-          - type: reading
-            title: "Module 1.2: What ztunnel can enforce"
-            path: sections/section-060/module-01/course-02-what-ztunnel-can-enforce.md
-          - type: reading
-            title: "Module 1.3: Waypoints and L7 policy"
-            path: sections/section-060/module-01/course-03-waypoints-and-l7-policy.md
-          - type: reading
-            title: "Module 1.4: Tooling, and carrying sidecar knowledge across"
-            path: sections/section-060/module-01/course-04-tooling-and-carrying-across.md
-          - type: playground
-            title: "Module 1 playground"
-            path: sections/section-060/module-01/playground
-          - type: lab
-            title: "Module 1 lab: Enforce L4 And L7 Policy In Ambient Mode"
-            path: sections/section-060/module-01/labs/lab-01
-            difficulty: intermediate
-    capstone:
+      How the ztunnel/waypoint split decides which AuthorizationPolicy fields
+      are enforced, which are ignored, and which make ztunnel refuse every caller.
+
+    content:
+      - type: reading
+        title: Section Overview
+        path: sections/section-060/README.md
+
+      - type: reading
+        title: "Authorization In Ambient Mode, L4 And L7"
+        path: sections/section-060/module-01/course.md
+      - type: reading
+        title: "The Ambient Dataplane"
+        path: sections/section-060/module-01/course-01-the-ambient-dataplane.md
+      - type: reading
+        title: "What ztunnel Can Enforce"
+        path: sections/section-060/module-01/course-02-what-ztunnel-can-enforce.md
+      - type: reading
+        title: Question
+        path: sections/section-060/module-01/labs/lab-02/question.md
+      - type: lab
+        title: "Allow Only Known Ships At L4 Lab"
+        path: sections/section-060/module-01/labs/lab-02
+        difficulty: beginner
+        estimated_duration: 15m
+        topic: ambient
+        task_kind: build
+        tags: [authorizationpolicy, ambient, ztunnel, l4-policy, principals, connection-reset, ztunnel-config]
+        learning_goals:
+          - Write identity-only ALLOW policies that ztunnel enforces with no waypoint
+          - Recognise an L4 refusal as a closed connection instead of a 403
+          - Keep the allowed callers working while every other ship is refused
+        resources:
+          - name: "Ambient L4 authorization policy"
+            url: https://istio.io/latest/docs/ambient/usage/l4-policy/
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+      - type: reading
+        title: "A Rule With Nowhere To Run"
+        path: sections/section-060/module-01/course-03-a-rule-with-nowhere-to-run.md
+      - type: reading
+        title: "Deploy A Waypoint"
+        path: sections/section-060/module-01/course-04-deploy-a-waypoint.md
+      - type: reading
+        title: Question
+        path: sections/section-060/module-01/labs/lab-01/question.md
+      - type: lab
+        title: "Enforce L4 And L7 Policy In Ambient Mode Lab"
+        path: sections/section-060/module-01/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 20m
+        topic: ambient
+        task_kind: build
+        tags: [authorizationpolicy, ambient, waypoint, l7-policy, target-refs, methods, rbac-403, access-log]
+        learning_goals:
+          - Deploy a waypoint and send a service's traffic through it with istio.io/use-waypoint
+          - Attach one L7 policy with targetRefs that enforces both identity and method
+          - Tell a waypoint refusal (403) from a ztunnel refusal (closed connection)
+        resources:
+          - name: "Use waypoint proxies"
+            url: https://istio.io/latest/docs/ambient/usage/waypoint/
+          - name: "Ambient L7 features"
+            url: https://istio.io/latest/docs/ambient/usage/l7-features/
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+      - type: reading
+        title: "Ask Who Holds The Rule"
+        path: sections/section-060/module-01/course-05-ask-who-holds-the-rule.md
+      - type: reading
+        title: "Wrap-Up: Mission Debrief"
+        path: sections/section-060/module-01/course-06-wrap-up.md
+
+      - type: reading
+        title: Question
+        path: sections/section-060/capstone/labs/lab-01/question.md
       - type: lab
         title: "Ambient Authorization Capstone"
         path: sections/section-060/capstone/labs/lab-01

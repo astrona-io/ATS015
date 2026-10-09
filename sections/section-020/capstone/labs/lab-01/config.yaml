@@ -1,53 +1,33 @@
-# Authorization Policy Capstone (CAP015-020)
-# Astrona hands-on lab. Schema: internal/config.LabConfig.
-# kind runtime (default): a single-node cluster with Istio 1.30.5.
-
 metadata:
   name: "ats-015-capstone-020"
   docs:
-    prerequisites: "docs/prerequisites.md"
-    examQuestion: "docs/exam-question.md"
-    caseStudy: "docs/case-study.md"
-    guide: "docs/step-by-step-guide.md"
+    solution: "solution.md"
+    question: "question.md"
 
 bootstrap:
   init:
-    - name: "setup"
-      description: "Installs Istio (demo profile) and the starting workloads. Creates nothing the task asks for."
+    - name: "install-istio"
+      description: "Installs istioctl 1.30.5 and a demo-profile control plane"
       type: "file"
-      source: "bootstrap/setup.sh"
-  manifests:
-    - name: "lab-start"
-      description: "Starting workloads: namespace, service accounts, Deployments, Services and a client pod."
+      source: "bootstrap/01-install-istio.sh"
+    - name: "capstone-020-setup"
+      description: "Creates authz-demo (booking-service as booking-sa, notification-service with no /admin handler, tester) under a namespace STRICT PeerAuthentication, with no AuthorizationPolicy"
       type: "file"
-      source: "manifests/lab-start.yaml"
-    - name: "peerauth"
-      description: "STRICT mTLS for the namespace — a precondition, so workload identities are verifiable."
-      type: "file"
-      source: "manifests/peerauth.yaml"
+      source: "bootstrap/02-seed-workloads.sh"
 
 testing:
-  manifests:
+  init:
     - name: "solution"
-      description: "Reference end state applied by `astrona test` in CI."
-      type: "folder"
-      source: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
 
 validation:
-  checks:
-    - name: "an AuthorizationPolicy exists in authz-demo"
-      type: "resourceExists"
-      resource: "authorizationpolicy -n authz-demo"
-  script:
-    name: "verify-behaviour"
-    description: "Sends real traffic and asserts the outcomes the task specifies."
-    type: "file"
-    source: "validate.sh"
+  scripts:
+    - name: "verify-section-020-capstone"
+      description: "Confirms a DENY backstop and a principals rule exist, the permissive /admin ALLOW policy is still in place, and the six graded calls return 200 or 403 as specified"
+      type: "file"
+      source: "validation/validate-completed.sh"
 
 teardown:
-  init:
-    - name: "dump-logs"
-      description: "Best-effort state capture before teardown."
-      type: "file"
-      source: "teardown/dump-logs.sh"
   keepCluster: false

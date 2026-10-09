@@ -27,6 +27,8 @@ kubectl -n migrate-demo exec deploy/notification-service-v1 -c istio-proxy -- \
 
 ## Step 2: Declare the state you are in (and your rollback)
 
+Write the manifest to a file and apply the file. It is the habit the exam rewards — you get something you can re-read, edit and re-apply, instead of a heredoc that is gone the moment it runs.
+
 ```sh
 cat > /tmp/permissive.yaml <<'YAML'
 apiVersion: security.istio.io/v1
@@ -83,7 +85,7 @@ is the signal.
 ## Step 5: Enforce
 
 ```sh
-kubectl apply -f - <<'YAML'
+cat > peerauthentication-default.yaml <<'YAML'
 apiVersion: security.istio.io/v1
 kind: PeerAuthentication
 metadata:
@@ -93,6 +95,7 @@ spec:
   mtls:
     mode: STRICT
 YAML
+kubectl apply -f peerauthentication-default.yaml
 ```
 
 ## Step 6: Verify, both ways
@@ -128,3 +131,14 @@ astrona submit -c .
 - **`outside-client` has one container.** Same cause — `rollout restart`.
 - **The STRICT check fails.** The policy may carry a `selector`, which makes it a
   workload policy rather than a namespace one.
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [PeerAuthentication API](https://istio.io/latest/docs/reference/config/security/peer_authentication/) — `mtls.mode` and the scoping rules
+- [Mutual TLS modes](https://istio.io/latest/docs/concepts/security/#mutual-tls-authentication) — what each mode accepts and rejects
+- [istioctl proxy-config secret](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-secret) — reading the certificates a workload actually holds
+- [istioctl proxy-config](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-secret) — reading a proxy's live configuration

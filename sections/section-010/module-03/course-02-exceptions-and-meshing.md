@@ -126,6 +126,17 @@ Either record the count, generate fresh traffic, and compare; or use `rate()` ag
 
 > *Labelling a namespace tells the webhook what to do next time; only recreating the pod makes it happen — which is why the restart, not the label, is the migration.*
 
+## Common pitfalls
+
+> [!WARNING]
+> **Meshing a caller and expecting it to be immediate.** Injection happens at pod creation, so nothing changes until the pods are recreated.
+>
+> **Restarting a pod that no controller owns.** A bare pod deleted is a bare pod gone. Check for a Deployment or StatefulSet before deleting anything.
+>
+> **Expecting a new pod to have a new identity.** The identity comes from the service account, so a recreated pod holds the same one.
+>
+> **Leaving an exemption in place after the exception ends.** A narrow `PERMISSIVE` written for one legacy caller outlives the caller unless someone removes it.
+
 ## Reference
 
 - [Sidecar injection](https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/) — the webhook, the namespace label, the pod-level annotation, and why existing pods are unaffected.

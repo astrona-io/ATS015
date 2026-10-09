@@ -1,0 +1,19 @@
+# Case 1: verify the server certificate's name. subjectAltNames lists the names
+# the certificate must contain; here a wrong one, so the check must fail.
+# (The real name would be httpbin.org.)
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: httpbin-org
+  namespace: starfleet
+spec:
+  host: httpbin.org
+  trafficPolicy:
+    portLevelSettings:
+    - port:
+        number: 80
+      tls:
+        mode: SIMPLE
+        sni: httpbin.org
+        subjectAltNames:
+        - wrong.example.com

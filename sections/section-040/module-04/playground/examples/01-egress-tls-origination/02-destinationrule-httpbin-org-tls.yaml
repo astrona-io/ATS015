@@ -1,0 +1,20 @@
+# TLS origination: the sidecar starts TLS itself for traffic to port 80.
+# App -> sidecar: plain HTTP (readable, so HTTP features work).
+# Sidecar -> httpbin.org:443: HTTPS (encrypted on the network).
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: httpbin-org
+  namespace: starfleet
+spec:
+  host: httpbin.org
+  trafficPolicy:
+    portLevelSettings:
+    - port:
+        number: 80
+      tls:
+        # SIMPLE: one-way TLS towards the server (MUTUAL would also send a
+        # client certificate).
+        mode: SIMPLE
+        # Name sent in the TLS handshake (SNI) and checked on the certificate.
+        sni: httpbin.org

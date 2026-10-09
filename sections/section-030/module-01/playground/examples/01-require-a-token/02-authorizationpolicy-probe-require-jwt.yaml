@@ -1,0 +1,17 @@
+# Require a valid JWT for every signal to the probe.
+# requestPrincipals is "<iss>/<sub>" of a validated token. "*" = any valid
+# token, so only signals WITHOUT a valid token are denied (HTTP 403).
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: probe-require-jwt
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: probe
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        requestPrincipals: ["*"]

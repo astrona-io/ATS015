@@ -1,0 +1,11 @@
+# The last step: every ship on starfleet accepts mTLS only.
+# Apply it only after no caller sends plain signals any more (the drifter on
+# outpost must be in the fleet first). A plain caller gets a connection reset.
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: starfleet
+spec:
+  mtls:
+    mode: STRICT

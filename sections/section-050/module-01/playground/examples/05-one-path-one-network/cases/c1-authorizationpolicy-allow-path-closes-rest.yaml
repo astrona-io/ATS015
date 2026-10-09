@@ -1,0 +1,20 @@
+# MISTAKE: the same intent written as ALLOW. Once an ALLOW policy selects the
+# gateway, every signal that matches none of its rules is refused. The office
+# reaches the API, and NOBODY reaches /productpage any more.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: gateway-api-office-only
+  namespace: istio-ingress
+spec:
+  selector:
+    matchLabels:
+      istio: ingress
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        paths: ["/api/v1/products*"]
+    from:
+    - source:
+        remoteIpBlocks: ["203.0.113.0/24"]

@@ -1,0 +1,18 @@
+# Close the bridge's API at the arrival gate, for every caller.
+# Lives in the GATEWAY's namespace (istio-ingress) and selects the gateway pod
+# (istio=ingress). The signal is refused at the gate and never reaches bridge.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: gateway-deny-api
+  namespace: istio-ingress
+spec:
+  selector:
+    matchLabels:
+      istio: ingress
+  action: DENY
+  rules:
+  - to:
+    - operation:
+        hosts: ["starfleet.example.com"]
+        paths: ["/api/v1/products*"]

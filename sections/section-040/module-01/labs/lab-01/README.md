@@ -1,43 +1,27 @@
+---
+estimated_duration: 3m
+---
+
 # Serve HTTPS At The Ingress Gateway
 
-- **ID:** LAB015-040-01
-- **Slug:** ats-015-lab-040-01
-- **Author:** Paris Nakita Kejser
-- **Type:** Astrona hands-on lab — graded
+Welcome to your first edge mission, astronaut. In this graded lab you put a TLS certificate where the ingress gateway can read it, serve HTTPS for one host name, and redirect plain HTTP callers to HTTPS. The lab runs a small app of its own (`booking-service` in `tls-demo`), not the Starfleet.
 
-Put a TLS credential where the gateway can read it, serve HTTPS for one hostname, and redirect plaintext callers.
+## Launching the Lab
 
-## Run it
+Run this command to start the cluster:
 
-```sh
-astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-040/module-01/labs/lab-01
-astrona submit -c .
+```bash
+astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-040/module-01/labs/lab-01
+```
+
+When you think you have finished, send it for grading:
+
+```bash
+astrona submit -c sections/section-040/module-01/labs/lab-01
+```
+
+When you are done, remove the lab:
+
+```bash
 astrona destroy ats-015-lab-040-01
 ```
-
-`astrona destroy` takes the environment name (`metadata.name` = `ats-015-lab-040-01`), not the
-config path.
-
-## Prove it (authors / CI)
-
-```sh
-astrona test -c . --junit-xml=report.xml
-```
-
-`astrona test` bootstraps the lab, applies `solution/`, submits it, and tears down —
-proving a learner who does everything right passes.
-
-## Layout
-
-| Path | Purpose |
-| --- | --- |
-| `config.yaml` | Lab definition (bootstrap / testing / validation / teardown) |
-| `docs/prerequisites.md` | What to know and have installed first |
-| `docs/exam-question.md` | The formal, self-contained task |
-| `docs/case-study.md` | The same task as a scenario, with hints instead of an answer |
-| `docs/step-by-step-guide.md` | Full walkthrough, including the answer |
-| `manifests/` | Starting state applied at bootstrap |
-| `bootstrap/setup.sh` | Istio install and pre-work — never the graded objects |
-| `solution/` | Reference end state (CI only; learners do not see it during a run) |
-| `validate.sh` | Behavioural grading |
-| `teardown/dump-logs.sh` | State capture before teardown |

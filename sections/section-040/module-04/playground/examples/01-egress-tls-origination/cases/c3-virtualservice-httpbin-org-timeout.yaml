@@ -1,0 +1,15 @@
+# Case 3: HTTP features on an external HTTPS service. Possible only because
+# the app sends plain HTTP and the sidecar does the TLS.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: httpbin-org
+  namespace: starfleet
+spec:
+  hosts:
+  - httpbin.org
+  http:
+  - route:
+    - destination:
+        host: httpbin.org
+    timeout: 2s

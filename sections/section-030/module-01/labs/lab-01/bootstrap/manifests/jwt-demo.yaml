@@ -1,0 +1,178 @@
+# Starting workloads for lab ats-015-lab-030-01 on the planet jwt-demo:
+# booking-service-v1 (calls notification-service), notification-service-v1
+# (answers every path, including POST /notify) and the tester client pod.
+# No RequestAuthentication and no AuthorizationPolicy: writing them is the task.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jwt-demo
+  labels:
+    istio-injection: enabled
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: booking-sa
+  namespace: jwt-demo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: booking-service-v1
+  namespace: jwt-demo
+  labels:
+    app: booking-service
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: booking-service
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: booking-service
+        version: v1
+    spec:
+      serviceAccountName: booking-sa
+      containers:
+        - name: booking-service
+          image: nginx:1.27-alpine
+          ports:
+            - containerPort: 8084
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: booking-service-v1-nginx-conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: booking-service
+  namespace: jwt-demo
+  labels:
+    app: booking-service
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8084
+  selector:
+    app: booking-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service-v1
+  namespace: jwt-demo
+  labels:
+    app: notification-service
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: notification-service
+        version: v1
+    spec:
+      containers:
+        - name: notification-service
+          image: nginx:1.27-alpine
+          ports:
+            - containerPort: 8084
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: notification-service-v1-nginx-conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: jwt-demo
+  labels:
+    app: notification-service
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8084
+  selector:
+    app: notification-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tester
+  namespace: jwt-demo
+  labels:
+    app: tester
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tester
+  template:
+    metadata:
+      labels:
+        app: tester
+    spec:
+      containers:
+        - name: tester
+          image: curlimages/curl
+          command: ["sh", "-c", "while true; do sleep 30; done"]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: booking-service-v1-nginx-conf
+  namespace: jwt-demo
+data:
+  default.conf: |
+    server {
+      listen 8084;
+      location / {
+        # rewrite ... break sends a fixed path upstream. A proxy_pass with a URI
+        # substitutes the matched prefix instead, so POST /book would arrive as
+        # POST /notifybook - which no policy or route is written for.
+        rewrite ^ /notify break;
+        proxy_pass http://notification-service:80;
+        proxy_http_version 1.1;
+        # The service this stands in for answers its own caller even when the
+        # call it makes downstream is refused, so a policy scoped to the
+        # downstream service does not turn into a failure here.
+        proxy_intercept_errors on;
+        error_page 400 401 403 404 429 500 502 503 504 = @downstream_failed;
+      }
+      location @downstream_failed {
+        default_type application/json;
+        return 200 '{"service":"booking-service","downstream":"unavailable"}';
+      }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: notification-service-v1-nginx-conf
+  namespace: jwt-demo
+data:
+  default.conf: |
+    server {
+      listen 8084;
+      location / {
+        default_type application/json;
+        return 200 '{"service":"notification-service","version":"v1"}';
+      }
+    }

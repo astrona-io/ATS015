@@ -1,0 +1,20 @@
+# MISTAKE: an http block for a passthrough listener.
+# It applies cleanly and istioctl analyze stays quiet, but the gate cannot read
+# a path, so it builds no port 443 listener for the host at all and the
+# connection fails during the handshake (curl prints 000).
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: tls-backend
+  namespace: starfleet
+spec:
+  hosts:
+  - vault.starfleet.example.com
+  gateways:
+  - vault-gateway
+  http:
+  - route:
+    - destination:
+        host: tls-backend
+        port:
+          number: 8443

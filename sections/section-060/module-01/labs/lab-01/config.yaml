@@ -1,52 +1,33 @@
-# Enforce L4 And L7 Policy In Ambient Mode (LAB015-060-01)
-# Astrona hands-on lab. Schema: internal/config.LabConfig.
-# kind runtime (default): a single-node cluster with Istio 1.30.5.
-
 metadata:
   name: "ats-015-lab-060-01"
   docs:
-    prerequisites: "docs/prerequisites.md"
-    examQuestion: "docs/exam-question.md"
-    caseStudy: "docs/case-study.md"
-    guide: "docs/step-by-step-guide.md"
+    solution: "solution.md"
+    question: "question.md"
 
 bootstrap:
   init:
-    - name: "setup"
-      description: "Installs Istio (ambient profile) and the starting workloads. Creates nothing the task asks for."
+    - name: "install-istio"
+      description: "Installs the Gateway API CRDs and Istio 1.30.5 in ambient mode (istio-base, istiod, istio-cni, ztunnel) with Helm"
       type: "file"
-      source: "bootstrap/setup.sh"
-  manifests:
-    - name: "lab-start"
-      description: "Starting workloads: namespace, service accounts, Deployments, Services and a client pod."
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-060-01-workloads"
+      description: "Creates namespace ambient-authz enrolled in ambient mode and mesh-wide access logs, with notification-service-v1, tester (tester-sa) and other-client (other-sa). No waypoint and no AuthorizationPolicy"
       type: "file"
-      source: "manifests/lab-start.yaml"
+      source: "bootstrap/02-seed-workloads.sh"
 
 testing:
-  manifests:
+  init:
     - name: "solution"
-      description: "Reference end state applied by `astrona test` in CI."
-      type: "folder"
-      source: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
 
 validation:
-  checks:
-    - name: "AuthorizationPolicy in ambient-authz"
-      type: "resourceExists"
-      resource: "authorizationpolicy -n ambient-authz"
-    - name: "waypoint Gateway in ambient-authz"
-      type: "resourceExists"
-      resource: "gateway.gateway.networking.k8s.io -n ambient-authz"
-  script:
-    name: "verify-behaviour"
-    description: "Sends real traffic and asserts the outcomes the task specifies."
-    type: "file"
-    source: "validate.sh"
+  scripts:
+    - name: "verify-waypoint-policy"
+      description: "Confirms a programmed waypoint Gateway exists, traffic is enrolled through it with istio.io/use-waypoint, an AuthorizationPolicy uses targetRefs, and live calls give other-client POST 403, tester POST 200 and tester GET 403"
+      type: "file"
+      source: "validation/validate-completed.sh"
 
 teardown:
-  init:
-    - name: "dump-logs"
-      description: "Best-effort state capture before teardown."
-      type: "file"
-      source: "teardown/dump-logs.sh"
   keepCluster: false

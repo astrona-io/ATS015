@@ -2,42 +2,148 @@
 
 > Declared in [`../config.yaml`](../config.yaml) under `metadata.docs.guide`.
 
-This is a **playground**, not a lab. The environment starts clean, runs
-`bootstrap/prepare.sh`, applies the starting workloads, and then waits. There is
-no task, no `astrona submit`, and no pass/fail. Explore, break things,
-`astrona destroy`, start over.
+This is a **playground**, not a lab: your training solar system, astronaut. It
+starts a fresh cluster, installs Istio, an ingress gateway and the Starfleet,
+and then waits. There is no task, no `astrona submit` and no pass or fail.
+Explore, break things, `astrona destroy`, start over.
+
+The **ingress gateway** is the spaceport arrival gate: the one door that
+signals from outside the solar system come through. In this playground you
+make it check the visitor's ID badge (a client certificate) as well as
+showing its own.
 
 ## What's in the box
 
-- A single-node `kind` Kubernetes cluster with `kubectl` already pointed at it.
-- **Istio 1.30.5**, installed with the `demo` profile — including the
-  `istio-ingressgateway` Deployment in `istio-system` — plus `istioctl` and
-  `openssl` on your PATH.
-- One injected namespace, **`mtlsedge-demo`**: `booking-service-v1` (serving
-  `/book`) and `notification-service-v1`.
-- **No `Gateway`, no `VirtualService`, no secret.** You build the CA and both
-  certificates yourself.
+- A single-node `kind` Kubernetes cluster. `kubectl` is already pointed at it.
+- **Istio 1.30.5**, installed with Helm. `istio-base` and `istiod` live in
+  `istio-system`. `istiod` is mission control: it sends every proxy its orders.
+- The **ingress gateway** on the planet `istio-ingress`. Its Deployment and
+  its Service are both called `istio-ingress`, and its pods carry the label
+  **`istio=ingress`**. A `Gateway` must select that label, and the secret it
+  names in `credentialName` must live in `istio-ingress`.
+- Mesh-wide **access logs**, so every proxy writes one line per signal.
+- Namespace **`starfleet`** (the planet you work on), labelled for injection, with:
+  - **The Starfleet**: `bridge` (the flagship page, on `/productpage`),
+    `cargo`, `navcom` and `scout` v1, v2 and v3, all on port `9080`.
+  - **`shuttle`**, a client pod inside the mesh.
+- **No certificate, no secret, no `Gateway` and no `VirtualService`.** Making
+  them is the point of the module.
 
-> **No load balancer on `kind`.** Reach the gateway with
-> `kubectl -n istio-system port-forward svc/istio-ingressgateway 8443:443`.
+You also need `istioctl` 1.30.5 and `openssl` on your own machine. Helm does
+not install them for you.
+
+### Reaching the gateway
+
+`kind` has no cloud load balancer, so nothing outside the cluster can reach
+the gateway on its own. `astrona run` keeps two port forwards running for you.
+If one drops, for example after a refused TLS handshake, astrona restarts it
+within about ten seconds.
+
+| Forward | Local | Goes to |
+| --- | --- | --- |
+| `ingress-http` | `http://127.0.0.1:8080` | the ingress gateway, port `80` |
+| `ingress-https` | `https://127.0.0.1:8443` | the ingress gateway, port `443` |
+
+Check them with `astrona port-forward list`. You do not need to start a
+`kubectl port-forward` yourself.
+
+## Make the certificates
+
+Work in one folder on your own machine. These commands make a CA
+(`example.com`), a server certificate for `starfleet.example.com` and a
+client certificate for `client.example.com`, all in `certs/`:
+
+```sh
+mkdir -p certs
+openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 \
+  -subj '/O=example Inc./CN=example.com' \
+  -keyout certs/example.com.key -out certs/example.com.crt
+openssl req -out certs/starfleet.example.com.csr -newkey rsa:2048 -nodes \
+  -keyout certs/starfleet.example.com.key \
+  -subj "/CN=starfleet.example.com/O=starfleet organization"
+printf "subjectAltName=DNS:starfleet.example.com\n" > certs/san.ext
+openssl x509 -req -sha256 -days 365 -CA certs/example.com.crt -CAkey certs/example.com.key \
+  -set_serial 0 -in certs/starfleet.example.com.csr -out certs/starfleet.example.com.crt \
+  -extfile certs/san.ext
+openssl req -out certs/client.example.com.csr -newkey rsa:2048 -nodes \
+  -keyout certs/client.example.com.key \
+  -subj "/CN=client.example.com/O=client organization"
+openssl x509 -req -sha256 -days 365 -CA certs/example.com.crt -CAkey certs/example.com.key \
+  -set_serial 1 -in certs/client.example.com.csr -out certs/client.example.com.crt
+```
+
+The module's first part explains each command.
+
+## Helper
+
+Paste this into each new terminal, in the folder that holds `certs/`. It
+sends one HTTPS signal through the gate to the bridge, trusts your CA, and
+prints the status code and curl's exit code. Any curl options you add are
+passed on:
+
+```sh
+https_status() { curl -s -o /dev/null -w "%{http_code} " --cacert certs/example.com.crt \
+  --resolve starfleet.example.com:8443:127.0.0.1 "$@" https://starfleet.example.com:8443/productpage; echo "exit=$?"; }
+```
+
+Use it like this: `https_status`, or
+`https_status --cert certs/client.example.com.crt --key certs/client.example.com.key`.
+
+curl's exit codes when TLS fails: `7` cannot connect (also for a few
+seconds after a refused handshake, while the port forward restarts), `35` or
+`56` the gate said no during TLS (in our runs a missing or refused client
+certificate gave `56`, a gate with no usable certificate gave `35`), `60`
+the server certificate is not trusted. Wait about ten seconds after a refused
+knock before the next one.
 
 ## Things to try
 
-- Build the secret with `kubectl create secret tls` and watch the gateway come
-  up serving TLS while requiring nothing. That is the dangerous failure: it
-  looks like it works.
-- Name the CA key `cacert` instead of `ca.crt` and check
-  `requireClientCertificate` before you test any traffic.
-- Make a second CA and a client certificate from it, then connect with that
-  certificate. Compare the error with connecting with no certificate at all.
-- Look at what the backend receives: enable `X-Forwarded-Client-Cert` handling
-  and see which client details reach the application.
-- Switch the same listener between `SIMPLE` and `MUTUAL` and diff the proxy
-  listener JSON.
-- Put the CA in a separate `booking-credential-mtls-cacert` secret instead and
-  see whether this Istio version picks it up.
-- Leave the mesh fully `PERMISSIVE` behind a `MUTUAL` gateway and convince
-  yourself the two are unrelated.
+Each idea below is a small change to the files you made while reading the
+module (`virtualservice-bridge.yaml` and `gateway-starfleet.yaml`). Edit your
+saved file, apply it with `kubectl apply -f`, and watch what happens. The
+module's parts show the full YAML for every step.
+
+- Switch the same `Gateway` between `SIMPLE` and `MUTUAL` and compare
+  `https_status` without a client certificate each time.
+- Compare the listener before and after:
+  `istioctl proxy-config listener deploy/istio-ingress -n istio-ingress --port 443 -o json | grep requireClientCertificate`.
+- Create the secret with `kubectl create secret tls` (no `ca.crt`) and point
+  a `MUTUAL` gateway at it. Read `istioctl proxy-config secret deploy/istio-ingress -n istio-ingress`
+  and look at the `-cacert` row, then test with a good client certificate.
+- Create the secret in `starfleet` instead of `istio-ingress`, then run
+  `istioctl analyze -n starfleet`.
+- Make a client certificate from another CA (the commands are in the module),
+  turn up the gate's connection log with
+  `istioctl proxy-config log deploy/istio-ingress -n istio-ingress --level connection:debug`,
+  knock with no certificate and with the stranger's, and compare the reasons:
+  `kubectl logs -n istio-ingress deploy/istio-ingress --since=1m | grep TLS_error`.
+- Put the CA in a separate secret named `<credentialName>-cacert` and check
+  that the gate still turns away visitors without a badge.
+- Replace `ca.crt` in the secret with the other CA, and watch your own good
+  client get turned away while the stranger gets in. No restart is needed:
+  mission control sends the new CA to the gate by itself.
+
+For an exam-style task with a solution, see [practice.md](./practice.md).
+
+## Start over without a new cluster
+
+```sh
+kubectl delete gateways.networking.istio.io,virtualservice --all -n starfleet
+kubectl delete secret -n istio-ingress starfleet-credential-mutual starfleet-credential-split starfleet-credential-split-cacert --ignore-not-found
+```
+
+## Playground not working?
+
+- `astrona list` shows running environments. "already exists" means an old
+  one is still there: `astrona destroy ats-015-playground-040-02`, then run
+  again.
+- The full log path is printed at the end of `astrona run` (`~/.astrona/logs/`).
+- `kubectl` talks to another cluster:
+  `kubectl config use-context kind-astro-ats-015-playground-040-02`.
+- `https_status` prints `exit=7`: check the port forward with
+  `astrona port-forward list`, and restart it with `astrona port-forward start -c .`.
+- `https_status` prints `exit=77` or a file error: you are not in the folder
+  that holds `certs/`.
 
 ## When you're done
 
@@ -45,4 +151,4 @@ no task, no `astrona submit`, and no pass/fail. Explore, break things,
 astrona destroy ats-015-playground-040-02
 ```
 
-(`astrona destroy` takes the environment name, not the config path.)
+(`astrona destroy` takes the environment name, not the configuration path.)

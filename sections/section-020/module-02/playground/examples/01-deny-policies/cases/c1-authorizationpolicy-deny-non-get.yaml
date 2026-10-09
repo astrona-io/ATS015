@@ -1,0 +1,13 @@
+# Case 1: DENY with a negative field: deny every method that is NOT GET,
+# for all workloads in starfleet (no selector).
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: deny-non-get
+  namespace: starfleet
+spec:
+  action: DENY
+  rules:
+  - to:
+    - operation:
+        notMethods: ["GET"]

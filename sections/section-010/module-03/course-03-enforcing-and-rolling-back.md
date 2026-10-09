@@ -88,16 +88,24 @@ kubectl get destinationrule -A -o yaml | grep -B15 'mode: DISABLE'
 Most of what goes wrong here is sequencing rather than syntax, and each mistake has a specific fix.
 
 > [!WARNING]
-> **Common pitfalls**
+## Common pitfalls
+
+> [!WARNING]
+> **Flipping to `STRICT` without reading telemetry** — the failures land in the callers' logs as connection resets, often in a team that does not know the mesh changed.
 >
-> - **Flipping to `STRICT` without reading telemetry** — the failures land in the callers' logs as connection resets, often in a team that does not know the mesh changed.
-> - **Forgetting the callers that are not applications** — Prometheus, health checkers, backup jobs, and anything in another namespace that was never meshed.
-> - **A measurement window shorter than your slowest periodic caller** — an hourly scraper is invisible in a one-minute sample.
-> - **Reading a cumulative counter as if it reset** — after migrating, check that `none` stopped increasing, not that it is zero.
-> - **Using the `Service` port in `portLevelMtls`** — it takes the workload's container port, and a wrong port is ignored silently.
-> - **Labelling a namespace for injection and expecting existing pods to change** — the webhook runs at pod creation. Existing pods need a restart.
-> - **Leaving a client-side `DestinationRule` with `tls.mode: DISABLE`** — the server demands mTLS, the client refuses to send it, and every request fails even though both sides are meshed.
-> - **Not keeping the `PERMISSIVE` manifest to hand** — rollback is one `kubectl apply`, but only if the file exists.
+> **Forgetting the callers that are not applications** — Prometheus, health checkers, backup jobs, and anything in another namespace that was never meshed.
+>
+> **A measurement window shorter than your slowest periodic caller** — an hourly scraper is invisible in a one-minute sample.
+>
+> **Reading a cumulative counter as if it reset** — after migrating, check that `none` stopped increasing, not that it is zero.
+>
+> **Using the `Service` port in `portLevelMtls`** — it takes the workload's container port, and a wrong port is ignored silently.
+>
+> **Labelling a namespace for injection and expecting existing pods to change** — the webhook runs at pod creation. Existing pods need a restart.
+>
+> **Leaving a client-side `DestinationRule` with `tls.mode: DISABLE`** — the server demands mTLS, the client refuses to send it, and every request fails even though both sides are meshed.
+>
+> **Not keeping the `PERMISSIVE` manifest to hand** — rollback is one `kubectl apply`, but only if the file exists.
 
 ## Rollback
 

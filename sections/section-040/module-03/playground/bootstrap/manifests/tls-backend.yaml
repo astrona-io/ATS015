@@ -1,0 +1,92 @@
+# The vault: a sealed ship that keeps its own lock and key.
+# tls-backend is not part of the Bookinfo fleet. It is a small nginx that
+# makes its OWN self-signed certificate when the pod starts
+# (CN=vault.starfleet.example.com, O=vault) and serves HTTPS itself on port
+# 8443. No Kubernetes Secret and no Istio object is involved in that
+# certificate, so whoever shows it to a client must be this ship.
+# The Service port is named "tls": the proxies treat the channel as an
+# encrypted stream they forward, not as HTTP they read.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tls-backend-conf
+  namespace: starfleet
+data:
+  default.conf: |
+    server {
+      listen 8443 ssl;
+      server_name vault.starfleet.example.com;
+      ssl_certificate     /etc/nginx/certs/tls.crt;
+      ssl_certificate_key /etc/nginx/certs/tls.key;
+      location / { return 200 "vault ended TLS itself\n"; }
+    }
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tls-backend
+  namespace: starfleet
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tls-backend
+  namespace: starfleet
+  labels:
+    app: tls-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tls-backend
+  template:
+    metadata:
+      labels:
+        app: tls-backend
+    spec:
+      serviceAccountName: tls-backend
+      initContainers:
+        # Makes the vault's own self-signed certificate at start-up.
+        - name: gen-cert
+          image: alpine/openssl:latest
+          command:
+            - sh
+            - -c
+            - >
+              openssl req -x509 -nodes -days 365 -newkey rsa:2048
+              -keyout /certs/tls.key -out /certs/tls.crt
+              -subj "/CN=vault.starfleet.example.com/O=vault"
+          volumeMounts:
+            - name: certs
+              mountPath: /certs
+      containers:
+        - name: nginx
+          image: nginx:1.27-alpine
+          ports:
+            - containerPort: 8443
+          volumeMounts:
+            - name: conf
+              mountPath: /etc/nginx/conf.d
+            - name: certs
+              mountPath: /etc/nginx/certs
+      volumes:
+        - name: conf
+          configMap:
+            name: tls-backend-conf
+        - name: certs
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tls-backend
+  namespace: starfleet
+  labels:
+    app: tls-backend
+spec:
+  ports:
+    - name: tls
+      port: 8443
+      targetPort: 8443
+  selector:
+    app: tls-backend

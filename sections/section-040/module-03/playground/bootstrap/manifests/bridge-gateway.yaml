@@ -1,0 +1,41 @@
+# Precondition: the bridge is already reachable through the arrival gate over
+# plain HTTP, at host starfleet.example.com on port 80. This is the "normal"
+# front door the module compares passthrough against. It does no TLS at all.
+#   curl -s -o /dev/null -w "%{http_code}\n" -H "Host: starfleet.example.com" http://127.0.0.1:8080/productpage
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: starfleet-gateway
+  namespace: starfleet
+spec:
+  selector:
+    istio: ingress
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - starfleet.example.com
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: bridge
+  namespace: starfleet
+spec:
+  hosts:
+  - starfleet.example.com
+  gateways:
+  - starfleet-gateway
+  http:
+  - match:
+    - uri:
+        exact: /productpage
+    - uri:
+        prefix: /static
+    route:
+    - destination:
+        host: bridge
+        port:
+          number: 9080

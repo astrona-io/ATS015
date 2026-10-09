@@ -1,0 +1,26 @@
+# Allow ONLY the shuttle (by its service account) to call the probe, and
+# only with GET. Everything else to the probe stays denied.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: probe-allow-shuttle-get
+  namespace: starfleet
+spec:
+  # Only applies to the probe pods.
+  selector:
+    matchLabels:
+      app: probe
+  action: ALLOW
+  # Allowed if ANY rule matches. Inside a rule, from + to + when must ALL match.
+  rules:
+  - from:
+    - source:
+        # Caller identity from its mTLS certificate (the name on its ID badge):
+        # <trust domain>/ns/<namespace>/sa/<service account>
+        # Needs mTLS: a caller without a sidecar has no principal.
+        principals:
+        - cluster.local/ns/starfleet/sa/shuttle
+    to:
+    - operation:
+        methods:
+        - GET

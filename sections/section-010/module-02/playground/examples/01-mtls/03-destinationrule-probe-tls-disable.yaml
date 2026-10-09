@@ -1,0 +1,16 @@
+# MISTAKE ON PURPOSE: tell callers NOT to use mTLS when they signal the probe.
+# DestinationRule tls = what the CLIENT sends. With the server on STRICT,
+# client and server disagree and every call fails with 503 UC.
+# Normally you never set this: Istio's auto mTLS picks ISTIO_MUTUAL for you
+# when the server has a sidecar.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  host: probe
+  trafficPolicy:
+    tls:
+      # DISABLE = plain text. ISTIO_MUTUAL = mTLS with Istio certificates.
+      mode: DISABLE

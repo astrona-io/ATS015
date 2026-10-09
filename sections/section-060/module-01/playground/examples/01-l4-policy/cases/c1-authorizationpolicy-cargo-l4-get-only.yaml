@@ -1,0 +1,21 @@
+# Mistake case: an L7 field (methods) in a selector policy with no waypoint.
+# ztunnel must enforce it but cannot read HTTP, so it fails safe: the rule
+# never matches and the ALLOW refuses every caller, the bridge included.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: cargo-l4
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: cargo
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals:
+        - cluster.local/ns/starfleet/sa/starfleet-bridge
+    to:
+    - operation:
+        methods: ["GET"]

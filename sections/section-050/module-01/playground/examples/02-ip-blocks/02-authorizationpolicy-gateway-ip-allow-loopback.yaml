@@ -1,0 +1,16 @@
+# The same rule, written for the address the gateway really sees behind the
+# port forward. Every signal through 127.0.0.1:8080 is allowed again.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: gateway-ip-allow
+  namespace: istio-ingress
+spec:
+  selector:
+    matchLabels:
+      istio: ingress
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        ipBlocks: ["127.0.0.1/32"]

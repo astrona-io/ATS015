@@ -1,0 +1,34 @@
+# One policy, one rule per role. Rules are combined with OR.
+#   rule 1: anyone, even without a token, may read /headers (public path)
+#   rule 2: any valid token may GET /get
+#   rule 3: only a token whose "groups" claim contains "group1" may reach /anything/admin
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: probe-require-jwt
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: probe
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        paths: ["/headers"]
+  - from:
+    - source:
+        requestPrincipals: ["*"]
+    to:
+    - operation:
+        methods: ["GET"]
+        paths: ["/get"]
+  - from:
+    - source:
+        requestPrincipals: ["*"]
+    to:
+    - operation:
+        paths: ["/anything/admin"]
+    when:
+    - key: request.auth.claims[groups]
+      values: ["group1"]

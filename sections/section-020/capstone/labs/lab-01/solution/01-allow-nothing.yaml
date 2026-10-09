@@ -1,9 +1,0 @@
-# CAP015-020, part 1 of 5 — the baseline. An ALLOW policy that selects every
-# workload in the namespace and matches nothing, which is what creates
-# deny-by-default for anything nobody has written a rule for.
-apiVersion: security.istio.io/v1
-kind: AuthorizationPolicy
-metadata:
-  name: allow-nothing
-  namespace: authz-demo
-spec: {}

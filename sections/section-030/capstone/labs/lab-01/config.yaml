@@ -1,52 +1,33 @@
-# End-User Authentication Capstone (CAP015-030)
-# Astrona hands-on lab. Schema: internal/config.LabConfig.
-# kind runtime (default): a single-node cluster with Istio 1.30.5.
-
 metadata:
   name: "ats-015-capstone-030"
   docs:
-    prerequisites: "docs/prerequisites.md"
-    examQuestion: "docs/exam-question.md"
-    caseStudy: "docs/case-study.md"
-    guide: "docs/step-by-step-guide.md"
+    solution: "solution.md"
+    question: "question.md"
 
 bootstrap:
   init:
-    - name: "setup"
-      description: "Installs Istio (demo profile) and the starting workloads. Creates nothing the task asks for."
+    - name: "install-istio"
+      description: "Installs istioctl 1.30.5 and a demo-profile control plane"
       type: "file"
-      source: "bootstrap/setup.sh"
-  manifests:
-    - name: "lab-start"
-      description: "Starting workloads: namespace, service accounts, Deployments, Services and a client pod."
+      source: "bootstrap/01-install-istio.sh"
+    - name: "capstone-030-setup"
+      description: "Creates jwtclaims-demo (booking-service, notification-service with no /admin handler, tester), with no RequestAuthentication or AuthorizationPolicy"
       type: "file"
-      source: "manifests/lab-start.yaml"
+      source: "bootstrap/02-seed-workloads.sh"
 
 testing:
-  manifests:
+  init:
     - name: "solution"
-      description: "Reference end state applied by `astrona test` in CI."
-      type: "folder"
-      source: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
 
 validation:
-  checks:
-    - name: "RequestAuthentication in jwtclaims-demo"
-      type: "resourceExists"
-      resource: "requestauthentication -n jwtclaims-demo"
-    - name: "AuthorizationPolicy in jwtclaims-demo"
-      type: "resourceExists"
-      resource: "authorizationpolicy -n jwtclaims-demo"
-  script:
-    name: "verify-behaviour"
-    description: "Sends real traffic and asserts the outcomes the task specifies."
-    type: "file"
-    source: "validate.sh"
+  scripts:
+    - name: "verify-section-030-capstone"
+      description: "Confirms a RequestAuthentication for testing@secure.istio.io, a policy using requestPrincipals and a groups claim, the six graded token calls (403, 401, 200, 403, allowed, 403), and booking-service still open without a token"
+      type: "file"
+      source: "validation/validate-completed.sh"
 
 teardown:
-  init:
-    - name: "dump-logs"
-      description: "Best-effort state capture before teardown."
-      type: "file"
-      source: "teardown/dump-logs.sh"
   keepCluster: false

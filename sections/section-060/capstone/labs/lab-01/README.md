@@ -1,43 +1,29 @@
-# Ambient Authorization Capstone
+---
+estimated_duration: 40m
+---
 
-- **ID:** CAP015-060
-- **Slug:** ats-015-capstone-060
-- **Author:** Paris Nakita Kejser
-- **Type:** Astrona hands-on capstone lab — graded
+# Capstone: Enforce Request Rules Through A Waypoint
 
-Split one access requirement across the two ambient enforcement points, and prove which component holds which half.
+Astronaut, this is your Section 060 capstone mission. The planet runs in ambient mode: ships fly without their own communications officer, and shared relay towers carry their signals. Relay towers cannot read a signal's contents, so a rule about methods and paths needs a checkpoint station that can. You build that station, send the traffic through it, and attach the rule to it.
 
-## Run it
+There is no walkthrough until you have tried it. Work from the task.
 
-```sh
-astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-060/capstone/labs/lab-01
-astrona submit -c .
+## Launching the Lab
+
+Run this command to start the cluster:
+
+```bash
+astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-060/capstone/labs/lab-01
+```
+
+When you think you have finished, send it for grading:
+
+```bash
+astrona submit -c sections/section-060/capstone/labs/lab-01
+```
+
+When you are done, remove the lab:
+
+```bash
 astrona destroy ats-015-capstone-060
 ```
-
-`astrona destroy` takes the environment name (`metadata.name` = `ats-015-capstone-060`), not the
-config path.
-
-## Prove it (authors / CI)
-
-```sh
-astrona test -c . --junit-xml=report.xml
-```
-
-`astrona test` bootstraps the lab, applies `solution/`, submits it, and tears down —
-proving a learner who does everything right passes.
-
-## Layout
-
-| Path | Purpose |
-| --- | --- |
-| `config.yaml` | Lab definition (bootstrap / testing / validation / teardown) |
-| `docs/prerequisites.md` | What to know and have installed first |
-| `docs/exam-question.md` | The formal, self-contained task |
-| `docs/case-study.md` | The same task as a scenario, with hints instead of an answer |
-| `docs/step-by-step-guide.md` | Full walkthrough, including the answer |
-| `manifests/` | Starting state applied at bootstrap |
-| `bootstrap/setup.sh` | Istio install and pre-work — never the graded objects |
-| `solution/` | Reference end state (CI only; learners do not see it during a run) |
-| `validate.sh` | Behavioural grading |
-| `teardown/dump-logs.sh` | State capture before teardown |

@@ -1,33 +1,36 @@
-# Authorize HTTP Traffic Between Workloads (PLAYGROUND) — Playground environment
-# A clean sandbox: it spins up, runs OS prep, then stays running for free
-# exploration. No task, no grading, no `astrona submit`.
-# Schema: internal/config.LabConfig.
-#
-# Runtime: kind cluster by default (no `runtime:` block). For a clean VM over
-# SSH with no Kubernetes, add a `runtime:` block with type "qemu" — see
-# references/astrona-cli.md in the skill. `scripts/scaffold_playground.sh
-# --runtime qemu` appends a starter block for you.
-
+# Authorize HTTP Traffic Between Workloads — Playground environment
+# A clean sandbox: it spins up, installs Istio and the Starfleet with STRICT
+# mTLS, then stays running for free exploration. No task, no grading, no
+# `astrona submit`.
+#   astrona run -c .                          new kind cluster "astro-ats-015-playground-020-01"
+#   astrona destroy ats-015-playground-020-01  delete the cluster again
 metadata:
   name: "ats-015-playground-020-01"
   docs:
     guide: "docs/overview.md"
 
+# Port forwards: astrona keeps these running on 127.0.0.1 (astrona port-forward list).
+runtime:
+  type: kind
+  portForwards:
+    - name: bridge-ui
+      resource: svc/bridge
+      namespace: starfleet
+      hostPort: 9080
+      targetPort: 9080
+      scheme: http
+      description: "The bridge – open /productpage and watch it break and come back as you add policies"
+
 bootstrap:
   init:
-    - name: "prepare"
-      description: "OS prep only: install tools/packages, seed sample data. Nothing to solve."
+    - name: "install-istio"
+      description: "Istio 1.30.5 (istio-base + istiod) with Helm"
       type: "file"
-      source: "bootstrap/prepare.sh"
-  manifests:
-    - name: "lab-start"
-      description: "Starting workloads for this module (namespace, service accounts, Deployments, Services, client pod)."
+      source: "bootstrap/install-istio.sh"
+    - name: "deploy"
+      description: "Namespace starfleet with access logs and STRICT mTLS, the Starfleet (bridge, cargo, scout v1-v3, navcom), shuttle, probe v1/v2, fortio, and the drifter on the outpost planet (no sidecar). No AuthorizationPolicy."
       type: "file"
-      source: "manifests/lab-start.yaml"
-    - name: "peerauth"
-      description: "STRICT mTLS for the namespace — a precondition, so workload identities are verifiable."
-      type: "file"
-      source: "manifests/peerauth.yaml"
+      source: "bootstrap/deploy.sh"
 
 teardown:
   keepCluster: false

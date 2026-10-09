@@ -1,43 +1,29 @@
-# Edge TLS Capstone
+---
+estimated_duration: 45m
+---
 
-- **ID:** CAP015-040
-- **Slug:** ats-015-capstone-040
-- **Author:** Paris Nakita Kejser
-- **Type:** Astrona hands-on capstone lab — graded
+# Capstone: Terminate And Pass Through TLS On One Gateway
 
-One gateway, two hostnames, two modes: terminate TLS for one and pass the other through untouched, with HTTP redirected.
+Astronaut, this is your Section 040 capstone mission. Two services share one arrival gate on port 443, and they want opposite things. For one, the gate opens the sealed signal and routes it by path. For the other, the gate must forward the sealed signal unopened. You also send plain-text visitors to the secure door.
 
-## Run it
+There is no walkthrough until you have tried it. Work from the task.
 
-```sh
-astrona run --git ssh://git@github.com/astrona-io/ATS015.git -c sections/section-040/capstone/labs/lab-01
-astrona submit -c .
+## Launching the Lab
+
+Run this command to start the cluster:
+
+```bash
+astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-040/capstone/labs/lab-01
+```
+
+When you think you have finished, send it for grading:
+
+```bash
+astrona submit -c sections/section-040/capstone/labs/lab-01
+```
+
+When you are done, remove the lab:
+
+```bash
 astrona destroy ats-015-capstone-040
 ```
-
-`astrona destroy` takes the environment name (`metadata.name` = `ats-015-capstone-040`), not the
-config path.
-
-## Prove it (authors / CI)
-
-```sh
-astrona test -c . --junit-xml=report.xml
-```
-
-`astrona test` bootstraps the lab, applies `solution/`, submits it, and tears down —
-proving a learner who does everything right passes.
-
-## Layout
-
-| Path | Purpose |
-| --- | --- |
-| `config.yaml` | Lab definition (bootstrap / testing / validation / teardown) |
-| `docs/prerequisites.md` | What to know and have installed first |
-| `docs/exam-question.md` | The formal, self-contained task |
-| `docs/case-study.md` | The same task as a scenario, with hints instead of an answer |
-| `docs/step-by-step-guide.md` | Full walkthrough, including the answer |
-| `manifests/` | Starting state applied at bootstrap |
-| `bootstrap/setup.sh` | Istio install and pre-work — never the graded objects |
-| `solution/` | Reference end state (CI only; learners do not see it during a run) |
-| `validate.sh` | Behavioural grading |
-| `teardown/dump-logs.sh` | State capture before teardown |

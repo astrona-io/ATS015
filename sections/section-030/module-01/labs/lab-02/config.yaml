@@ -1,0 +1,37 @@
+# Take The Token From The Query String (ats-015-lab-030-01-02)
+# Astrona hands-on lab. kind runtime: a single-node cluster with Istio 1.30.5.
+# Needs outbound internet: the grader and istiod fetch the Istio demo token and
+# its JWKS from raw.githubusercontent.com.
+metadata:
+  name: "ats-015-lab-030-01-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base and istiod) with Helm"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-030-01-02-workloads"
+      description: "Creates the starfleet namespace with the echo probe (v1 and v2), the shuttle client and mesh-wide access logs. Creates nothing the task asks for"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-token-in-query"
+      description: "Confirms the probe's RequestAuthentication reads the token only from the token query parameter, the token is required by a DENY policy with notRequestPrincipals and no ALLOW policy selects the probe, then sends real signals: query token 200, header token 403, bad query token 401, no token 403"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

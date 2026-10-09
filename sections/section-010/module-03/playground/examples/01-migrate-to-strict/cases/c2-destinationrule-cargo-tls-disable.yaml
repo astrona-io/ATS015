@@ -1,0 +1,14 @@
+# Case 2: the client side can still break a STRICT planet.
+# This tells every sender in starfleet to send PLAIN signals to cargo.
+# Both ships are in the fleet, but cargo (STRICT) refuses the plain signal:
+# the shuttle gets 503 with the flag UC in its access log.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: cargo
+  namespace: starfleet
+spec:
+  host: cargo
+  trafficPolicy:
+    tls:
+      mode: DISABLE

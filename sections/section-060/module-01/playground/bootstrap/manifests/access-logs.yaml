@@ -1,0 +1,18 @@
+# Turn on Envoy access logs for the whole mesh.
+# In ambient mode there are no sidecars. The Envoy proxies that remain (the
+# waypoint, and gateways) then print one line per request, so
+# "kubectl logs -n starfleet deploy/waypoint" shows what the waypoint did with
+# each request: status code, response flags, and for an authorization denial
+# the reason "rbac_access_denied_matched_policy[...]".
+# ztunnel writes its own log lines without this setting.
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  # Telemetry in the root namespace (istio-system) = mesh-wide default.
+  name: mesh-default
+  namespace: istio-system
+spec:
+  accessLogging:
+  # "envoy" is the built-in provider: plain-text logs to the proxy's stdout.
+  - providers:
+    - name: envoy

@@ -1,0 +1,11 @@
+# istiod Helm values: every gateway trusts ONE relay in front of it.
+# The gateway then takes the client address from the right end of
+# X-Forwarded-For. Gateways read it when they start: restart them after
+# the helm upgrade.
+#   helm upgrade istiod istiod --repo https://istio-release.storage.googleapis.com/charts \
+#     --version 1.30.5 -n istio-system --reuse-values -f values-istiod-topology.yaml
+#   kubectl rollout restart deployment/istio-ingress -n istio-ingress
+meshConfig:
+  defaultConfig:
+    gatewayTopology:
+      numTrustedProxies: 1

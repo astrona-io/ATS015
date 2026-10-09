@@ -1,0 +1,18 @@
+# MISTAKE CASE: spiffe:// written into principals.
+# Accepted by Kubernetes, istioctl analyze is clean, and nobody gets in:
+# the proxy compares against spiffe://spiffe://cluster.local/... .
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: probe
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals:
+        - spiffe://cluster.local/ns/starfleet/sa/shuttle

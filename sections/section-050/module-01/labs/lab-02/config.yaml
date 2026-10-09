@@ -1,0 +1,33 @@
+metadata:
+  name: "ats-015-lab-050-01-02"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 with Helm (istio-base, istiod with numTrustedProxies 1 as the default gateway proxy config, ingress gateway istio-ingress in istio-ingress)"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-050-01-02-workloads"
+      description: "Creates the starfleet namespace with the Starfleet (bridge, cargo, scout v1-v3, navcom), the shuttle client, mesh-wide access logs, and a Gateway plus VirtualService that send starfleet.example.com to the bridge. No AuthorizationPolicy"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-one-path-one-network"
+      description: "Confirms the api-office-only policy lives in istio-ingress and selects istio=ingress, the gateway still trusts one proxy hop, and live signals through the gateway reach /api/v1/products only from 203.0.113.0/24 while /productpage stays open"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

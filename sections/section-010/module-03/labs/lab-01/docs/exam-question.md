@@ -12,7 +12,7 @@
 A `kind` cluster with Istio (`demo` profile) and two namespaces:
 
 - **`migrate-demo`** — injected. `booking-service-v1`, `notification-service-v1`
-  (container port `8084`) and a `tester` client pod. No `PeerAuthentication`, so
+  (container port `8084`) and a `tester` client pod. No [`PeerAuthentication`](https://istio.io/latest/docs/reference/config/security/peer_authentication/), so
   it is implicitly `PERMISSIVE`.
 - **`outside`** — not injected. One `outside-client` pod that calls
   `notification-service.migrate-demo` in plaintext.
@@ -58,3 +58,14 @@ astrona destroy ats-015-lab-010-03
 
 Want it walked through? See the [step-by-step guide](./step-by-step-guide.md).
 Prefer hints over a full answer? See the [case study](./case-study.md).
+
+---
+
+## Reference
+
+The official documentation for everything this task touches — open these rather than trying to recall field names:
+
+- [PeerAuthentication API](https://istio.io/latest/docs/reference/config/security/peer_authentication/) — `mtls.mode` and the scoping rules
+- [Mutual TLS modes](https://istio.io/latest/docs/concepts/security/#mutual-tls-authentication) — what each mode accepts and rejects
+- [istioctl proxy-config secret](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-secret) — reading the certificates a workload actually holds
+- [istioctl proxy-config](https://istio.io/latest/docs/reference/commands/istioctl/#istioctl-proxy-config-secret) — reading a proxy's live configuration

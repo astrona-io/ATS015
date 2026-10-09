@@ -1,0 +1,11 @@
+# Case 3: DENY with one empty rule = deny EVERYTHING, and DENY beats ALLOW,
+# so even allow-all (case 2) cannot open it.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: deny-all
+  namespace: starfleet
+spec:
+  action: DENY
+  rules:
+  - {}

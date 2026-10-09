@@ -1,0 +1,16 @@
+# ALLOW by connection peer (ipBlocks). Behind the playground's port forward the
+# peer is 127.0.0.1, not 10.x, so this closes the WHOLE gate: 403 for everyone.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: gateway-ip-allow
+  namespace: istio-ingress
+spec:
+  selector:
+    matchLabels:
+      istio: ingress
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        ipBlocks: ["10.0.0.0/8"]

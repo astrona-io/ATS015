@@ -1,0 +1,18 @@
+# Guest list for the probe: only the shuttle's badge may come aboard.
+# principals = the SAN from the certificate WITHOUT spiffe:// (Istio adds it).
+# Expect: shuttle 200, fortio 403 (sa/default), drifter 403 (no badge).
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: probe
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: probe
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals:
+        - cluster.local/ns/starfleet/sa/shuttle

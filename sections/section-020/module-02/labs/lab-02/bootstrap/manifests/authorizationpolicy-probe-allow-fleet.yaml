@@ -1,0 +1,17 @@
+# The starting guest list for the probe: every ship on the planet starfleet
+# may send any signal (any method, any path). It is part of the lab's starting
+# state and must stay unchanged. The task adds a DENY next to it.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: probe-allow-fleet
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: probe
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        namespaces: ["starfleet"]

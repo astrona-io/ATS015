@@ -1,0 +1,21 @@
+# Variant: attach the L7 rule to the waypoint itself instead of the Service.
+# The rule then covers every Service that uses this waypoint.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: probe-l7
+  namespace: starfleet
+spec:
+  targetRefs:
+  - kind: Gateway
+    group: gateway.networking.k8s.io
+    name: waypoint
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals:
+        - cluster.local/ns/starfleet/sa/shuttle
+    to:
+    - operation:
+        methods: ["GET"]

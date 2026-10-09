@@ -1,52 +1,37 @@
-# Require A Valid End-User Token (LAB015-030-01)
-# Astrona hands-on lab. Schema: internal/config.LabConfig.
-# kind runtime (default): a single-node cluster with Istio 1.30.5.
-
+# Require A Valid End-User Token (ats-015-lab-030-01)
+# Astrona hands-on lab. kind runtime: a single-node cluster with Istio 1.30.5.
+# Needs outbound internet: the grader and istiod fetch the Istio demo token and
+# its JWKS from raw.githubusercontent.com.
 metadata:
   name: "ats-015-lab-030-01"
   docs:
-    prerequisites: "docs/prerequisites.md"
-    examQuestion: "docs/exam-question.md"
-    caseStudy: "docs/case-study.md"
-    guide: "docs/step-by-step-guide.md"
+    solution: "solution.md"
+    question: "question.md"
 
 bootstrap:
   init:
-    - name: "setup"
-      description: "Installs Istio (demo profile) and the starting workloads. Creates nothing the task asks for."
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base and istiod) with Helm"
       type: "file"
-      source: "bootstrap/setup.sh"
-  manifests:
-    - name: "lab-start"
-      description: "Starting workloads: namespace, service accounts, Deployments, Services and a client pod."
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-030-01-workloads"
+      description: "Creates the jwt-demo namespace with booking-service-v1, notification-service-v1 and the tester client. Creates nothing the task asks for"
       type: "file"
-      source: "manifests/lab-start.yaml"
+      source: "bootstrap/02-seed-workloads.sh"
 
 testing:
-  manifests:
+  init:
     - name: "solution"
-      description: "Reference end state applied by `astrona test` in CI."
-      type: "folder"
-      source: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
 
 validation:
-  checks:
-    - name: "RequestAuthentication in jwt-demo"
-      type: "resourceExists"
-      resource: "requestauthentication -n jwt-demo"
-    - name: "AuthorizationPolicy in jwt-demo"
-      type: "resourceExists"
-      resource: "authorizationpolicy -n jwt-demo"
-  script:
-    name: "verify-behaviour"
-    description: "Sends real traffic and asserts the outcomes the task specifies."
-    type: "file"
-    source: "validate.sh"
+  scripts:
+    - name: "verify-require-jwt"
+      description: "Confirms a RequestAuthentication for the demo issuer and an AuthorizationPolicy with requestPrincipals exist in jwt-demo, then sends real requests: no token gets 403, a bad token 401, the demo token 200, and booking-service still answers without a token"
+      type: "file"
+      source: "validation/validate-completed.sh"
 
 teardown:
-  init:
-    - name: "dump-logs"
-      description: "Best-effort state capture before teardown."
-      type: "file"
-      source: "teardown/dump-logs.sh"
   keepCluster: false

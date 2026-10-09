@@ -1,0 +1,19 @@
+# Case 2: one public path, token required everywhere else.
+# Two rules = OR: either the path is /headers, or there is a valid token.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: probe-require-jwt
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: probe
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        paths: ["/headers"]
+  - from:
+    - source:
+        requestPrincipals: ["*"]

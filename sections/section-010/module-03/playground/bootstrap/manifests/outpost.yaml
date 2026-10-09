@@ -1,0 +1,30 @@
+# The outpost: a planet WITHOUT sidecar injection, on purpose.
+# The drifter is an old ship with no communications officer on board (1/1).
+# In this module the drifter is the caller that still sends plain signals:
+# it would break the moment starfleet switches to STRICT mTLS. Bringing it
+# into the fleet (label the planet, then restart it) is part of the module.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: outpost
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: drifter
+  namespace: outpost
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: drifter
+  template:
+    metadata:
+      labels:
+        app: drifter
+    spec:
+      terminationGracePeriodSeconds: 0
+      containers:
+      - name: drifter
+        image: curlimages/curl:8.11.1
+        command: ["sleep", "infinity"]

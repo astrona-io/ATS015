@@ -1,0 +1,33 @@
+metadata:
+  name: "ats-015-lab-040-04-01"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 (istio-base and istiod) with Helm, at the ALLOW_ANY default"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-040-04-workloads"
+      description: "Creates the starfleet namespace with the shuttle client and mesh-wide access logs. No ServiceEntry, DestinationRule or VirtualService"
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-tls-origination"
+      description: "Confirms the httpbin-org ServiceEntry sends port 80 to 443, the DestinationRule seals only port 80 with SIMPLE, sni and subjectAltNames, the shuttle's proxy holds a TLS transport socket on port 80 only, and a plain http:// signal from the shuttle reaches httpbin.org as https on port 443"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false
