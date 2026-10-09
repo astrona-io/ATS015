@@ -58,18 +58,6 @@ SCOUT_URL=http://scout.starfleet:9080/reviews/0
 
 Use them like this: `from_shuttle $PROBE_URL` or `from_drifter $SCOUT_URL`.
 
-## The parts of this module
-
-Read the parts in this order. Three of them end with a graded mission.
-
-1. [Two Callers, One Default](./course-01-two-callers-one-default.md): what mTLS adds, why both callers get in today, and how one port accepts two kinds of signal.
-2. [Require The Handshake With STRICT](./course-02-require-the-handshake.md): the four modes, and the reset connection a caller without a sidecar gets.
-3. [Three Scopes, Narrowest Wins](./course-03-three-scopes-narrowest-wins.md): mesh, namespace and workload scope, and which policy decides.
-4. [Read The Mode Off The Ship](./course-04-read-the-mode-off-the-ship.md): prove which mode a pod really uses, instead of guessing from a status code.
-5. [An Exception For One Port](./course-05-an-exception-for-one-port.md): `portLevelMtls`, and why its key is the container port.
-6. [Client And Server Must Agree](./course-06-client-and-server-must-agree.md): the `DestinationRule` side, auto mTLS, `503 UC` and `DISABLE`.
-7. [Wrap-Up: Mission Debrief](./course-07-wrap-up.md): what you learned, your missions, and cleaning up.
-
 ## Why this matters
 
 `PeerAuthentication` is the first security object most exam tasks touch, and almost every later rule depends on it. A rule that allows "only the shuttle" checks the shuttle's identity, and that identity only exists on signals that used mTLS. Get the mode and scope right here, and the rules you write later have something real to check.
