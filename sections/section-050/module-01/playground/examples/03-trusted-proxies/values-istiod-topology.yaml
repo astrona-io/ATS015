@@ -1,4 +1,4 @@
-# istiod Helm values: every gateway trusts ONE relay in front of it.
+# istiod Helm values: every gateway trusts ONE proxy in front of it.
 # The gateway then takes the client address from the right end of
 # X-Forwarded-For. Gateways read it when they start: restart them after
 # the helm upgrade.

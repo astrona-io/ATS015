@@ -1,9 +1,9 @@
-# The arrival gate is already open for starfleet.example.com.
+# The ingress gateway already accepts starfleet.example.com.
 # This is a precondition, not the subject of the module: the module puts
 # AuthorizationPolicies on the gateway pod that serves this listener.
 #
 #   /headers  -> probe (echo service: shows the headers the gateway sent on)
-#   anything  -> bridge (the flagship page on /productpage, its API on /api/v1/products)
+#   anything  -> bridge (the web frontend page on /productpage, its API on /api/v1/products)
 #
 # The Gateway selects istio=ingress, the label of the Helm "gateway" chart
 # installed as release istio-ingress in namespace istio-ingress.

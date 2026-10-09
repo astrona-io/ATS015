@@ -4,7 +4,7 @@ estimated_duration: 3m
 
 # Open One Path To One Network
 
-Welcome to a mission at the arrival gate, astronaut. On the planet `starfleet`, anyone can reach the bridge's API through the gate. Only the office network should.
+In this lab you work on the ingress gateway. In the namespace `starfleet`, anyone can reach the `bridge` API through the gateway. Only the office network should.
 
 Your job is to close `/api/v1/products` to everyone outside `203.0.113.0/24`, by the client's real address, while `/productpage` stays open for all.
 

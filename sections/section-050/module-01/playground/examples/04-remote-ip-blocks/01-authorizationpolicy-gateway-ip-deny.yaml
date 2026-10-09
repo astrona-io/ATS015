@@ -1,6 +1,6 @@
-# Block a client range at the arrival gate, by the ORIGINAL client address.
+# Block a client range at the ingress gateway, by the ORIGINAL client address.
 # remoteIpBlocks reads the address the gateway took from X-Forwarded-For,
-# which needs numTrustedProxies to match the relays in front of the gate.
+# which needs numTrustedProxies to match the proxies in front of the gateway.
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:

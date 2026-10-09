@@ -1,6 +1,6 @@
-# MISTAKE: ipBlocks used to block a client that sits behind a relay.
-# ipBlocks reads the connection peer (the relay), never X-Forwarded-For,
-# so a signal with X-Forwarded-For: 192.168.5.5 is still served.
+# MISTAKE: ipBlocks used to block a client that sits behind a proxy.
+# ipBlocks reads the connection peer (the proxy), never X-Forwarded-For,
+# so a request with X-Forwarded-For: 192.168.5.5 is still served.
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:

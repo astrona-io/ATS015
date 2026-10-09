@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Grading for ats-015-lab-050-01-02 - open one path to one network at the gate.
+# Grading for ats-015-lab-050-01-02 - open one path to one network at the gateway.
 # Confirms the policy api-office-only lives in istio-ingress and selects the
 # gateway pod, that the gateway still trusts one proxy hop (xffNumTrustedHops),
 # that the Gateway and VirtualService are unchanged, and - the part that
-# matters - that live signals through the gateway get the right answers:
+# matters - that live requests through the gateway get the right answers:
 #   /api/v1/products   from the office 203.0.113.0/24    -> 200
 #   /api/v1/products   from anyone else                  -> 403 (also below it)
 #   /productpage       from anyone                       -> 200
@@ -48,7 +48,7 @@ else
   fail "the gateway listener has no xffNumTrustedHops: 1. It was set at install time - do not reinstall Istio or change numTrustedProxies"
 fi
 
-# --- 3. live signals through the gateway ------------------------------------
+# --- 3. live requests through the gateway -----------------------------------
 # kubectl port-forward exits when a connection through it fails, so each round
 # starts a fresh one. A new policy takes up to about a minute to reach live
 # traffic: retry every check for up to ~90 s before calling it wrong.

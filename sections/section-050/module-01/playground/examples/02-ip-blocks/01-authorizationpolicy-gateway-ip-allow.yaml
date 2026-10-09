@@ -1,5 +1,5 @@
 # ALLOW by connection peer (ipBlocks). Behind the playground's port forward the
-# peer is 127.0.0.1, not 10.x, so this closes the WHOLE gate: 403 for everyone.
+# peer is 127.0.0.1, not 10.x, so this closes the WHOLE gateway: 403 for everyone.
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:

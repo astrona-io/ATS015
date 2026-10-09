@@ -1,6 +1,6 @@
-# Close the bridge's API at the arrival gate, for every caller.
+# Close the bridge API at the ingress gateway, for every caller.
 # Lives in the GATEWAY's namespace (istio-ingress) and selects the gateway pod
-# (istio=ingress). The signal is refused at the gate and never reaches bridge.
+# (istio=ingress). The request is denied at the gateway and never reaches bridge.
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:

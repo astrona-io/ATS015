@@ -1,6 +1,6 @@
 # Only the office network (203.0.113.0/24) may reach the bridge's API.
-# Read it as: DENY a signal to /api/v1/products* when its client address
-# is NOT in the office range. Everything else on the gate stays open.
+# Read it as: DENY a request to /api/v1/products* when its client address
+# is NOT in the office range. Everything else on the gateway stays open.
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:

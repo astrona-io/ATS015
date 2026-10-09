@@ -1,4 +1,4 @@
-# The arrival gate is already open for starfleet.example.com: every path goes
+# The ingress gateway already accepts starfleet.example.com: every path goes
 # to the bridge (the page on /productpage, its API on /api/v1/products).
 # The Gateway selects istio=ingress, the label of the Helm "gateway" chart
 # installed as release istio-ingress in namespace istio-ingress.
