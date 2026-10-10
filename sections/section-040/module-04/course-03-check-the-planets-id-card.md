@@ -139,32 +139,3 @@ You now know the two checks the sidecar makes on an outside server. The signatur
 > - **Setting only `sni` and calling it a check.** `sni` is what the sidecar asks for. `subjectAltNames` is what it insists on.
 > - **Reading `503 UF` as a server problem.** With `CERTIFICATE_VERIFY_FAILED` in the log, the `shuttle` pod's own sidecar refused the server. The request never got past the handshake.
 > - **Using `insecureSkipVerify: true` to make the error go away.** It switches the whole certificate check off. Fix the name or the `caCertificates` instead.
-
-## Your mission: Originate TLS To An External Service Lab
-
-You can now make the `shuttle` pod's sidecar originate TLS for a plain request to an external service, and make it check the server's name. The graded lab asks you to add `httpbin.org` with a `ServiceEntry`, originate TLS for the `shuttle` pod's plain `http://` requests, and require the right name in the server's certificate.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-015-playground-040-04
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-040/module-04/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-040/module-04/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-015-lab-040-04-01
-astrona start ats-015-playground-040-04
-```

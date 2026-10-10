@@ -177,32 +177,3 @@ You can now prove the client certificate check from both sides. From the client,
 > - **Looking for refused clients in the access log.** It has no line for a handshake that failed. Only requests that got through are logged.
 > - **Taking a `200` as proof.** It only shows that one good certificate is accepted. Prove the check with `proxy-config secret` and `requireClientCertificate`.
 > - **Ignoring `WARMING`.** A `-cacert` row in `WARMING` means the gateway has no CA, and it refuses every client, trusted or not. `istioctl analyze` does not warn about it.
-
-## Your mission: Fix The Trusted CA In A MUTUAL Gateway
-
-You can now tell a trusted client certificate from an untrusted one, and prove from the gateway's proxy which CA the gateway checks against. In the graded lab, the gateway for the `starfleet` namespace refuses the trusted partner, while a client with a certificate from another CA gets in, and you have to find out why and fix it.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-015-playground-040-02
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-040/module-02/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-040/module-02/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-015-lab-040-02-02
-astrona start ats-015-playground-040-02
-```

@@ -138,34 +138,3 @@ You can now require a token on a workload. Requiring a token is not a feature of
 > - **Applying the policy before the `RequestAuthentication`.** No token is checked yet, so every request is refused, even ones with a valid token.
 > - **Mixing up `principals` and `requestPrincipals`.** One is the workload's identity from its certificate, the other the end user's identity from the token. Both sit in `from.source`.
 > - **Writing only the issuer in `requestPrincipals`.** The value is `<issuer>/<subject>`. `testing@secure.istio.io` on its own matches nobody; use `testing@secure.istio.io/*` for everyone from that issuer.
-
-## Your mission: Require A Valid End-User Token
-
-You can now validate tokens on a workload, require one, and tell from `401` and `403` which object refused a request. The graded lab asks you to protect a notification service so that only requests with a valid token from the sample issuer get through, while the service next to it stays open.
-
-This lab runs on its own small app (`notification-service`, `booking-service` and a `tester` client in the namespace `jwt-demo`), not on the Starfleet sample app. The objects you write are the same.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-015-playground-030-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-030/module-01/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-030/module-01/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-015-lab-030-01
-astrona start ats-015-playground-030-01
-```

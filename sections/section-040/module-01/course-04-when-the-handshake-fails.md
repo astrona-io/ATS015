@@ -183,32 +183,3 @@ You can now read a failed handshake instead of guessing. A missing certificate a
 > - **Trusting `kubectl get` alone.** The `Gateway` and the Secret both exist, and it still fails. `istioctl proxy-config secret` shows whether the gateway really has the certificate.
 > - **Testing with an IP address.** No SNI, no matching server, exit `35`.
 > - **Testing again too fast.** After a failed handshake the port forward restarts, and the next request gets `exit=7` for a few seconds. Wait ten seconds before you read that as a new problem.
-
-## Your mission: Fix A Broken HTTPS Gateway
-
-You can now read a failed handshake, find a Secret in the wrong namespace, and spot a host name the gateway does not serve. In the graded lab, the HTTPS server for `bridge` is broken in two places, and you must make `https://starfleet.example.com` answer again with the right certificate.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-015-playground-040-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-040/module-01/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-040/module-01/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-015-lab-040-01-02
-astrona start ats-015-playground-040-01
-```

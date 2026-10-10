@@ -87,34 +87,3 @@ Together, the three pieces of evidence leave no other explanation. The certifica
 > - **"Fixing" the missing HTTP route.** For a passthrough host, no HTTP route is correct.
 > - **Comparing only the subject line.** A gateway certificate can carry the same name. The fingerprint tells two certificates apart.
 > - **Expecting a status code in the gateway's access log.** For passthrough traffic the gateway logs a connection, not a request.
-
-## Your mission: Route An Encrypted Stream By SNI
-
-You can now set up a passthrough server, route it on the SNI name, and prove the backend ended TLS itself. The graded lab asks you to expose a backend that keeps its own certificate through the shared ingress gateway, without the gateway decrypting anything.
-
-This lab uses its own small app, not the Starfleet: a `tls-backend` in the namespace `passthrough-demo` with the host `secure.ica.local`, behind the gateway `istio-ingressgateway` in `istio-system`. The task explains it in full.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-015-playground-040-03
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-040/module-03/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-040/module-03/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-015-lab-040-03
-astrona start ats-015-playground-040-03
-```

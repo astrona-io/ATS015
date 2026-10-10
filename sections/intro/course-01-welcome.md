@@ -95,7 +95,7 @@ Every chapter ends with a box of common pitfalls, the mistakes people make most 
 > [!WARNING]
 > **Common pitfalls.** The mistakes people make most often with what you just learned, and how to spot them. Every chapter ends with one.
 
-When a graded lab tests what a chapter taught, that chapter ends with a **Your mission** section. It tells you what the lab asks, then gives every command you need, in order: pause the playground with `astrona stop`, start the lab with `astrona run`, and send your work for grading with `astrona submit`. Solve the lab on your own before you look at its solution. When the lab is done, remove it with `astrona destroy` and wake the playground up again with `astrona start`, so you can carry on reading where you left off.
+When a graded lab tests what a chapter taught, the lab comes right after that chapter: first a page with its task, then the lab itself. Solve the lab on your own before you look at its solution.
 
 The last page of every module is the **Summary**. It sums up what you learned in a few short paragraphs, organised by idea. It also ends the module's hands-on work: the Summary page shows you how to remove the playground, so your machine is clean before the next module.
 

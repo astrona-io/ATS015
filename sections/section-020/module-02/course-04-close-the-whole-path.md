@@ -141,34 +141,3 @@ Under `DENY`, a missing `*` leaves a gap, and a missing part matches everything.
 > - **A `*` in the middle of a path.** It is not a wildcard there. On our test system, `paths: ["/anything/*/admin"]` did not refuse `/anything/x/admin`; it only matched a path with a real `*` character in it.
 > - **Trying to carve out an exception with an `ALLOW`.** Put the exception in the `DENY` rule, for example with `notPaths`.
 > - **Forgetting that a missing `from` covers every caller.** Under `DENY`, a missing part matches everything, so it is not harmless.
-
-## Your mission: Close A Path With DENY
-
-You can now deny a whole path area and prove that no `ALLOW` policy reopens it. The graded lab asks you to allow a service's normal call, deny its admin path and everything beneath it, and keep a careless `ALLOW` for that path in place without opening anything.
-
-This lab runs on its own small app, not on the Starfleet: `notification-service`, `booking-service` and a `tester` client in the namespace `deny-demo`. The `question.md` describes it.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-015-playground-020-02
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-020/module-02/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-020/module-02/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-015-lab-020-02
-astrona start ats-015-playground-020-02
-```

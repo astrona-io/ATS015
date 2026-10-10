@@ -126,34 +126,3 @@ You now know that `remoteIpBlocks` matches the client address the gateway took f
 > - **`ipBlocks` for a client behind a proxy.** It reads the connection, never the header, so the attacking range is never matched.
 > - **An `ALLOW` for a block-list.** On a shared gateway, an `ALLOW` decides for every host. A `DENY` only touches what it names.
 > - **Testing only one address.** Always send one request that must pass and one that must be denied. A rule that denies everything also "blocks the range".
-
-## Your mission: Block A Client Range At The Gateway
-
-You can now block a client range at the ingress gateway by its real address, and prove that everyone else still gets through. Now prove it in a graded lab: a load balancer sits in front of the gateway, and you must deny `192.168.0.0/16` without closing anything else.
-
-The lab runs its own small app, not the Starfleet: a `booking-service` behind the host `booking.ica.local`. Istio is installed there with `istioctl` and the `demo` profile, so its gateway runs in `istio-system` with the label `istio: ingressgateway`, and `numTrustedProxies` is already set to `1`. Read those values from the cluster before you write the policy.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-015-playground-050-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-050/module-01/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-050/module-01/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-015-lab-050-01
-astrona start ats-015-playground-050-01
-```

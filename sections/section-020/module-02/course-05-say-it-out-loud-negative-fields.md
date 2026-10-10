@@ -96,32 +96,3 @@ A negative field inside a `DENY` denies everything except its list, and reading 
 > - **Forgetting the scope of a policy without a selector.** `deny-non-get` made every workload in the namespace read-only, not only the probe.
 > - **Using `notMethods` when you meant `methods`.** `DENY` + `methods: ["POST"]` denies one method; `DENY` + `notMethods: ["POST"]` denies every other method.
 > - **Expecting a negative field to see a caller that never reached the authorization check.** Under `STRICT`, a plain-text caller is turned away at the TLS handshake first.
-
-## Your mission: Make The Probe Read-Only
-
-You can now deny every method except one with a single negative field, and predict how it combines with an `ALLOW` policy. In the graded lab, the probe has an `ALLOW` policy that lets every workload in the namespace send anything, and you must make the probe read-only for every caller without touching that `ALLOW` policy.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-015-playground-020-02
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-020/module-02/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-020/module-02/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-015-lab-020-02-02
-astrona start ats-015-playground-020-02
-```

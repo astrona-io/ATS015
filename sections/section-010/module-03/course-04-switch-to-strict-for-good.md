@@ -185,34 +185,3 @@ The namespace now runs `STRICT`, every client still works, and `istioctl x descr
 > - **Forgetting clients that are not apps.** Monitoring tools, health checkers, backup jobs, and anything in a namespace that was never added to the mesh.
 > - **Leaving a client `DestinationRule` with `tls.mode: DISABLE`.** The server requires mTLS, the client proxy sends plain text, and every request fails with `503 UC` even though both workloads have sidecars.
 > - **Trusting traffic alone.** Two successful requests do not show which policy applies. Check the pod with `istioctl x describe pod`.
-
-## Your mission: Migrate A Namespace To STRICT mTLS
-
-You can now measure, move a client into the mesh and switch a namespace to `STRICT` without breaking anyone. The graded lab asks you to prove it: a namespace with one client still outside the mesh must end up `STRICT`, with every client still working.
-
-This lab uses its own small app: a `notification-service` in namespace `migrate-demo`, a `tester` client, and an `outside-client` in namespace `outside` that still sends plain-text requests.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-015-playground-010-03
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-010/module-03/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-010/module-03/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-015-lab-010-03
-astrona start ats-015-playground-010-03
-```

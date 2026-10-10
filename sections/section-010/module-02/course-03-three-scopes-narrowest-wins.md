@@ -179,32 +179,3 @@ You can now place a policy at any of the three scopes and predict its effect. Wh
 > - **Adding a `selector` to narrow a mesh-wide policy.** It does not narrow it. It becomes a workload policy for pods in `istio-system`.
 > - **Expecting policies to merge.** The narrowest one decides alone. A `PERMISSIVE` namespace policy beats a `STRICT` mesh policy.
 > - **Two policies at the same level for the same pods.** Istio quietly picks one. Keep one namespace-wide policy per namespace, and one workload policy per set of pods.
-
-## Your mission: Enforce mTLS At Three Scopes
-
-You can now place a `PeerAuthentication` at mesh, namespace and workload scope, and predict which one wins. Now prove it in a graded lab: build a strict mesh, a namespace that opts out, and one sensitive workload in that namespace that still requires mTLS. This lab uses its own small app, with the namespaces `mtls-demo` and `outside`.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-015-playground-010-02
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-010/module-02/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-010/module-02/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-015-lab-010-02
-astrona start ats-015-playground-010-02
-```

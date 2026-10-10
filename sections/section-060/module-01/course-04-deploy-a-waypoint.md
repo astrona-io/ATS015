@@ -142,32 +142,3 @@ You can now bring an L7 rule to life: create the waypoint, label the Service, an
 > - **Missing the Gateway API CRDs.** A waypoint is a `Gateway`. Without the CRDs, `istioctl waypoint apply` fails.
 > - **Keeping a pod-level identity rule behind a waypoint.** The destination's ztunnel then sees the waypoint's identity, so a rule that allows only the original caller refuses everyone.
 > - **Removing a waypoint and forgetting its policies.** The L7 policies stay, stop being enforced, and still show in `kubectl get`.
-
-## Your mission: Enforce L4 And L7 Policy In Ambient Mode
-
-You can now create a waypoint, send a service's traffic through it, and attach an L7 rule with `targetRefs`. The graded lab asks you to allow one client identity and one method on a service in an ambient namespace, and nothing else.
-
-The lab uses its own small app (`notification-service` with two client pods), and it runs in its own cluster. So first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-015-playground-060-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-060/module-01/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-060/module-01/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-015-lab-060-01
-astrona start ats-015-playground-060-01
-```

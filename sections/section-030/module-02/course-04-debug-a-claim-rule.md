@@ -159,32 +159,3 @@ You now have a short routine for a claim rule that refuses everyone. A clean `is
 > - **Guessing instead of comparing.** Decode the refused token and put it next to the rule from `proxy-config`.
 > - **Missing that the rule never arrived.** If `proxy-config` shows no claim name at all, the problem is the policy's `selector`, not the claim.
 > - **Forgetting the `RequestAuthentication`.** Without one on the workload, no claims are published and every claim rule fails, even a correct one.
-
-## Your mission: Fix The Claim Rule
-
-You can now find a broken claim rule from the proxy's configuration and a decoded token. The graded lab gives you a policy on the probe that refuses the administrator group and blocks a path that should be public. You have to find and fix both faults.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-015-playground-030-02
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-030/module-02/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-030/module-02/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-015-lab-030-02-02
-astrona start ats-015-playground-030-02
-```

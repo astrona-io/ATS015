@@ -176,32 +176,3 @@ You can now tell a client-side mTLS problem from a server-side one. `PeerAuthent
 > - **Copying a `trafficPolicy` from another service.** A copied `tls` block turns auto mTLS off for that host. Check every `DestinationRule` for a `tls` field you did not mean to write.
 > - **Loosening the server to fix a client problem.** Setting the receiver to `PERMISSIVE` or `DISABLE` hides a `503 UC`, and removes the protection you wanted. Fix the `DestinationRule` instead.
 > - **Tightening the server before the callers are ready.** Make every caller able to do mTLS first, then switch the server to `STRICT`.
-
-## Your mission: Fix A DestinationRule That Breaks mTLS
-
-You can now tell a client-side mTLS problem from a server-side one, and fix it on the right side. Now prove it in a graded lab: the shuttle gets `503` from a strict probe, and you must make it work again without weakening the namespace policy.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-015-playground-010-02
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-010/module-02/labs/lab-03
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-010/module-02/labs/lab-03
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-015-lab-010-02-03
-astrona start ats-015-playground-010-02
-```

@@ -195,32 +195,3 @@ You now have the full path from certificate to rule. The receiving proxy reads t
 > - **Expecting a selector to name the caller.** `selector` picks the workloads the policy protects. `principals` names the callers a rule matches.
 > - **Forgetting plain-text callers.** A pod without a sidecar presents no certificate, so it never matches `principals` and gets `403`.
 > - **Hard-coding `cluster.local` after a trust domain change.** Every `principals` entry stops matching, and at first only for some workloads.
-
-## Your mission: Prove A Workload Identity And Authorize On It
-
-You can now read a workload's identity from its live certificate and write an `AuthorizationPolicy` that allows exactly that identity. The graded lab asks you to prove it: in the namespace `identity-demo`, read the identity of `booking-service`, require STRICT mTLS for the whole namespace, and allow only `booking-service` to call `notification-service`. This lab runs its own small app (`booking-service`, `notification-service` and a `tester` client), not the Starfleet.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-015-playground-010-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-010/module-01/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-010/module-01/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-015-lab-010-01
-astrona start ats-015-playground-010-01
-```

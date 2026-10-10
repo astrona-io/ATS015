@@ -136,32 +136,3 @@ You now know what ztunnel can enforce on its own: everything you can decide from
 > - **Thinking identity needs a waypoint.** `principals` and `namespaces` come from the certificate on the tunnel. ztunnel enforces them alone.
 > - **Using the Service port in a `ports` rule.** ztunnel sees the pod's port, for example `8080` for the probe, not `8000`.
 > - **Reading a policy as enforced because it exists.** In ambient mode, always ask which component enforces it.
-
-## Your mission: Allow Callers By Identity With L4 Policy
-
-You can now write an identity rule that ztunnel enforces with no waypoint, and read the refused connection it gives. The graded lab asks you to restrict two Starfleet workloads so that only the right callers can reach them, using L4 rules alone.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-015-playground-060-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-060/module-01/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-060/module-01/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-015-lab-060-01-02
-astrona start ats-015-playground-060-01
-```

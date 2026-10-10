@@ -15,7 +15,7 @@ The repository has four layers:
 | **Practice** | `.../module-0M/labs/lab-0N/` and `.../module-0M/playground/` | Graded labs, each placed right after the part it practises, and one ungraded sandbox per module |
 | **Integration** | `sections/section-0N0/capstone/labs/lab-01/` | One graded capstone per section that combines all of its modules |
 
-The way through each module is simple. Read its parts with its playground open alongside. When a part ends with **Your mission**, pause the playground and take that lab without looking at the solution. The module ends with a summary of what you learned, and the playground is removed. Finish each section with its capstone.
+The way through each module is simple. Read its parts with its playground open alongside. When a graded lab follows a part, take that lab without looking at the solution. The module ends with a summary of what you learned, and the playground is removed. Finish each section with its capstone.
 
 ---
 
