@@ -154,32 +154,3 @@ In short, `kubectl get` shows what you wrote, the proxy configuration shows what
 > - **Reading the caller's log.** The decision is logged by the workload that received the request.
 > - **Trusting `kubectl get` as proof.** It shows the object exists, not that any proxy received it.
 > - **Skipping `istioctl analyze`.** A selector that matches no pod is exactly the kind of mistake it catches.
-
-## Your mission: Repair Broken AuthorizationPolicies
-
-You can now read a denial in the access log, check which policies a proxy really holds, and tell a wrong rule from a policy that never arrived. In the graded lab, the Starfleet least-privilege policies are in place but the `bridge` page is broken: find and fix every fault without opening any shortcut.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-015-playground-020-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-020/module-01/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-020/module-01/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-015-lab-020-01-02
-astrona start ats-015-playground-020-01
-```
