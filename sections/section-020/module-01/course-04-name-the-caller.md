@@ -143,34 +143,3 @@ You can now name a caller by the identity that mTLS verified, either one service
 > - **Guessing the service account.** Read it from the pod. `fortio` runs as `default`, and the `scout` pods share one account.
 > - **Expecting another `ALLOW` policy to restrict.** `ALLOW` policies add up. To take something away, you need `DENY`.
 > - **Using `namespaces` where one caller was meant.** Every workload in the namespace gets in, including ones deployed later.
-
-## Your mission: Lock A Namespace Down With ALLOW Policies
-
-You can now close a namespace, allow one call by namespace and another by exact identity, and limit each call to one method and path. The graded lab asks you to lock down a small booking app and reopen exactly the two calls its design needs.
-
-This lab runs on a small app of its own, not the Starfleet: `booking-service` (service account `booking-sa`), `notification-service` and a `tester` client, in the namespace `authz-demo` with `STRICT` mTLS already on. The task in `question.md` describes it.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-015-playground-020-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-020/module-01/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-020/module-01/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-015-lab-020-01
-astrona start ats-015-playground-020-01
-```

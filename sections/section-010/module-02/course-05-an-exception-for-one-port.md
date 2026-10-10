@@ -154,32 +154,3 @@ You can now open a single port on an otherwise strict workload. `portLevelMtls` 
 > - **Leaving out the `selector`.** Port-level settings only work in a workload policy. Without a `selector`, `kubectl apply` fails with `portLevelMtls requires selector`.
 > - **Opening a whole workload when one port would do.** A workload-level `PERMISSIVE` opens every port on the pod. `portLevelMtls` opens only the one the old caller needs.
 > - **Checking only the port you opened.** Also send a request to another workload in the same namespace, to prove the rest is still strict.
-
-## Your mission: Open One Port With portLevelMtls
-
-You can now open a single container port on an otherwise strict workload. Now prove it in a graded lab: the whole mesh is `STRICT`, and the drifter must reach the probe through one open port while every other workload keeps refusing it.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-015-playground-010-02
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-010/module-02/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-010/module-02/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-015-lab-010-02-02
-astrona start ats-015-playground-010-02
-```
