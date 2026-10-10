@@ -144,32 +144,3 @@ kubectl delete -f peerauthentication-probe.yaml
 > - **Leaving out the `selector`.** Port exceptions only work on a policy that selects workloads.
 > - **Trusting the object instead of a signal.** `kubectl apply` succeeds for a useless exception too. Send a real plain signal to the port and check you get `200`.
 > - **Leaving an exception in place.** A narrow `PERMISSIVE` written for one old caller outlives the caller unless someone removes it.
-
-## Your mission: Keep One Port Open For The Drifter
-
-You can now write a port exception and spot one that points at the wrong port. Now prove it in a graded mission: a `STRICT` planet has a port exception that does nothing, and you have to make it work without opening anything else.
-
-The mission runs in its own training solar system, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-015-playground-010-03
-```
-
-Then start the mission:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-010/module-03/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-010/module-03/labs/lab-02
-```
-
-When the mission is done, remove it and wake your playground up again:
-
-```sh
-astrona destroy ats-015-lab-010-03-02
-astrona start ats-015-playground-010-03
-```

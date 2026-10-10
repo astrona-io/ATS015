@@ -171,32 +171,3 @@ You can now describe a workload's whole access model in one `ALLOW` policy, with
 > - **Putting a requirement in a `DENY`.** A token without the claim does not fit the `DENY`, so it passes.
 > - **Spreading one workload's access over many policies.** It works, but you can no longer read who may do what in one place.
 > - **Testing only with a well-formed token.** The token that breaks your policy is the one missing the claim, or no token at all.
-
-## Your mission: Authorize On A JWT Claim
-
-You can now build one policy with a rule for every role and gate a path on a group claim. The graded lab asks you to open one path to any logged-in user and an administrator path only to `group1`, on a small notification service that has its own app.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-015-playground-030-02
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-030/module-02/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-030/module-02/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-015-lab-030-02
-astrona start ats-015-playground-030-02
-```

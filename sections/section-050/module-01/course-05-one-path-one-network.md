@@ -150,32 +150,3 @@ You now know that "only this network may reach this path" is a `DENY` on the pat
 > - **Testing one corner.** Test the allowed network, an outsider on the protected path, and an outsider on an open path.
 > - **Trusting the YAML.** Read back the policies with `kubectl get authorizationpolicy -A`, the trusted proxies with `xffNumTrustedHops`, and the address in the access log.
 > - **An address as the only lock.** Addresses are shared, reassigned and borrowed. Put a real identity check behind them.
-
-## Your mission: Open One Path To One Network
-
-You can now open one path to one network at the ingress gateway, keep the rest of the gateway open, and read back every piece that decides the result. Now prove it in a graded lab: on the `starfleet` gateway, only the office range may reach the `bridge` API, and nobody may lose access to the page.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-015-playground-050-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-050/module-01/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-050/module-01/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-015-lab-050-01-02
-astrona start ats-015-playground-050-01
-```

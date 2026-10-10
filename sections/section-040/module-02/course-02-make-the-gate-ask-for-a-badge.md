@@ -209,32 +209,3 @@ You now have a working `MUTUAL` gateway. Its secret carries `ca.crt` next to the
 > - **Expecting `403` for a missing client certificate.** The gateway refuses the client in the handshake. Look for `000` and curl exit code `56` (or `35`).
 > - **Sending the next request too fast.** After a refused handshake the port forward restarts, and the next request gets `000 exit=7` for a few seconds. Wait about ten seconds.
 > - **Testing only with a good client certificate.** A `200` with a certificate does not show that the gateway checks certificates. Always test without one too.
-
-## Your mission: Require Client Certificates At The Edge
-
-You can now build the three-key secret and switch a gateway to `MUTUAL`. The graded lab asks you to expose a service over HTTPS so that only clients with a certificate from the given CA can connect. This lab uses its own small app (`booking-service` in the namespace `mtlsedge-demo`) and the gateway of an `istioctl` install, `istio-ingressgateway` in `istio-system`.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-015-playground-040-02
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-040/module-02/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-040/module-02/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-015-lab-040-02
-astrona start ats-015-playground-040-02
-```

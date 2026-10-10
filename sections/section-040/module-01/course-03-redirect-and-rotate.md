@@ -142,32 +142,3 @@ Your gateway now handles both jobs. A port `80` server with `httpsRedirect: true
 > - **Putting `credentialName` on the port 80 server.** The redirect server needs no certificate. Only `httpsRedirect: true` belongs in its `tls` block.
 > - **A redirect in front of API clients.** A program that does not follow redirects sees only a `301`.
 > - **Deleting the Secret to replace it.** Between delete and create, the gateway has no certificate and new handshakes fail. Update it in place with `apply`.
-
-## Your mission: Serve HTTPS At The Ingress Gateway
-
-You can now put a certificate where the gateway reads it, serve HTTPS, and redirect plain HTTP. The graded lab asks you to expose a booking service over HTTPS from certificate files you are given, with plain HTTP redirected. This lab still runs an older small app (`booking-service` in the namespace `tls-demo`), with the gateway that `istioctl install` creates in `istio-system`, so its names differ from the Starfleet.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-015-playground-040-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-040/module-01/labs/lab-01
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-040/module-01/labs/lab-01
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-015-lab-040-01
-astrona start ats-015-playground-040-01
-```

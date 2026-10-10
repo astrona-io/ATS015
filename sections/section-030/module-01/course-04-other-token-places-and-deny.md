@@ -144,32 +144,3 @@ You can now choose where the proxy reads a token and how a policy requires one. 
 > - **Reading that `403` as a bad token.** A token the proxy never read cannot be bad. `401` means "read and found invalid"; `403` here means "no token seen".
 > - **Writing `requestPrincipals` under `DENY`.** `DENY` with `requestPrincipals: ["*"]` refuses every request that **has** a valid token: the opposite of what you want. Use `notRequestPrincipals`.
 > - **Forgetting that `DENY` beats `ALLOW`.** A `DENY` rule that matches always wins, whatever the `ALLOW` policies say.
-
-## Your mission: Read A JWT From A Query Parameter
-
-You can now read a token from a query parameter and require one with a `DENY` policy. The graded lab asks that the probe accept its token only from the `token` query parameter, and refuse every request without a valid token through a `DENY` policy.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-015-playground-030-01
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-030/module-01/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-030/module-01/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-015-lab-030-01-02
-astrona start ats-015-playground-030-01
-```

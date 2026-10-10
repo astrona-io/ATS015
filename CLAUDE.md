@@ -47,7 +47,7 @@ Strict guidelines:
   a technical book. Open with a short paragraph on the problem it solves and
   why it matters. Link each paragraph to the next with a transition sentence.
   Close with a paragraph that sums up what the reader now knows and the
-  question still open, before `## Common pitfalls` and the mission. Write
+  question still open, before `## Common pitfalls`. Write
   explanations as prose; keep bullets for real lists (fields, ordered steps,
   options). Use `##` only when the topic changes and `###` only inside a long
   section, never for a single command. Weave hands-on steps into the text:
@@ -119,11 +119,9 @@ Strict guidelines:
   graded labs at the end of a module. In `astrona.yaml`, put each lab (its
   `question.md` reading and the `lab` entry) right after the reading part it
   tests. If a part teaches a gradeable skill and no lab covers it, create a
-  new lab. That part then ends with a `## Your mission: <lab title>` section:
-  one sentence on what the reader can now do, one on what the mission asks,
-  then pause the playground (`astrona stop <playground name>`), the
-  `astrona run` and `astrona submit` commands, and finally
-  `astrona destroy <lab name>` plus `astrona start <playground name>`.
+  new lab. The part itself ends with `## Common pitfalls`; it has no
+  `## Your mission` section or lab commands, because the platform shows the
+  lab right after it.
 - **Renew the playground before hands-on work.** Every reading part that
   runs commands has `<!-- astrona:playground:renew -->` exactly once, on its
   own line, right before the first hands-on step (the first "Save this as"

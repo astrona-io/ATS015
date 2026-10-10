@@ -204,32 +204,3 @@ A passthrough mistake never sends an error page: the connection just has nowhere
 > - **Waiting for a `404` or `403`.** A broken passthrough setup ends the connection; it never sends an HTTP code.
 > - **Fixing the setup when the test is wrong.** A request sent to an IP address carries no SNI name and fails with any setup.
 > - **Changing only one side of a host name.** `Gateway` `hosts` and `VirtualService` `sniHosts` must name the same host.
-
-## Your mission: Fix A Passthrough Gateway That Routes Nothing
-
-You can now tell an `http` block, a host mismatch and a missing SNI name apart, and find each one in the gateway's listener. The graded lab gives you a passthrough setup for `tls-backend` in the `starfleet` namespace that applies cleanly but routes nothing, and you have to find and fix every fault.
-
-The lab runs in its own cluster, so first pause your playground. Nothing in it is lost:
-
-```sh
-astrona stop ats-015-playground-040-03
-```
-
-Then start the lab:
-
-```sh
-astrona run --git git@github.com:astrona-io/ATS015.git -c sections/section-040/module-03/labs/lab-02
-```
-
-The task is on the next page. Solve it on your own first. When you think you are done, send it for grading:
-
-```sh
-astrona submit -c sections/section-040/module-03/labs/lab-02
-```
-
-When the lab is done, remove it and start your playground again:
-
-```sh
-astrona destroy ats-015-lab-040-03-02
-astrona start ats-015-playground-040-03
-```
