@@ -1,0 +1,12 @@
+# OpenSSL configuration for the root CA certificate (self-signed).
+[req]
+distinguished_name = dn
+prompt = no
+x509_extensions = v3_ca
+[dn]
+O = Starfleet
+CN = Starfleet Root CA
+[v3_ca]
+basicConstraints = critical, CA:TRUE
+keyUsage = critical, keyCertSign, cRLSign
+subjectKeyIdentifier = hash

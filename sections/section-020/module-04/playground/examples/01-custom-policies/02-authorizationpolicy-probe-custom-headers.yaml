@@ -1,0 +1,16 @@
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: ext-authz
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: probe
+  action: CUSTOM
+  provider:
+    name: sample-ext-authz-http
+  rules:
+  - to:
+    - operation:
+        paths: ["/headers"]

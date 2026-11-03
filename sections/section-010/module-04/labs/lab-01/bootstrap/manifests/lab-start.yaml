@@ -1,0 +1,134 @@
+# Starting state for ats-015-lab-010-04: namespace ca-demo (sidecar injection, STRICT mTLS),
+# shuttle (client) and two echo servers, probe-long and probe-short, each with its own Service.
+# istiod runs with its self-signed CA: no cacerts Secret exists.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ca-demo
+  labels:
+    istio-injection: enabled
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: ca-demo
+spec:
+  mtls:
+    mode: STRICT
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: shuttle
+  namespace: ca-demo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shuttle
+  namespace: ca-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shuttle
+  template:
+    metadata:
+      labels:
+        app: shuttle
+    spec:
+      serviceAccountName: shuttle
+      terminationGracePeriodSeconds: 0
+      containers:
+      - name: shuttle
+        image: curlimages/curl:8.11.1
+        command: ["sleep", "infinity"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: probe-long
+  namespace: ca-demo
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: probe-long
+  namespace: ca-demo
+  labels:
+    app: probe-long
+spec:
+  selector:
+    app: probe-long
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probe-long
+  namespace: ca-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: probe-long
+  template:
+    metadata:
+      labels:
+        app: probe-long
+    spec:
+      serviceAccountName: probe-long
+      terminationGracePeriodSeconds: 0
+      containers:
+      - name: probe
+        image: mccutchen/go-httpbin:v2.15.0
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: probe-short
+  namespace: ca-demo
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: probe-short
+  namespace: ca-demo
+  labels:
+    app: probe-short
+spec:
+  selector:
+    app: probe-short
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probe-short
+  namespace: ca-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: probe-short
+  template:
+    metadata:
+      labels:
+        app: probe-short
+    spec:
+      serviceAccountName: probe-short
+      terminationGracePeriodSeconds: 0
+      containers:
+      - name: probe
+        image: mccutchen/go-httpbin:v2.15.0
+        ports:
+        - containerPort: 8080

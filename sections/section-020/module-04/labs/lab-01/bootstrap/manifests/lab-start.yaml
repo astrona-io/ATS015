@@ -1,0 +1,171 @@
+# Starting state for ats-015-lab-020-04: namespace starfleet (sidecar injection), shuttle (client),
+# probe (HTTP echo server on port 8000), ext-authz (sample external authorizer, no sidecar)
+# and a STRICT PeerAuthentication. No extension provider and no AuthorizationPolicy.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: starfleet
+  labels:
+    istio-injection: enabled
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: shuttle
+  namespace: starfleet
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shuttle
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shuttle
+  template:
+    metadata:
+      labels:
+        app: shuttle
+    spec:
+      serviceAccountName: shuttle
+      # Stop instantly on delete; nothing to drain in a test client.
+      terminationGracePeriodSeconds: 0
+      containers:
+      - name: shuttle
+        image: curlimages/curl:8.11.1
+        # Keep the container running so we can exec into it.
+        command: ["sleep", "infinity"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: probe
+  namespace: starfleet
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: probe
+  namespace: starfleet
+  labels:
+    app: probe
+spec:
+  # Selects BOTH versions. Subsets in a DestinationRule split them by "version".
+  selector:
+    app: probe
+  ports:
+  # Port name "http" tells Istio the protocol (HTTP), so HTTP features work.
+  - name: http
+    port: 8000
+    targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probe-v1
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: probe
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: probe
+        version: v1
+    spec:
+      serviceAccountName: probe
+      containers:
+      - name: probe
+        image: mccutchen/go-httpbin:v2.15.0
+        env:
+        # Make /hostname return the real pod name, so tests can see which
+        # pod answered.
+        - name: USE_REAL_HOSTNAME
+          value: "true"
+        ports:
+        - containerPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probe-v2
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: probe
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: probe
+        version: v2
+    spec:
+      serviceAccountName: probe
+      containers:
+      - name: probe
+        image: mccutchen/go-httpbin:v2.15.0
+        env:
+        # Make /hostname return the real pod name, so tests can see which
+        # pod answered.
+        - name: USE_REAL_HOSTNAME
+          value: "true"
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ext-authz
+  namespace: starfleet
+  labels:
+    app: ext-authz
+spec:
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000
+  - name: grpc
+    port: 9000
+    targetPort: 9000
+  selector:
+    app: ext-authz
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ext-authz
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ext-authz
+  template:
+    metadata:
+      labels:
+        app: ext-authz
+        sidecar.istio.io/inject: "false" # do not inject the sidecar
+    spec:
+      containers:
+      - image: registry.istio.io/testing/ext-authz:latest
+        imagePullPolicy: IfNotPresent
+        name: ext-authz
+        ports:
+        - containerPort: 8000
+        - containerPort: 9000
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: starfleet
+spec:
+  mtls:
+    mode: STRICT

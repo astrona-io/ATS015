@@ -1,0 +1,36 @@
+# Gate One Path With An External Authorizer (ats-015-lab-020-04)
+# Astrona hands-on lab. kind runtime (default): a single-node cluster with Istio 1.30.5.
+# STATUS: UNTESTED. Built from the Istio documentation; never run on a cluster.
+metadata:
+  name: "ats-015-lab-020-04"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 with istioctl (demo profile)"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-020-04-workloads"
+      description: "Creates namespace starfleet with shuttle, probe, the sample external authorizer ext-authz and a STRICT PeerAuthentication. Creates no extension provider and no AuthorizationPolicy."
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-external-authorization"
+      description: "Checks the mesh configuration has an HTTP extension provider and a CUSTOM policy exists, then sends real requests: /headers without the header, with deny and with allow, and /ip"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

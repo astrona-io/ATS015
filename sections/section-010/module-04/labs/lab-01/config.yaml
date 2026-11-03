@@ -1,0 +1,36 @@
+# Plug In A CA And Shorten One Certificate Lifetime (ats-015-lab-010-04)
+# Astrona hands-on lab. kind runtime (default): a single-node cluster with Istio 1.30.5.
+# STATUS: UNTESTED. Built from the Istio documentation; never run on a cluster.
+metadata:
+  name: "ats-015-lab-010-04"
+  docs:
+    solution: "solution.md"
+    question: "question.md"
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Installs Istio 1.30.5 with istioctl (demo profile)"
+      type: "file"
+      source: "bootstrap/01-install-istio.sh"
+    - name: "lab-010-04-workloads"
+      description: "Creates namespace ca-demo with STRICT mTLS, shuttle, probe-long and probe-short. istiod keeps its self-signed CA: no cacerts Secret."
+      type: "file"
+      source: "bootstrap/02-seed-workloads.sh"
+
+testing:
+  init:
+    - name: "solution"
+      description: "Reference solution applied by `astrona test` in CI"
+      type: "file"
+      source: "solution/apply.sh"
+
+validation:
+  scripts:
+    - name: "verify-plug-in-ca-and-lifetime"
+      description: "Checks the cacerts Secret has four keys, reads the certificate chains that probe-long and probe-short present, verifies them against the CA in the Secret, and checks that probe-short's certificate expires within four hours while probe-long's does not"
+      type: "file"
+      source: "validation/validate-completed.sh"
+
+teardown:
+  keepCluster: false

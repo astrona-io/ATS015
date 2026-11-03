@@ -418,9 +418,9 @@ this order:
   `serviceentry`, `gateway-api`, `waypoint`
 - Identity and mTLS: `spiffe`, `certificates`, `trust-domain`,
   `cert-rotation`, `mtls-strict`, `mtls-permissive`, `mtls-scopes`,
-  `port-level-mtls`, `sidecar-injection`
+  `port-level-mtls`, `sidecar-injection`, `custom-ca`
 - Authorization: `default-deny`, `allow-nothing`, `deny-policy`,
-  `audit-policy`, `custom-policy`, `principals`, `namespaces`, `ip-blocks`,
+  `audit-policy`, `custom-policy`, `ext-authz`, `tcp-policy`, `principals`, `namespaces`, `ip-blocks`,
   `remote-ip-blocks`, `paths`, `methods`, `when-conditions`,
   `evaluation-order`
 - End users: `jwt`, `jwks`, `request-principals`, `jwt-claims`,

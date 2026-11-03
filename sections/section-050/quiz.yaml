@@ -1,0 +1,196 @@
+# Knowledge check for section 050. Listed in astrona.yaml as a `type: quiz` entry after the capstone lab.
+schema_version: 1
+kind: question_bank
+id: ats015-050
+course_id: ATS015
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: section
+  id: section-050
+  title: "Authorization At The Edge"
+questions:
+  - id: ats015-050-q01
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Place a gateway policy in the right namespace"
+    source_readings:
+      - sections/section-050/module-01/course-01-guard-the-arrival-gate.md
+    prompt: "The ingress gateway pod is in `istio-ingress` with the label `istio: ingress`. Where does an `AuthorizationPolicy` for it go?"
+    options:
+      - id: a
+        text: "In the app's namespace, with the same selector."
+        explanation: "The selector finds no pod there."
+      - id: b
+        text: "In `istio-ingress`, with a selector for `istio: ingress`."
+        explanation: "Correct. A selector only looks at pods in the policy's own namespace. A policy in the app's namespace is accepted and applies to nothing."
+      - id: c
+        text: "In `default`, which applies to all gateways."
+        explanation: "There is no such namespace-wide default."
+      - id: d
+        text: "In `istio-system`, because `istiod` pushes policies."
+        explanation: "The location is decided by the selected pod's namespace."
+    correct_option: b
+    explanation: "A selector only looks at pods in the policy's own namespace. A policy in the app's namespace is accepted and applies to nothing."
+
+  - id: ats015-050-q02
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Tell ipBlocks from remoteIpBlocks"
+    source_readings:
+      - sections/section-050/module-01/course-02-who-opened-the-connection.md
+    prompt: "Behind a cloud load balancer, a rule must match the real client address. Which field?"
+    options:
+      - id: a
+        text: "`ipBlocks`."
+        explanation: "It would see the load balancer's address."
+      - id: b
+        text: "`principals`."
+        explanation: "An outside client has no mesh identity."
+      - id: c
+        text: "`hosts`."
+        explanation: "That matches the request host name, not an address."
+      - id: d
+        text: "`remoteIpBlocks`, which reads the client address from `X-Forwarded-For`."
+        explanation: "Correct. `ipBlocks` matches the connection peer, which behind a load balancer is the load balancer."
+    correct_option: d
+    explanation: "`ipBlocks` matches the connection peer, which behind a load balancer is the load balancer."
+
+  - id: ats015-050-q03
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Explain numTrustedProxies"
+    source_readings:
+      - sections/section-050/module-01/course-03-trust-the-right-number-of-relays.md
+    prompt: "`numTrustedProxies` is set too high. What can happen?"
+    options:
+      - id: a
+        text: "A client can write extra entries in `X-Forwarded-For` and fake its address."
+        explanation: "Correct. The gateway counts that many entries from the right. If it counts past the proxies you run, it reads entries the client wrote."
+      - id: b
+        text: "The gateway sees a proxy address instead of the client."
+        explanation: "That is the effect of a value too low."
+      - id: c
+        text: "The gateway refuses all requests."
+        explanation: "The setting changes which address is read, not whether requests pass."
+      - id: d
+        text: "Nothing, because the header is verified by Envoy."
+        explanation: "The header is only as trustworthy as the setting."
+    correct_option: a
+    explanation: "The gateway counts that many entries from the right. If it counts past the proxies you run, it reads entries the client wrote."
+
+  - id: ats015-050-q04
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Locate the numTrustedProxies setting"
+    source_readings:
+      - sections/section-050/module-01/course-03-trust-the-right-number-of-relays.md
+    prompt: "Where is `numTrustedProxies` set in the mesh configuration?"
+    options:
+      - id: a
+        text: "Directly under `meshConfig.gatewayTopology`."
+        explanation: "This key is ignored."
+      - id: b
+        text: "In the `Gateway` object, under `servers`."
+        explanation: "The `Gateway` has no such field."
+      - id: c
+        text: "Under `meshConfig.defaultConfig.gatewayTopology`, or in the `proxy.istio.io/config` annotation of one gateway."
+        explanation: "Correct. A key directly under `meshConfig.gatewayTopology` is ignored. The gateway reads the setting at start, so it needs a restart."
+      - id: d
+        text: "In the `AuthorizationPolicy`, under `from.source`."
+        explanation: "The policy only matches addresses."
+    correct_option: c
+    explanation: "A key directly under `meshConfig.gatewayTopology` is ignored. The gateway reads the setting at start, so it needs a restart."
+
+  - id: ats015-050-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Write an address block-list"
+    source_readings:
+      - sections/section-050/module-01/course-04-block-a-client-range.md
+    prompt: "How do you refuse a client network on a shared gateway without closing other traffic?"
+    options:
+      - id: a
+        text: "An `ALLOW` policy with `remoteIpBlocks` for the other networks."
+        explanation: "That denies every request it does not list, on every host."
+      - id: b
+        text: "A `PeerAuthentication` with `STRICT`."
+        explanation: "That governs mTLS inside the mesh."
+      - id: c
+        text: "A `RequestAuthentication` with the range as issuer."
+        explanation: "That validates tokens."
+      - id: d
+        text: "A `DENY` policy with `remoteIpBlocks` for that range."
+        explanation: "Correct. A `DENY` removes only what it matches. An `ALLOW` would refuse every other request on the gateway."
+    correct_option: d
+    explanation: "A `DENY` removes only what it matches. An `ALLOW` would refuse every other request on the gateway."
+
+  - id: ats015-050-q06
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Restrict one path to one network"
+    source_readings:
+      - sections/section-050/module-01/course-05-one-path-one-network.md
+    prompt: "Only the network `10.0.0.0/8` may reach `/admin`. Which policy does that without affecting other paths?"
+    options:
+      - id: a
+        text: "An `ALLOW` on `/admin` with `remoteIpBlocks: [\"10.0.0.0/8\"]`."
+        explanation: "It turns on default-deny for every other request."
+      - id: b
+        text: "A `DENY` on `/admin` with `notRemoteIpBlocks: [\"10.0.0.0/8\"]`, with `to` and `from` in the same rule."
+        explanation: "Correct. The `DENY` refuses `/admin` for every client outside the range, and other paths are untouched."
+      - id: c
+        text: "A `DENY` on `/admin` with `ipBlocks: [\"10.0.0.0/8\"]`."
+        explanation: "That denies the allowed network."
+      - id: d
+        text: "A `DENY` with `to` and `from` in two separate rules."
+        explanation: "Two rules are OR. The path rule would refuse everyone."
+    correct_option: b
+    explanation: "The `DENY` refuses `/admin` for every client outside the range, and other paths are untouched."
+
+  - id: ats015-050-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "State what a gateway policy protects"
+    source_readings:
+      - sections/section-050/module-01/course-06-summary.md
+    prompt: "A gateway `DENY` blocks a client range. Can a pod inside the mesh from that range still call a workload directly?"
+    options:
+      - id: a
+        text: "No. A gateway policy applies mesh-wide."
+        explanation: "It selects the gateway pod only."
+      - id: b
+        text: "No, because mTLS blocks the range."
+        explanation: "mTLS does not use address ranges."
+      - id: c
+        text: "Yes. Pods inside the mesh do not pass through the gateway, so gateway rules do not protect them."
+        explanation: "Correct. The gateway policy applies only to traffic through the gateway. Protect workloads with their own policies."
+      - id: d
+        text: "Yes, but only with `AUDIT`."
+        explanation: "`AUDIT` is not needed."
+    correct_option: c
+    explanation: "The gateway policy applies only to traffic through the gateway. Protect workloads with their own policies."
+
+  - id: ats015-050-q08
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Read a gateway denial"
+    source_readings:
+      - sections/section-050/module-01/course-06-summary.md
+    prompt: "A request is refused at the gateway by an address rule. What does the caller see?"
+    options:
+      - id: a
+        text: "A normal `403`, and the request never enters the mesh."
+        explanation: "Correct. A gateway policy is an `AuthorizationPolicy`, so it answers with an HTTP `403`."
+      - id: b
+        text: "A reset connection, `000`."
+        explanation: "That is an mTLS or TLS result."
+      - id: c
+        text: "`401`."
+        explanation: "That comes from token validation."
+      - id: d
+        text: "`404`."
+        explanation: "That comes from a missing route."
+    correct_option: a
+    explanation: "A gateway policy is an `AuthorizationPolicy`, so it answers with an HTTP `403`."

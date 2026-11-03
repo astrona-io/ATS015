@@ -1,0 +1,26 @@
+# Authorize TCP Traffic — Playground environment
+# A clean sandbox: it spins up, installs Istio and the Starfleet, then stays running
+# for free exploration. No task, no grading, no `astrona submit`.
+#   astrona run -c .                          new kind cluster "astro-ats-015-playground-020-03"
+#   astrona destroy ats-015-playground-020-03  delete the cluster again
+metadata:
+  name: "ats-015-playground-020-03"
+  docs:
+    guide: "docs/overview.md"
+
+runtime:
+  type: kind
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Istio 1.30.5 (istio-base + istiod) with Helm"
+      type: "file"
+      source: "bootstrap/install-istio.sh"
+    - name: "deploy"
+      description: "Namespace starfleet with access logs, the Starfleet, shuttle, relay, tcp-echo (TCP server on ports 9000-9002), probe, fortio, the drifter in outpost (no sidecar), and STRICT mTLS for starfleet"
+      type: "file"
+      source: "bootstrap/deploy.sh"
+
+teardown:
+  keepCluster: false

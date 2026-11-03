@@ -1,0 +1,26 @@
+# Control Workload Certificates: Plug-In CA And Lifetime — Playground environment
+# A clean sandbox: it spins up, installs Istio and the Starfleet, then stays running
+# for free exploration. No task, no grading, no `astrona submit`.
+#   astrona run -c .                          new kind cluster "astro-ats-015-playground-010-04"
+#   astrona destroy ats-015-playground-010-04  delete the cluster again
+metadata:
+  name: "ats-015-playground-010-04"
+  docs:
+    guide: "docs/overview.md"
+
+runtime:
+  type: kind
+
+bootstrap:
+  init:
+    - name: "install-istio"
+      description: "Istio 1.30.5 (istio-base + istiod) with Helm"
+      type: "file"
+      source: "bootstrap/install-istio.sh"
+    - name: "deploy"
+      description: "Namespace starfleet with access logs, shuttle, probe v1/v2 and STRICT mTLS. Istiod runs with its self-signed CA: no cacerts Secret exists."
+      type: "file"
+      source: "bootstrap/deploy.sh"
+
+teardown:
+  keepCluster: false

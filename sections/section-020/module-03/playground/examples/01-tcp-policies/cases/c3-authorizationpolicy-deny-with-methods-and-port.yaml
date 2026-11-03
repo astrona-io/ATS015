@@ -1,0 +1,16 @@
+# A DENY rule with an HTTP-only field and a port: only port 9000 is denied.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: tcp-policy
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: tcp-echo
+  action: DENY
+  rules:
+  - to:
+    - operation:
+        methods: ["GET"]
+        ports: ["9000"]

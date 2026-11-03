@@ -1,0 +1,472 @@
+# Final domain knowledge check for ATS015. Listed in astrona.yaml as the last `type: quiz` entry.
+schema_version: 1
+kind: question_bank
+id: ats015-final
+course_id: ATS015
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: domain
+  id: securing-workloads
+  title: "ICA Securing Workloads"
+questions:
+  - id: ats015-final-q01
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Name the Secret that holds a plug-in CA"
+    source_readings:
+      - sections/section-010/module-04/course-02-plug-in-your-own-ca.md
+    prompt: "Which Secret and namespace does `istiod` read to use your own intermediate CA?"
+    options:
+      - id: a
+        text: "`istio-ca-secret` in `istio-system`, with `tls.crt` and `tls.key`."
+        explanation: "That is the name of the self-signed CA Secret `istiod` creates itself."
+      - id: b
+        text: "`cacerts` in `istio-system`, with `ca-cert.pem`, `ca-key.pem`, `root-cert.pem` and `cert-chain.pem`."
+        explanation: "Correct. `istiod` reads this Secret when it starts. Without it, it creates a self-signed CA."
+      - id: c
+        text: "`cacerts` in the application namespace."
+        explanation: "`istiod` reads it only in `istio-system`."
+      - id: d
+        text: "`gate-tls` in `istio-ingress`."
+        explanation: "That is a gateway credential, not a mesh CA."
+    correct_option: b
+    explanation: "`istiod` reads this Secret when it starts. Without it, it creates a self-signed CA."
+
+  - id: ats015-final-q02
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Verify that a workload certificate chains to your root"
+    source_readings:
+      - sections/section-010/module-04/course-02-plug-in-your-own-ca.md
+    prompt: "How do you check that a workload certificate was issued under your own root CA?"
+    options:
+      - id: a
+        text: "Check that the `cacerts` Secret exists."
+        explanation: "The Secret can exist while workloads still hold old certificates."
+      - id: b
+        text: "Run `istioctl analyze`."
+        explanation: "It does not read workload certificates."
+      - id: c
+        text: "Check that `PeerAuthentication` is `STRICT`."
+        explanation: "That shows the mode, not the issuer."
+      - id: d
+        text: "Read the chain with `openssl s_client -showcerts` from the proxy and run `openssl verify` against your root and intermediate."
+        explanation: "Correct. A matching chain shows the leaf was signed by your intermediate."
+    correct_option: d
+    explanation: "A matching chain shows the leaf was signed by your intermediate."
+
+  - id: ats015-final-q03
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Predict the effect of changing the CA on running workloads"
+    source_readings:
+      - sections/section-010/module-04/course-02-plug-in-your-own-ca.md
+    prompt: "You create `cacerts` after the mesh is running. Which certificates change, and when?"
+    options:
+      - id: a
+        text: "Only certificates issued after `istiod` restarts with the Secret. Running workloads keep their certificates until they renew or restart."
+        explanation: "Correct. A certificate is signed once. Changing the CA does not reissue it."
+      - id: b
+        text: "All certificates change at once."
+        explanation: "Nothing reissues existing certificates."
+      - id: c
+        text: "No certificate changes, ever."
+        explanation: "New certificates after the restart use the new CA."
+      - id: d
+        text: "Only gateway certificates change."
+        explanation: "Gateways get workload certificates like any other."
+    correct_option: a
+    explanation: "A certificate is signed once. Changing the CA does not reissue it."
+
+  - id: ats015-final-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Read the default workload certificate lifetime"
+    source_readings:
+      - sections/section-010/module-04/course-03-lifetime-and-rotation.md
+    prompt: "What is the default workload certificate lifetime, and when does the proxy ask for a new one?"
+    options:
+      - id: a
+        text: "90 days, renewed on the last day."
+        explanation: "That is not the default."
+      - id: b
+        text: "1 hour, renewed every minute."
+        explanation: "That is not the default."
+      - id: c
+        text: "24 hours, and the proxy renews at half of the lifetime (`SECRET_GRACE_PERIOD_RATIO` is `0.5`)."
+        explanation: "Correct. Renewing at half the lifetime leaves time to retry before expiry."
+      - id: d
+        text: "24 hours, renewed only after it expires."
+        explanation: "Renewal happens well before expiry."
+    correct_option: c
+    explanation: "Renewing at half the lifetime leaves time to retry before expiry."
+
+  - id: ats015-final-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Pick the TCP fields that work"
+    source_readings:
+      - sections/section-020/module-03/course-01-which-fields-a-tcp-rule-can-use.md
+    prompt: "Which fields can an `AuthorizationPolicy` rule use for plain TCP traffic?"
+    options:
+      - id: a
+        text: "`methods` and `paths`."
+        explanation: "They are HTTP-only."
+      - id: b
+        text: "`hosts` and `requestPrincipals`."
+        explanation: "They need HTTP and a JWT."
+      - id: c
+        text: "`headers` and `when` on `request.auth.claims`."
+        explanation: "These need HTTP."
+      - id: d
+        text: "`ports`, `principals`, `namespaces` and `ipBlocks`."
+        explanation: "Correct. These come from the connection and the mTLS identity. `hosts`, `methods` and `paths` need HTTP."
+    correct_option: d
+    explanation: "These come from the connection and the mTLS identity. `hosts`, `methods` and `paths` need HTTP."
+
+  - id: ats015-final-q06
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Predict an ALLOW rule with an HTTP-only field on TCP"
+    source_readings:
+      - sections/section-020/module-03/course-03-http-fields-in-tcp-rules.md
+    prompt: "An `ALLOW` policy on a TCP port has a rule with `methods: [\"GET\"]`. What happens to TCP traffic?"
+    options:
+      - id: a
+        text: "The rule works for TCP."
+        explanation: "TCP has no method."
+      - id: b
+        text: "The rule is ignored and the `ALLOW` matches nothing, so every connection is refused."
+        explanation: "Correct. Istio fails safe: it cannot check the field, so the rule never matches."
+      - id: c
+        text: "Every connection is allowed."
+        explanation: "An `ALLOW` with no match refuses."
+      - id: d
+        text: "The policy is rejected when applied."
+        explanation: "It is accepted."
+    correct_option: b
+    explanation: "Istio fails safe: it cannot check the field, so the rule never matches."
+
+  - id: ats015-final-q07
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Predict a DENY with only an HTTP-only field on TCP"
+    source_readings:
+      - sections/section-020/module-03/course-03-http-fields-in-tcp-rules.md
+    prompt: "A `DENY` policy on a TCP port has only `methods: [\"POST\"]` in its rule. What happens?"
+    options:
+      - id: a
+        text: "It allows all traffic."
+        explanation: "The `DENY` takes effect."
+      - id: b
+        text: "It is ignored."
+        explanation: "It is not ignored."
+      - id: c
+        text: "It denies all TCP traffic on that workload."
+        explanation: "Correct. The method cannot be checked on TCP, so a `DENY` treats the rule as matching."
+      - id: d
+        text: "It denies only `POST`."
+        explanation: "TCP has no `POST`."
+    correct_option: c
+    explanation: "The method cannot be checked on TCP, so a `DENY` treats the rule as matching."
+
+  - id: ats015-final-q08
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "State why an ALLOW policy closes another port"
+    source_readings:
+      - sections/section-020/module-03/course-02-allow-by-port-and-identity.md
+    prompt: "An `ALLOW` policy lists port `9000`. The pod also listens on `9002`. Can a pod IP client reach `9002`?"
+    options:
+      - id: a
+        text: "No. Once any `ALLOW` applies to the workload, a connection that no rule allows is refused, including on `9002`."
+        explanation: "Correct. An `ALLOW` policy switches the workload to default-deny."
+      - id: b
+        text: "Yes, because `9002` is not listed in a `DENY`."
+        explanation: "An `ALLOW` already closes it."
+      - id: c
+        text: "Yes, because policies apply per port."
+        explanation: "The default-deny covers the workload."
+      - id: d
+        text: "Only if the client has a JWT."
+        explanation: "A JWT is not involved."
+    correct_option: a
+    explanation: "An `ALLOW` policy switches the workload to default-deny."
+
+  - id: ats015-final-q09
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Place a provider and a policy for CUSTOM"
+    source_readings:
+      - sections/section-020/module-04/course-02-register-a-provider-and-attach-it.md
+    prompt: "Where do you register an external authorizer, and how does a policy use it?"
+    options:
+      - id: a
+        text: "In a `DestinationRule`, then `action: AUDIT`."
+        explanation: "A `DestinationRule` has no providers."
+      - id: b
+        text: "In `meshConfig.extensionProviders` of the `istio` ConfigMap, then `action: CUSTOM` with `provider.name` in an `AuthorizationPolicy`."
+        explanation: "Correct. The provider tells Envoy where the authorizer is. The policy chooses which requests go to it."
+      - id: c
+        text: "In a `RequestAuthentication`, then `action: ALLOW`."
+        explanation: "That validates JWTs."
+      - id: d
+        text: "In a `ServiceEntry`, then `action: DENY`."
+        explanation: "It declares a host, not a provider."
+    correct_option: b
+    explanation: "The provider tells Envoy where the authorizer is. The policy chooses which requests go to it."
+
+  - id: ats015-final-q10
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Order the actions"
+    source_readings:
+      - sections/section-020/module-04/course-03-custom-with-allow-and-deny.md
+    prompt: "A request meets `CUSTOM`, `DENY` and `ALLOW` policies. In which order are they evaluated?"
+    options:
+      - id: a
+        text: "`ALLOW`, then `DENY`, then `CUSTOM`."
+        explanation: "The order is the reverse."
+      - id: b
+        text: "`DENY`, `CUSTOM`, then `ALLOW`."
+        explanation: "`CUSTOM` comes first."
+      - id: c
+        text: "All at once, with `ALLOW` winning."
+        explanation: "`DENY` wins over `ALLOW`."
+      - id: d
+        text: "`CUSTOM` first, then `DENY`, then `ALLOW`. A denial at any step ends the evaluation."
+        explanation: "Correct. An `ALLOW` cannot overrule a refusal from `CUSTOM` or `DENY`."
+    correct_option: d
+    explanation: "An `ALLOW` cannot overrule a refusal from `CUSTOM` or `DENY`."
+
+  - id: ats015-final-q11
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Read the default failure behaviour of an external authorizer"
+    source_readings:
+      - sections/section-020/module-04/course-02-register-a-provider-and-attach-it.md
+    prompt: "The external authorizer is unreachable. By default, what does the proxy do?"
+    options:
+      - id: a
+        text: "It refuses the request with `403`, because `failOpen` defaults to `false`."
+        explanation: "Correct. `statusOnError` sets the refusal status and defaults to `403`."
+      - id: b
+        text: "It allows the request, because `failOpen` is `true`."
+        explanation: "The default is `false`."
+      - id: c
+        text: "It retries for 600 seconds, then allows."
+        explanation: "It does not allow on failure by default."
+      - id: d
+        text: "It falls back to `ALLOW` policies."
+        explanation: "The check fails closed."
+    correct_option: a
+    explanation: "`statusOnError` sets the refusal status and defaults to `403`."
+
+  - id: ats015-final-q12
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Pick the policy order rule in the deny-first model"
+    source_readings:
+      - sections/section-020/module-02/course-02-a-guest-list-cannot-overrule-the-ban.md
+    prompt: "A request matches a `DENY` rule and an `ALLOW` rule. What is the result?"
+    options:
+      - id: a
+        text: "It is allowed, because the later rule wins."
+        explanation: "There is no later-wins rule."
+      - id: b
+        text: "It is allowed, because `ALLOW` is more specific."
+        explanation: "Specificity does not matter."
+      - id: c
+        text: "It is refused. A matching `DENY` wins over any `ALLOW`."
+        explanation: "Correct. `DENY` is checked before `ALLOW`."
+      - id: d
+        text: "It depends on the namespace."
+        explanation: "The action decides."
+    correct_option: c
+    explanation: "`DENY` is checked before `ALLOW`."
+
+  - id: ats015-final-q13
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Lock a workload with one empty rule"
+    source_readings:
+      - sections/section-020/module-02/course-03-lock-everything-with-one-empty-rule.md
+    prompt: "Which policy denies all requests to a namespace until you add allows?"
+    options:
+      - id: a
+        text: "A `DENY` policy with `spec: {}`."
+        explanation: "An empty `DENY` matches nothing and denies nothing."
+      - id: b
+        text: "A `PeerAuthentication` with `DISABLE`."
+        explanation: "That turns mTLS off."
+      - id: c
+        text: "A `RequestAuthentication` with no rules."
+        explanation: "That only validates tokens."
+      - id: d
+        text: "An `ALLOW` policy with an empty `spec: {}` in that namespace."
+        explanation: "Correct. An `ALLOW` policy with no rules matches nothing, so everything else is refused."
+    correct_option: d
+    explanation: "An `ALLOW` policy with no rules matches nothing, so everything else is refused."
+
+  - id: ats015-final-q14
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Separate RequestAuthentication from authorization"
+    source_readings:
+      - sections/section-030/module-01/course-03-require-a-token.md
+    prompt: "A request has no JWT. `RequestAuthentication` is applied alone. What happens?"
+    options:
+      - id: a
+        text: "It is refused with `401`."
+        explanation: "`401` comes for an invalid token."
+      - id: b
+        text: "It passes. `RequestAuthentication` rejects only a bad token. An `AuthorizationPolicy` is needed to require one."
+        explanation: "Correct. A missing token has no identity to validate, so the request continues without a `requestPrincipal`."
+      - id: c
+        text: "It is refused with `403`."
+        explanation: "`403` needs an authorization policy."
+      - id: d
+        text: "It is refused with `503`."
+        explanation: "No such refusal here."
+    correct_option: b
+    explanation: "A missing token has no identity to validate, so the request continues without a `requestPrincipal`."
+
+  - id: ats015-final-q15
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Require a claim"
+    source_readings:
+      - sections/section-030/module-02/course-02-require-a-claim.md
+    prompt: "How do you allow only tokens with the claim `role=captain`?"
+    options:
+      - id: a
+        text: "`RequestAuthentication` with `claims: role`."
+        explanation: "`RequestAuthentication` has no claim rules."
+      - id: b
+        text: "`PeerAuthentication` with `role`."
+        explanation: "That is for transport identity."
+      - id: c
+        text: "An `ALLOW` policy with a `when` condition on `request.auth.claims[role]` with value `captain`."
+        explanation: "Correct. Claims are checked in the authorization policy, after `RequestAuthentication` validated the token."
+      - id: d
+        text: "A `DestinationRule` with `subjectAltNames`."
+        explanation: "That sets server names."
+    correct_option: c
+    explanation: "Claims are checked in the authorization policy, after `RequestAuthentication` validated the token."
+
+  - id: ats015-final-q16
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Place the credentialName Secret"
+    source_readings:
+      - sections/section-040/module-01/course-01-give-the-gate-its-certificate.md
+    prompt: "Where does the Secret named by `credentialName` live?"
+    options:
+      - id: a
+        text: "In the namespace of the ingress gateway pod."
+        explanation: "Correct. The lookup uses the gateway workload's namespace, not the `Gateway` object's."
+      - id: b
+        text: "In the namespace of the `Gateway` object."
+        explanation: "It is not looked up there."
+      - id: c
+        text: "In `kube-system`."
+        explanation: "Not special for Istio."
+      - id: d
+        text: "In every namespace."
+        explanation: "One namespace is used."
+    correct_option: a
+    explanation: "The lookup uses the gateway workload's namespace, not the `Gateway` object's."
+
+  - id: ats015-final-q17
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Describe mutual TLS at the gateway"
+    source_readings:
+      - sections/section-040/module-02/course-03-turn-away-strangers-and-prove-it.md
+    prompt: "A `MUTUAL` gateway refuses a client without a certificate. At which point?"
+    options:
+      - id: a
+        text: "In the `VirtualService`, with `403`."
+        explanation: "No request is read."
+      - id: b
+        text: "In the TLS handshake. The client gets no HTTP status."
+        explanation: "Correct. The check is before HTTP starts, so the access log has no line for the refusal."
+      - id: c
+        text: "In the application, with `401`."
+        explanation: "The request never reaches it."
+      - id: d
+        text: "In `istiod`, which sends a reset."
+        explanation: "`istiod` is not in the data path."
+    correct_option: b
+    explanation: "The check is before HTTP starts, so the access log has no line for the refusal."
+
+  - id: ats015-final-q18
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Match passthrough with its route type"
+    source_readings:
+      - sections/section-040/module-03/course-02-open-a-gate-that-does-not-decrypt.md
+    prompt: "How does a passthrough gateway pick a backend?"
+    options:
+      - id: a
+        text: "By the HTTP `Host` header."
+        explanation: "It cannot read it."
+      - id: b
+        text: "By the URI path."
+        explanation: "It cannot read it."
+      - id: c
+        text: "By the JWT issuer."
+        explanation: "It cannot read the token."
+      - id: d
+        text: "By the SNI name, with a `VirtualService` `tls` block and `sniHosts`."
+        explanation: "Correct. The gateway never decrypts, so it cannot read the host header or the path."
+    correct_option: d
+    explanation: "The gateway never decrypts, so it cannot read the host header or the path."
+
+  - id: ats015-final-q19
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Choose the right address field at the edge"
+    source_readings:
+      - sections/section-050/module-01/course-02-who-opened-the-connection.md
+    prompt: "Behind a load balancer, which field matches the original client address?"
+    options:
+      - id: a
+        text: "`remoteIpBlocks`, which uses `X-Forwarded-For` together with `numTrustedProxies`."
+        explanation: "Correct. `ipBlocks` sees the load balancer."
+      - id: b
+        text: "`ipBlocks`."
+        explanation: "It matches the peer, which is the load balancer."
+      - id: c
+        text: "`namespaces`."
+        explanation: "That is a mesh identity field."
+      - id: d
+        text: "`hosts`."
+        explanation: "That is a request host name."
+    correct_option: a
+    explanation: "`ipBlocks` sees the load balancer."
+
+  - id: ats015-final-q20
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "State which component enforces an L7 rule in ambient mode"
+    source_readings:
+      - sections/section-060/module-01/course-02-what-ztunnel-can-enforce.md
+    prompt: "Where is a rule on `methods` enforced in ambient mode?"
+    options:
+      - id: a
+        text: "On ztunnel."
+        explanation: "It sees only connections."
+      - id: b
+        text: "On `istiod`."
+        explanation: "`istiod` distributes policy."
+      - id: c
+        text: "On a waypoint. ztunnel cannot read HTTP."
+        explanation: "Correct. ztunnel enforces L4 fields such as `principals`, `namespaces`, `ipBlocks` and `ports`."
+      - id: d
+        text: "On the CNI plugin."
+        explanation: "It only redirects traffic."
+    correct_option: c
+    explanation: "ztunnel enforces L4 fields such as `principals`, `namespaces`, `ipBlocks` and `ports`."

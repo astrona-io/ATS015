@@ -1,0 +1,43 @@
+# ext-authz: the Istio sample external authorizer (HTTP on 8000, gRPC on 9000). It allows a
+# request only if it carries the header 'x-ext-authz: allow'. The pod gets no sidecar.
+apiVersion: v1
+kind: Service
+metadata:
+  name: ext-authz
+  namespace: starfleet
+  labels:
+    app: ext-authz
+spec:
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000
+  - name: grpc
+    port: 9000
+    targetPort: 9000
+  selector:
+    app: ext-authz
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ext-authz
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ext-authz
+  template:
+    metadata:
+      labels:
+        app: ext-authz
+        sidecar.istio.io/inject: "false" # do not inject the sidecar
+    spec:
+      containers:
+      - image: registry.istio.io/testing/ext-authz:latest
+        imagePullPolicy: IfNotPresent
+        name: ext-authz
+        ports:
+        - containerPort: 8000
+        - containerPort: 9000

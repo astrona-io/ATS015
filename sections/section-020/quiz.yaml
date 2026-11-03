@@ -1,0 +1,242 @@
+# Knowledge check for section 020. Listed in astrona.yaml as a `type: quiz` entry after the capstone lab.
+schema_version: 1
+kind: question_bank
+id: ats015-020
+course_id: ATS015
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: section
+  id: section-020
+  title: "Authorization Policy Fundamentals"
+questions:
+  - id: ats015-020-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Explain what the first ALLOW policy does to a workload"
+    source_readings:
+      - sections/section-020/module-01/course-07-summary.md
+    prompt: "A workload has no `AuthorizationPolicy`. You apply one `ALLOW` policy that allows only `GET /status`. What happens to a `POST /status`?"
+    options:
+      - id: a
+        text: "It is allowed, because the policy mentions `/status`."
+        explanation: "The method does not match the rule, and unmatched requests are refused."
+      - id: b
+        text: "It is refused with `403`, because once an `ALLOW` policy selects the workload, every request that no rule matches is refused."
+        explanation: "Correct. The first `ALLOW` policy turns on default-deny for the workload."
+      - id: c
+        text: "It is allowed, because only `DENY` policies refuse requests."
+        explanation: "An `ALLOW` policy that selects a workload also refuses what it does not match."
+      - id: d
+        text: "It is reset with `000`, because the policy runs before mTLS."
+        explanation: "Authorization runs after mTLS, and a denial is an HTTP `403`."
+    correct_option: b
+    explanation: "The first `ALLOW` policy turns on default-deny for the workload."
+
+  - id: ats015-020-q02
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Tell an allow-nothing policy from an allow-everything policy"
+    source_readings:
+      - sections/section-020/module-01/course-07-summary.md
+    prompt: "What does `spec: {}` in an `AuthorizationPolicy` with the default action do, compared with `rules: [{}]`?"
+    options:
+      - id: a
+        text: "Both allow everything, because an empty value is a wildcard."
+        explanation: "Only the empty rule is a wildcard. No rules means no match."
+      - id: b
+        text: "Both allow nothing, because empty means no match."
+        explanation: "One empty rule matches every request."
+      - id: c
+        text: "`spec: {}` allows everything and `rules: [{}]` allows nothing."
+        explanation: "This is the wrong way round."
+      - id: d
+        text: "`spec: {}` has no rules, so it allows nothing. `rules: [{}]` has one empty rule, so it allows everything."
+        explanation: "Correct. An `ALLOW` policy with no rules matches no request. One empty rule matches every request."
+    correct_option: d
+    explanation: "An `ALLOW` policy with no rules matches no request. One empty rule matches every request."
+
+  - id: ats015-020-q03
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Predict the evaluation order of DENY and ALLOW"
+    source_readings:
+      - sections/section-020/module-02/course-01-the-guard-checks-the-banned-list-first.md
+    prompt: "A `DENY` policy blocks `fortio` and an `ALLOW` policy lists `fortio` explicitly. A request from `fortio` arrives. What is the result?"
+    options:
+      - id: a
+        text: "It is refused. A `DENY` match ends the decision, and no `ALLOW` policy is read after it."
+        explanation: "Correct. The order is `CUSTOM`, then `DENY`, then `ALLOW`. There is no most-specific-wins rule."
+      - id: b
+        text: "It is allowed, because the more specific rule wins."
+        explanation: "`AuthorizationPolicy` has no specificity rule."
+      - id: c
+        text: "It is allowed, because policies are checked in creation order."
+        explanation: "Creation order is not used."
+      - id: d
+        text: "The result is undefined when two policies conflict."
+        explanation: "The order is fixed and the result is predictable."
+    correct_option: a
+    explanation: "The order is `CUSTOM`, then `DENY`, then `ALLOW`. There is no most-specific-wins rule."
+
+  - id: ats015-020-q04
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Write a DENY path rule that closes a whole area"
+    source_readings:
+      - sections/section-020/module-02/course-04-close-the-whole-path.md
+    prompt: "A `DENY` rule uses `paths: [\"/admin\"]`. A request for `/admin/users` gets through. Which change closes the whole area?"
+    options:
+      - id: a
+        text: "Use the regular expression `/admin.*`."
+        explanation: "Paths match exactly, by prefix or by suffix, and not by regular expression."
+      - id: b
+        text: "Change the action to `ALLOW`."
+        explanation: "That would allow the path and do the opposite."
+      - id: c
+        text: "Use the prefix `\"/admin*\"` and test a path the rule does not name."
+        explanation: "Correct. A path without a wildcard matches exactly. A trailing `*` matches the prefix."
+      - id: d
+        text: "Add `notPaths: [\"/admin\"]`."
+        explanation: "That would match every path except `/admin`."
+    correct_option: c
+    explanation: "A path without a wildcard matches exactly. A trailing `*` matches the prefix."
+
+  - id: ats015-020-q05
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Name the AuthorizationPolicy fields that work on TCP"
+    source_readings:
+      - sections/section-020/module-03/course-01-which-fields-a-tcp-rule-can-use.md
+    prompt: "Which fields can an `AuthorizationPolicy` rule use on a TCP workload?"
+    options:
+      - id: a
+        text: "`methods`, `paths` and `hosts`."
+        explanation: "These three are HTTP-only fields."
+      - id: b
+        text: "`requestPrincipals` and JWT claims in `when`."
+        explanation: "These need an HTTP request with a token."
+      - id: c
+        text: "None. TCP workloads cannot be protected by `AuthorizationPolicy`."
+        explanation: "A policy matches the connection fields of a TCP workload."
+      - id: d
+        text: "`principals`, `namespaces`, `ipBlocks` and `ports`, with their negative forms."
+        explanation: "Correct. These describe a connection. `hosts`, `methods` and `paths` apply to HTTP only."
+    correct_option: d
+    explanation: "These describe a connection. `hosts`, `methods` and `paths` apply to HTTP only."
+
+  - id: ats015-020-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Predict how an ALLOW policy treats a port the Service does not list"
+    source_readings:
+      - sections/section-020/module-03/course-02-allow-by-port-and-identity.md
+    prompt: "An `ALLOW` policy on `tcp-echo` allows ports `9000` and `9001`. The pod also listens on `9002`, which the Service does not list. What happens to a connection to the pod IP on port `9002`?"
+    options:
+      - id: a
+        text: "It is allowed, because the Service does not list the port."
+        explanation: "The pass-through path is under the same policy."
+      - id: b
+        text: "It is refused, because no `ALLOW` rule names port `9002`."
+        explanation: "Correct. Once an `ALLOW` policy selects the workload, an unmatched connection is refused, on a port the Service lists or not."
+      - id: c
+        text: "It is allowed, because TCP is not covered by default-deny."
+        explanation: "Default-deny covers TCP."
+      - id: d
+        text: "It is allowed, because policies only match Service ports."
+        explanation: "The policy matches the destination port of the connection."
+    correct_option: b
+    explanation: "Once an `ALLOW` policy selects the workload, an unmatched connection is refused, on a port the Service lists or not."
+
+  - id: ats015-020-q07
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Predict the effect of an HTTP-only field in an ALLOW or DENY rule on TCP"
+    source_readings:
+      - sections/section-020/module-03/course-03-http-fields-in-tcp-rules.md
+    prompt: "A `DENY` policy on a TCP workload has one rule with only `to.operation.methods: [\"GET\"]`. What does it deny?"
+    options:
+      - id: a
+        text: "Nothing, because `GET` never appears in TCP."
+        explanation: "This holds for an `ALLOW` rule, which is ignored. A `DENY` rule fits every connection."
+      - id: b
+        text: "Only connections on port `80`."
+        explanation: "The rule names no port."
+      - id: c
+        text: "All TCP traffic to the workload, because a missing attribute in a `DENY` rule is treated as a match."
+        explanation: "Correct. `methods` is HTTP-only and cannot match a TCP connection. In a `DENY` rule, the missing attribute is a match, so the rule fits everything. Scope a TCP `DENY` with `ports`."
+      - id: d
+        text: "Istio rejects the object with a validation error."
+        explanation: "The object is accepted."
+    correct_option: c
+    explanation: "`methods` is HTTP-only and cannot match a TCP connection. In a `DENY` rule, the missing attribute is a match, so the rule fits everything. Scope a TCP `DENY` with `ports`."
+
+  - id: ats015-020-q08
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Describe what the sidecar does with a CUSTOM policy"
+    source_readings:
+      - sections/section-020/module-04/course-01-where-the-decision-is-made.md
+    prompt: "A `CUSTOM` policy selects the `probe` and matches `/headers`. What does the probe's sidecar do for a request to `/headers`?"
+    options:
+      - id: a
+        text: "It sends a check request to the external authorizer and forwards or rejects the request by the answer."
+        explanation: "Correct. The external authorization filter pauses the request and asks the provider. Only matching requests are checked."
+      - id: b
+        text: "It forwards the request and sends a copy to the authorizer afterwards."
+        explanation: "The check happens before the request is forwarded."
+      - id: c
+        text: "It evaluates the authorizer's rules itself, using the provider settings."
+        explanation: "Istio does not read the authorizer's rules. It only asks for a decision."
+      - id: d
+        text: "The caller's sidecar calls the authorizer."
+        explanation: "The check runs in the sidecar of the protected workload."
+    correct_option: a
+    explanation: "The external authorization filter pauses the request and asks the provider. Only matching requests are checked."
+
+  - id: ats015-020-q09
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Register an external authorizer"
+    source_readings:
+      - sections/section-020/module-04/course-02-register-a-provider-and-attach-it.md
+    prompt: "Where is an external authorizer defined so that a `CUSTOM` policy can refer to it by name?"
+    options:
+      - id: a
+        text: "In the `AuthorizationPolicy`, under `provider.service`."
+        explanation: "The policy holds only the provider name."
+      - id: b
+        text: "In `meshConfig.extensionProviders`, which `istiod` reads from the `mesh` key of the `istio` ConfigMap in `istio-system`."
+        explanation: "Correct. The policy only names the provider with `provider.name`. The host, port and protocol live in the mesh configuration."
+      - id: c
+        text: "In a `DestinationRule` for the authorizer Service."
+        explanation: "A `DestinationRule` does not register providers."
+      - id: d
+        text: "In the `RequestAuthentication` of the workload."
+        explanation: "That object validates JWTs."
+    correct_option: b
+    explanation: "The policy only names the provider with `provider.name`. The host, port and protocol live in the mesh configuration."
+
+  - id: ats015-020-q10
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "State what happens when the authorizer is not reachable"
+    source_readings:
+      - sections/section-020/module-04/course-03-custom-with-allow-and-deny.md
+    prompt: "An HTTP provider uses the default settings. The authorizer pods are scaled to zero. A request that matches the `CUSTOM` rule arrives. What is the result?"
+    options:
+      - id: a
+        text: "The request passes, because the check is best effort."
+        explanation: "That needs `failOpen: true`."
+      - id: b
+        text: "The request waits forever."
+        explanation: "A `timeout` bounds the wait, and the default for an unreachable service is an error."
+      - id: c
+        text: "`503`, because the sidecar has no upstream."
+        explanation: "The default status on error is `403`."
+      - id: d
+        text: "The request is rejected with `403`, because `failOpen` defaults to `false` and `statusOnError` to `403`."
+        explanation: "Correct. A failed check counts as a denial unless `failOpen` is set to `true`. Requests that match no `CUSTOM` rule are not affected."
+    correct_option: d
+    explanation: "A failed check counts as a denial unless `failOpen` is set to `true`. Requests that match no `CUSTOM` rule are not affected."

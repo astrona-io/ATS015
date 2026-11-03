@@ -1,0 +1,242 @@
+# Knowledge check for section 010. Listed in astrona.yaml as a `type: quiz` entry after the capstone lab.
+schema_version: 1
+kind: question_bank
+id: ats015-010
+course_id: ATS015
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: section
+  id: section-010
+  title: "Workload Identity And Mutual TLS"
+questions:
+  - id: ats015-010-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Explain where a workload identity comes from and how it is written"
+    source_readings:
+      - sections/section-010/module-01/course-04-summary.md
+    prompt: "Two Deployments in `starfleet` run with the same service account `crew`. An `ALLOW` policy lists `cluster.local/ns/starfleet/sa/crew` as the only allowed principal. Which statement is correct?"
+    options:
+      - id: a
+        text: "Only the Deployment created first is allowed, because the first certificate wins."
+        explanation: "Identity is not issued first-come. Every pod with the service account gets the same name."
+      - id: b
+        text: "Both Deployments have the same identity, so the rule allows both of them and cannot tell them apart."
+        explanation: "Correct. Istio builds the identity from the namespace and the service account, not from the pod name or its labels."
+      - id: c
+        text: "The rule needs a pod label to select one Deployment."
+        explanation: "Labels are not part of the identity. A rule on `principals` cannot read them."
+      - id: d
+        text: "Neither Deployment is allowed, because a principal needs the `spiffe://` prefix."
+        explanation: "The prefix must be left out in `principals`. A rule with it never matches."
+    correct_option: b
+    explanation: "Istio builds the identity from the namespace and the service account, not from the pod name or its labels."
+
+  - id: ats015-010-q02
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Write a principal value correctly"
+    source_readings:
+      - sections/section-010/module-01/course-04-summary.md
+    prompt: "A policy uses `principals: [\"spiffe://cluster.local/ns/starfleet/sa/shuttle\"]`. `kubectl apply` succeeds and `istioctl analyze` is clean, but the shuttle is refused. What is the fix?"
+    options:
+      - id: a
+        text: "Restart `istiod` so it reloads the policy."
+        explanation: "The policy was accepted and pushed. The value is wrong, so a reload changes nothing."
+      - id: b
+        text: "Replace `principals` with `namespaces: [\"starfleet\"]` and keep the prefix."
+        explanation: "`namespaces` takes a namespace name, and the goal was to name the shuttle."
+      - id: c
+        text: "Add `notPrincipals` with the same value."
+        explanation: "`notPrincipals` inverts the match. It would refuse the shuttle explicitly."
+      - id: d
+        text: "Remove the `spiffe://` prefix and write `cluster.local/ns/starfleet/sa/shuttle`."
+        explanation: "Correct. `principals` takes the name without the scheme. The object is accepted with the prefix, but the rule never matches."
+    correct_option: d
+    explanation: "`principals` takes the name without the scheme. The object is accepted with the prefix, but the rule never matches."
+
+  - id: ats015-010-q03
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Choose the right PeerAuthentication scope"
+    source_readings:
+      - sections/section-010/module-02/course-07-summary.md
+    prompt: "The mesh has a `STRICT` `PeerAuthentication` in `istio-system` with no selector. The namespace `outpost` has a `PERMISSIVE` policy with no selector. What mode do pods in `outpost` use?"
+    options:
+      - id: a
+        text: "`PERMISSIVE`, because the narrowest policy that covers a pod decides alone."
+        explanation: "Correct. Scope is mesh, then namespace, then workload, then port. The narrowest policy wins, even when it is weaker."
+      - id: b
+        text: "`STRICT`, because the mesh policy always wins."
+        explanation: "The wider policy does not win. Narrower scopes override it."
+      - id: c
+        text: "`STRICT`, because the stricter mode wins when two policies overlap."
+        explanation: "Modes are not merged. One policy decides."
+      - id: d
+        text: "`DISABLE`, because two policies cancel each other."
+        explanation: "Policies do not cancel each other."
+    correct_option: a
+    explanation: "Scope is mesh, then namespace, then workload, then port. The narrowest policy wins, even when it is weaker."
+
+  - id: ats015-010-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Predict what STRICT does to a client without a sidecar"
+    source_readings:
+      - sections/section-010/module-02/course-02-require-the-handshake.md
+    prompt: "A namespace is `STRICT`. A pod outside the mesh sends plain HTTP to a workload in it. What does `curl` report?"
+    options:
+      - id: a
+        text: "`403` with the body `RBAC: access denied`."
+        explanation: "That is an authorization denial. mTLS is checked before authorization."
+      - id: b
+        text: "`200`, because auto mTLS upgrades the request."
+        explanation: "Auto mTLS works only for callers with a sidecar."
+      - id: c
+        text: "No HTTP status (`000`) and exit code `56`, because the connection is reset."
+        explanation: "Correct. `STRICT` keeps only the mTLS filter chain, so a plain-text connection finds no chain. An HTTP status code needs an HTTP response."
+      - id: d
+        text: "`401`, because the caller has no identity."
+        explanation: "`401` comes from JWT checks, not from `PeerAuthentication`."
+    correct_option: c
+    explanation: "`STRICT` keeps only the mTLS filter chain, so a plain-text connection finds no chain. An HTTP status code needs an HTTP response."
+
+  - id: ats015-010-q05
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Set a port-level mTLS exception correctly"
+    source_readings:
+      - sections/section-010/module-02/course-05-an-exception-for-one-port.md
+    prompt: "A workload listens on container port `8080` and its Service exposes port `8000`. You want that one port to accept plain text while the workload is otherwise `STRICT`. Which `portLevelMtls` key is correct?"
+    options:
+      - id: a
+        text: "`8000`, the Service port."
+        explanation: "This is accepted without an error and silently has no effect."
+      - id: b
+        text: "`80`, the default HTTP port."
+        explanation: "The key is the real container port, not a default."
+      - id: c
+        text: "Any port, because a namespace-wide policy accepts `portLevelMtls` without a selector."
+        explanation: "`portLevelMtls` needs a `selector`."
+      - id: d
+        text: "`8080`, the container port, in a policy that has a `selector`."
+        explanation: "Correct. `portLevelMtls` is keyed by the port the workload listens on, and it needs a selector. A Service port as key is accepted and does nothing."
+    correct_option: d
+    explanation: "`portLevelMtls` is keyed by the port the workload listens on, and it needs a selector. A Service port as key is accepted and does nothing."
+
+  - id: ats015-010-q06
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Place a count of plain-text traffic correctly in a migration"
+    source_readings:
+      - sections/section-010/module-03/course-01-count-the-plain-signals.md
+    prompt: "Before switching a namespace to `STRICT`, you want to find clients that still send plain text. Where do you read the evidence?"
+    options:
+      - id: a
+        text: "On the client's proxy, because it knows its own destinations."
+        explanation: "A client outside the mesh has no proxy and cannot report."
+      - id: b
+        text: "On the receiving workload's proxy: `istio_requests_total` with `connection_security_policy=\"none\"`."
+        explanation: "Correct. Only the receiver sees every client, including those you did not know about. The label says how each request arrived."
+      - id: c
+        text: "In `istioctl analyze`, which lists plain-text callers."
+        explanation: "`istioctl analyze` reports configuration, not live traffic."
+      - id: d
+        text: "In the `PeerAuthentication` status field."
+        explanation: "The object has no per-client traffic information."
+    correct_option: b
+    explanation: "Only the receiver sees every client, including those you did not know about. The label says how each request arrived."
+
+  - id: ats015-010-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Choose a safe order for the switch to STRICT"
+    source_readings:
+      - sections/section-010/module-03/course-05-summary.md
+    prompt: "A namespace has no `PeerAuthentication`, and a legacy client outside the mesh calls one workload. What is the safest first step before `STRICT`?"
+    options:
+      - id: a
+        text: "Apply `STRICT` at once and fix whichever client breaks."
+        explanation: "That cuts off the legacy client with a connection reset."
+      - id: b
+        text: "Label the namespace for injection and wait. Running pods get a sidecar automatically."
+        explanation: "Injection runs only when a pod is created, so running pods need a restart."
+      - id: c
+        text: "Save the current mode as an explicit `PERMISSIVE` policy, move the client into the mesh with a restart, check that the plain-text count stopped rising, then switch to `STRICT`."
+        explanation: "Correct. The default is `PERMISSIVE`. Writing it down gives a rollback, and the count proves no plain-text client is left."
+      - id: d
+        text: "Set `DISABLE` on the namespace and then `STRICT`."
+        explanation: "`DISABLE` removes mTLS for callers and adds nothing to the migration."
+    correct_option: c
+    explanation: "The default is `PERMISSIVE`. Writing it down gives a rollback, and the count proves no plain-text client is left."
+
+  - id: ats015-010-q08
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Name the CA that signs workload certificates by default"
+    source_readings:
+      - sections/section-010/module-04/course-01-the-certificate-authority-in-istiod.md
+    prompt: "No `cacerts` Secret exists in `istio-system`. Which CA signs the workload certificates?"
+    options:
+      - id: a
+        text: "A self-signed root that `istiod` generates at startup."
+        explanation: "Correct. `istiod` signs with the key from `cacerts` if it exists, and otherwise with its own generated self-signed root."
+      - id: b
+        text: "The Kubernetes cluster CA."
+        explanation: "The Kubernetes CA signs API certificates, not Istio workload certificates."
+      - id: c
+        text: "The CA of the ingress gateway."
+        explanation: "A gateway does not sign workload certificates."
+      - id: d
+        text: "No CA. Workload certificates are self-signed by each sidecar."
+        explanation: "Each sidecar sends a signing request, and `istiod` signs it."
+    correct_option: a
+    explanation: "`istiod` signs with the key from `cacerts` if it exists, and otherwise with its own generated self-signed root."
+
+  - id: ats015-010-q09
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Create the cacerts Secret with the required keys"
+    source_readings:
+      - sections/section-010/module-04/course-02-plug-in-your-own-ca.md
+    prompt: "Which set of keys must the Secret `cacerts` in `istio-system` hold for a plug-in CA?"
+    options:
+      - id: a
+        text: "`tls.crt`, `tls.key` and `ca.crt`."
+        explanation: "That is the layout of a gateway credential Secret."
+      - id: b
+        text: "`ca-cert.pem`, `ca-key.pem`, `root-cert.pem` and `cert-chain.pem`."
+        explanation: "Correct. These four files are the intermediate certificate and key, the root certificate, and the chain the sidecars send."
+      - id: c
+        text: "`root-cert.pem` and `root-key.pem`."
+        explanation: "The root key must stay outside the cluster, and the intermediate is required."
+      - id: d
+        text: "`ca-cert.pem` only."
+        explanation: "`istiod` needs the key, the root and the chain too."
+    correct_option: b
+    explanation: "These four files are the intermediate certificate and key, the root certificate, and the chain the sidecars send."
+
+  - id: ats015-010-q10
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Set the lifetime of one workload certificate"
+    source_readings:
+      - sections/section-010/module-04/course-03-lifetime-and-rotation.md
+    prompt: "One workload must use a two-hour certificate and all others the default. Which change does that?"
+    options:
+      - id: a
+        text: "Set `DEFAULT_WORKLOAD_CERT_TTL: 2h` on `istiod`."
+        explanation: "That changes the default for every workload."
+      - id: b
+        text: "Put the annotation on the Deployment object, not the pod template."
+        explanation: "The sidecar injector reads the pod annotations, so the Deployment's own annotations are ignored."
+      - id: c
+        text: "Delete the `cacerts` Secret."
+        explanation: "That changes the signing CA, not the lifetime."
+      - id: d
+        text: "Set `SECRET_TTL: 2h` through the `proxy.istio.io/config` annotation on that workload's pod template, and restart its pods."
+        explanation: "Correct. The sidecar requests the lifetime in its CSR. The annotation sets the variable for that workload, and `istiod` grants it if it is below the maximum."
+    correct_option: d
+    explanation: "The sidecar requests the lifetime in its CSR. The annotation sets the variable for that workload, and `istiod` grants it if it is below the maximum."

@@ -1,0 +1,16 @@
+# An ALLOW rule with an HTTP-only field (methods) on a TCP workload.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: tcp-policy
+  namespace: starfleet
+spec:
+  selector:
+    matchLabels:
+      app: tcp-echo
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        methods: ["GET"]
+        ports: ["9000"]

@@ -1,0 +1,196 @@
+# Knowledge check for section 030. Listed in astrona.yaml as a `type: quiz` entry after the capstone lab.
+schema_version: 1
+kind: question_bank
+id: ats015-030
+course_id: ATS015
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: section
+  id: section-030
+  title: "End-User Authentication With JWT"
+questions:
+  - id: ats015-030-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Distinguish peer identity from request identity"
+    source_readings:
+      - sections/section-030/module-01/course-01-two-identities-on-one-signal.md
+    prompt: "Which field of an `AuthorizationPolicy` matches the end user named by a JWT, and which matches the calling workload?"
+    options:
+      - id: a
+        text: "`principals` for the end user and `requestPrincipals` for the workload."
+        explanation: "This is reversed."
+      - id: b
+        text: "`requestPrincipals` matches the end user from the token. `principals` matches the workload from its mTLS certificate."
+        explanation: "Correct. The peer identity comes from the certificate, the request identity from the JWT."
+      - id: c
+        text: "Both fields match the JWT, and one is for the issuer and one for the subject."
+        explanation: "`principals` reads the certificate."
+      - id: d
+        text: "`namespaces` for the end user and `ipBlocks` for the workload."
+        explanation: "Neither field reads a token."
+    correct_option: b
+    explanation: "The peer identity comes from the certificate, the request identity from the JWT."
+
+  - id: ats015-030-q02
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Configure a RequestAuthentication so tokens are accepted"
+    source_readings:
+      - sections/section-030/module-01/course-02-check-the-token.md
+    prompt: "A `RequestAuthentication` has `issuer: https://issuer.example/` but the token's `iss` claim is `https://issuer.example`. What is the result for a valid token?"
+    options:
+      - id: a
+        text: "`200`, because the signature is valid."
+        explanation: "The issuer is checked too."
+      - id: b
+        text: "`403`, because the policy refuses the claim."
+        explanation: "`403` comes from authorization. The token check answers `401`."
+      - id: c
+        text: "`200`, because a trailing slash is ignored."
+        explanation: "The comparison is exact."
+      - id: d
+        text: "`401`, because the issuer must match the `iss` claim letter for letter."
+        explanation: "Correct. A small difference in the string, such as a trailing slash, makes every token fail the check."
+    correct_option: d
+    explanation: "A small difference in the string, such as a trailing slash, makes every token fail the check."
+
+  - id: ats015-030-q03
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "State what RequestAuthentication does with a request that has no token"
+    source_readings:
+      - sections/section-030/module-01/course-03-require-a-token.md
+    prompt: "Only a `RequestAuthentication` protects a workload. A request without any token arrives. What happens?"
+    options:
+      - id: a
+        text: "It passes the check with no identity attached, because `RequestAuthentication` never requires a token."
+        explanation: "Correct. It rejects only invalid tokens. To require a token, add an `ALLOW` policy with `requestPrincipals: [\"*\"]`."
+      - id: b
+        text: "`401`, because the token is missing."
+        explanation: "Only a bad token gets `401`."
+      - id: c
+        text: "`403`, because a request without an identity is denied by default."
+        explanation: "No authorization policy exists, so nothing refuses it."
+      - id: d
+        text: "The connection is reset."
+        explanation: "That is an mTLS result."
+    correct_option: a
+    explanation: "It rejects only invalid tokens. To require a token, add an `ALLOW` policy with `requestPrincipals: [\"*\"]`."
+
+  - id: ats015-030-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Read a status code to find the failing layer"
+    source_readings:
+      - sections/section-030/module-01/course-05-summary.md
+    prompt: "A request returns `403` with the body `RBAC: access denied`. Where do you look first?"
+    options:
+      - id: a
+        text: "At the JWKS and the issuer of the `RequestAuthentication`."
+        explanation: "Those cause `401`."
+      - id: b
+        text: "At the `PeerAuthentication` mode."
+        explanation: "A `STRICT` refusal is a reset connection, not an HTTP status."
+      - id: c
+        text: "At the `AuthorizationPolicy`, because the token check would answer `401`."
+        explanation: "Correct. `401` points to the `RequestAuthentication`; `403` points to authorization."
+      - id: d
+        text: "At the `DestinationRule` of the client."
+        explanation: "A `DestinationRule` problem shows as `503 UC`."
+    correct_option: c
+    explanation: "`401` points to the `RequestAuthentication`; `403` points to authorization."
+
+  - id: ats015-030-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Write a rule that matches a claim"
+    source_readings:
+      - sections/section-030/module-02/course-02-require-a-claim.md
+    prompt: "Which condition requires the claim `groups` to contain `captains`?"
+    options:
+      - id: a
+        text: "`from.source.principals: [\"captains\"]`."
+        explanation: "`principals` matches the certificate identity."
+      - id: b
+        text: "`to.operation.paths: [\"/captains\"]`."
+        explanation: "That matches the request path."
+      - id: c
+        text: "`when` with `key: request.headers[groups]`."
+        explanation: "That reads a request header, not a token claim."
+      - id: d
+        text: "A `when` entry with `key: request.auth.claims[groups]` and `values: [\"captains\"]`."
+        explanation: "Correct. A list claim matches if any item is in `values`, so no special list syntax is needed."
+    correct_option: d
+    explanation: "A list claim matches if any item is in `values`, so no special list syntax is needed."
+
+  - id: ats015-030-q06
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Explain a missing claim under ALLOW and DENY"
+    source_readings:
+      - sections/section-030/module-02/course-03-one-rule-per-role.md
+    prompt: "A valid token has no `groups` claim. What does a claim rule do under `ALLOW`, and what under `DENY` with the same condition?"
+    options:
+      - id: a
+        text: "It is refused in both cases."
+        explanation: "A `DENY` that does not match refuses nothing."
+      - id: b
+        text: "Under `ALLOW` the request does not match and is refused. Under `DENY` it does not match either, so the request is not refused by that rule."
+        explanation: "Correct. A missing claim fails closed under `ALLOW` and open under `DENY`, so requirements belong in `ALLOW` rules."
+      - id: c
+        text: "It is allowed in both cases."
+        explanation: "Under `ALLOW`, an unmatched request is refused."
+      - id: d
+        text: "It returns `401` in both cases."
+        explanation: "The token is valid, so the token check passes."
+    correct_option: b
+    explanation: "A missing claim fails closed under `ALLOW` and open under `DENY`, so requirements belong in `ALLOW` rules."
+
+  - id: ats015-030-q07
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Debug a claim rule with the proxy configuration"
+    source_readings:
+      - sections/section-030/module-02/course-04-debug-a-claim-rule.md
+    prompt: "A claim rule refuses every user. `istioctl analyze` is clean. Which check finds the cause fastest?"
+    options:
+      - id: a
+        text: "Run `istioctl analyze` again with `--all-namespaces`."
+        explanation: "It still cannot know the claim names."
+      - id: b
+        text: "Delete the `RequestAuthentication`."
+        explanation: "Without it no claim is published and no claim rule can fit."
+      - id: c
+        text: "Read the claim names the proxy holds with `istioctl proxy-config listener <pod> -o json`, and compare them with the decoded token."
+        explanation: "Correct. `istioctl analyze` does not know your issuer's claim names. A wrong claim name gives no error."
+      - id: d
+        text: "Switch the policy to `AUDIT`."
+        explanation: "`AUDIT` never changes the response and needs a provider."
+    correct_option: c
+    explanation: "`istioctl analyze` does not know your issuer's claim names. A wrong claim name gives no error."
+
+  - id: ats015-030-q08
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Use fromParams or fromHeaders correctly"
+    source_readings:
+      - sections/section-030/module-01/course-04-other-token-places-and-deny.md
+    prompt: "A `RequestAuthentication` sets `fromParams: [\"access_token\"]`. A client sends a valid token in the `Authorization` header and the workload also requires a request principal. What happens?"
+    options:
+      - id: a
+        text: "`403`, because the proxy reads only the configured place and finds no token there."
+        explanation: "Correct. With `fromParams` or `fromHeaders`, the default `Authorization` header is not read, so the request carries no request principal."
+      - id: b
+        text: "`200`, because the proxy reads all places."
+        explanation: "Only the configured places are read."
+      - id: c
+        text: "`401`, because the token in the header is invalid."
+        explanation: "The token is not read from the header at all."
+      - id: d
+        text: "The connection is reset."
+        explanation: "This is not an mTLS result."
+    correct_option: a
+    explanation: "With `fromParams` or `fromHeaders`, the default `Authorization` header is not read, so the request carries no request principal."

@@ -231,6 +231,41 @@ modules:
         path: sections/section-010/module-03/course-05-summary.md
 
       - type: reading
+        title: "External Authorization With CUSTOM Policies"
+        path: sections/section-020/module-04/course.md
+      - type: reading
+        title: "Where The Decision Is Made"
+        path: sections/section-020/module-04/course-01-where-the-decision-is-made.md
+      - type: reading
+        title: "Register A Provider And Attach It"
+        path: sections/section-020/module-04/course-02-register-a-provider-and-attach-it.md
+      - type: reading
+        title: "CUSTOM With ALLOW And DENY"
+        path: sections/section-020/module-04/course-03-custom-with-allow-and-deny.md
+      - type: reading
+        title: Question
+        path: sections/section-020/module-04/labs/lab-01/question.md
+      - type: lab
+        title: "Gate One Path With An External Authorizer Lab"
+        path: sections/section-020/module-04/labs/lab-01
+        difficulty: advanced
+        estimated_duration: 25m
+        topic: authorization
+        task_kind: build
+        tags: [authorizationpolicy, custom-policy, ext-authz, evaluation-order, rbac-403, access-log]
+        learning_goals:
+          - Register an external authorizer as an extension provider in the mesh configuration
+          - Attach a CUSTOM policy to one path and prove the authorizer decides that path only
+        resources:
+          - name: "External authorization"
+            url: https://istio.io/latest/docs/tasks/security/authorization/authz-custom/
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+      - type: reading
+        title: "Summary"
+        path: sections/section-020/module-04/course-04-summary.md
+
+      - type: reading
         title: Question
         path: sections/section-010/capstone/labs/lab-01/question.md
       - type: lab
@@ -252,6 +287,10 @@ modules:
             url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
           - name: "Mutual TLS migration"
             url: https://istio.io/latest/docs/tasks/security/authentication/mtls-migration/
+      - type: quiz
+        title: "Knowledge Check: Workload Identity And Mutual TLS"
+        path: sections/section-010/quiz.yaml
+        pass_score: 70
 
   - id: module-020
     title: "Authorization Policy Fundamentals"
@@ -401,11 +440,85 @@ modules:
         path: sections/section-020/module-02/course-07-summary.md
 
       - type: reading
+        title: "Authorize TCP Traffic"
+        path: sections/section-020/module-03/course.md
+      - type: reading
+        title: "Which Fields A TCP Rule Can Use"
+        path: sections/section-020/module-03/course-01-which-fields-a-tcp-rule-can-use.md
+      - type: reading
+        title: "Allow By Port And Identity"
+        path: sections/section-020/module-03/course-02-allow-by-port-and-identity.md
+      - type: reading
+        title: "HTTP Fields In TCP Rules"
+        path: sections/section-020/module-03/course-03-http-fields-in-tcp-rules.md
+      - type: reading
+        title: Question
+        path: sections/section-020/module-03/labs/lab-01/question.md
+      - type: lab
+        title: "Allow Only One Caller To One TCP Port Lab"
+        path: sections/section-020/module-03/labs/lab-01
+        difficulty: intermediate
+        estimated_duration: 25m
+        topic: authorization
+        task_kind: build
+        tags: [authorizationpolicy, tcp-policy, principals, default-deny, evaluation-order, access-log]
+        learning_goals:
+          - Write an ALLOW policy that names one caller and one TCP port
+          - Prove that a rule with an HTTP-only field matches nothing on TCP and that the unlisted port is closed
+        resources:
+          - name: "Authorization for TCP traffic"
+            url: https://istio.io/latest/docs/tasks/security/authorization/authz-tcp/
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+      - type: reading
+        title: "Summary"
+        path: sections/section-020/module-03/course-04-summary.md
+
+      - type: reading
+        title: "External Authorization With CUSTOM Policies"
+        path: sections/section-020/module-04/course.md
+      - type: reading
+        title: "Where The Decision Is Made"
+        path: sections/section-020/module-04/course-01-where-the-decision-is-made.md
+      - type: reading
+        title: "Register A Provider And Attach It"
+        path: sections/section-020/module-04/course-02-register-a-provider-and-attach-it.md
+      - type: reading
+        title: "CUSTOM With ALLOW And DENY"
+        path: sections/section-020/module-04/course-03-custom-with-allow-and-deny.md
+      - type: reading
+        title: Question
+        path: sections/section-020/module-04/labs/lab-01/question.md
+      - type: lab
+        title: "Gate One Path With An External Authorizer Lab"
+        path: sections/section-020/module-04/labs/lab-01
+        difficulty: advanced
+        estimated_duration: 25m
+        topic: authorization
+        task_kind: build
+        tags: [authorizationpolicy, custom-policy, ext-authz, evaluation-order, rbac-403, access-log]
+        learning_goals:
+          - Register an external authorizer as an extension provider in the mesh configuration
+          - Attach a CUSTOM policy to one path and prove the authorizer decides that path only
+        resources:
+          - name: "External authorization"
+            url: https://istio.io/latest/docs/tasks/security/authorization/authz-custom/
+          - name: "AuthorizationPolicy reference"
+            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+      - type: reading
+        title: "Summary"
+        path: sections/section-020/module-04/course-04-summary.md
+
+      - type: reading
         title: Question
         path: sections/section-020/capstone/labs/lab-01/question.md
       - type: lab
         title: "Capstone: Deny By Default And Allow Two Calls"
         path: sections/section-020/capstone/labs/lab-01
+      - type: quiz
+        title: "Knowledge Check: Authorization Policy Fundamentals"
+        path: sections/section-020/quiz.yaml
+        pass_score: 70
 
   - id: module-030
     title: "End-User Authentication With JWT"
@@ -551,6 +664,10 @@ modules:
       - type: lab
         title: "Capstone: Require A Token And Split Access By Claim"
         path: sections/section-030/capstone/labs/lab-01
+      - type: quiz
+        title: "Knowledge Check: End-User Authentication With JWT"
+        path: sections/section-030/quiz.yaml
+        pass_score: 70
 
   - id: module-040
     title: "Securing Edge Traffic With TLS"
@@ -803,6 +920,10 @@ modules:
       - type: lab
         title: "Capstone: Terminate And Pass Through TLS On One Gateway"
         path: sections/section-040/capstone/labs/lab-01
+      - type: quiz
+        title: "Knowledge Check: Securing Edge Traffic With TLS"
+        path: sections/section-040/quiz.yaml
+        pass_score: 70
 
   - id: module-050
     title: "Authorization At The Edge"
@@ -887,6 +1008,10 @@ modules:
       - type: lab
         title: "Capstone: Block Client IP Ranges At The Ingress Gateway"
         path: sections/section-050/capstone/labs/lab-01
+      - type: quiz
+        title: "Knowledge Check: Authorization At The Edge"
+        path: sections/section-050/quiz.yaml
+        pass_score: 70
 
   - id: module-060
     title: "Authorization In Ambient Mode"
@@ -970,3 +1095,11 @@ modules:
         title: "Capstone: Enforce Request Rules Through A Waypoint"
         path: sections/section-060/capstone/labs/lab-01
         difficulty: advanced
+      - type: quiz
+        title: "Knowledge Check: Authorization In Ambient Mode"
+        path: sections/section-060/quiz.yaml
+        pass_score: 70
+      - type: quiz
+        title: "Final Knowledge Check: ICA Securing Workloads"
+        path: sections/final-domain-quiz.yaml
+        pass_score: 70

@@ -2,7 +2,7 @@
 
 Every security rule in this course eventually matches on one string — a workload's mesh identity. This section is where that string comes from, how you make a workload prove it, and how to turn the proof on in a cluster that is already running without breaking the callers who were not ready.
 
-The process follows a clear dependency order. First, open a certificate and verify the identity it contains, because enforcing a policy against an assumed rather than verified identity is one of the most common failure points in this domain. Next, use `PeerAuthentication` to make that identity mandatory at each of its three scopes. Finally, apply the procedure to a live namespace: measure, document, mesh, and enforce.
+The process follows a clear dependency order. First, open a certificate and verify the identity it contains, because enforcing a policy against an assumed rather than verified identity is one of the most common failure points in this domain. Next, use `PeerAuthentication` to make that identity mandatory at each of its three scopes. Finally, apply the procedure to a live namespace: measure, document, mesh, and enforce. The last module covers who signs the certificates: the CA inside `istiod`, plugging in your own CA, and certificate lifetime and rotation.
 
 ---
 
@@ -16,6 +16,8 @@ The process follows a clear dependency order. First, open a certificate and veri
 - Reading `connection_security_policy` off `istio_requests_total` to prove no plaintext remains before enforcing.
 - `portLevelMtls` exceptions on container ports, and why a client-side `DestinationRule` with `tls.mode: DISABLE` breaks a `STRICT` server with `503 UC`.
 - Reading the mode a pod really uses with `istioctl x describe pod` and its inbound listener.
+- The self-signed CA `istiod` creates by default, the `cacerts` Secret that replaces it with your own intermediate CA, and verifying a workload certificate chain with `openssl`.
+- The workload certificate lifetime (24 hours by default), renewal at half of the lifetime, and shortening it for one workload.
 
 ---
 

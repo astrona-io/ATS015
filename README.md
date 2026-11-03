@@ -31,14 +31,14 @@ The exam lists three topics for this domain. The course teaches them in a differ
 
 | Section | Title | Modules | Exam topic |
 | --- | --- | --- | --- |
-| [010](sections/section-010/README.md) | Workload Identity And Mutual TLS | 3 | Configuring Authentication (mTLS, JWT) |
-| [020](sections/section-020/README.md) | Authorization Policy Fundamentals | 2 | Configuring Authorization |
+| [010](sections/section-010/README.md) | Workload Identity And Mutual TLS | 4 | Configuring Authentication (mTLS, JWT) |
+| [020](sections/section-020/README.md) | Authorization Policy Fundamentals | 4 | Configuring Authorization |
 | [030](sections/section-030/README.md) | End-User Authentication With JWT | 2 | Configuring Authentication (mTLS, JWT) and Configuring Authorization |
 | [040](sections/section-040/README.md) | Securing Edge Traffic With TLS | 4 | Securing Edge Traffic with TLS |
 | [050](sections/section-050/README.md) | Authorization At The Edge | 1 | Configuring Authorization |
 | [060](sections/section-060/README.md) | Authorization In Ambient Mode | 1 | Configuring Authorization |
 
-**13 modules, 61 parts, 24 graded labs, 6 capstones and 13 playgrounds.**
+**16 modules, 70 parts, 27 graded labs, 6 capstones, 6 section quizzes, a final quiz and 16 playgrounds.**
 
 Here is why the order works:
 
@@ -60,8 +60,11 @@ Each module has a landing page, ordered chapters and a summary. The landing page
 | 010-01 | [Inspect Workload Identity And Certificates](sections/section-010/module-01/course.md) | 3 | [Prove A Workload Identity And Authorize On It](sections/section-010/module-01/labs/lab-01/README.md) (`ats-015-lab-010-01`) |
 | 010-02 | [Enforce mTLS With PeerAuthentication At Three Scopes](sections/section-010/module-02/course.md) | 6 | [Enforce mTLS At Three Scopes](sections/section-010/module-02/labs/lab-01/README.md) (`ats-015-lab-010-02`), [Open One Port With portLevelMtls](sections/section-010/module-02/labs/lab-02/README.md) (`ats-015-lab-010-02-02`), [Fix A DestinationRule That Breaks mTLS](sections/section-010/module-02/labs/lab-03/README.md) (`ats-015-lab-010-02-03`) |
 | 010-03 | [Migrate A Namespace From PERMISSIVE To STRICT mTLS](sections/section-010/module-03/course.md) | 4 | [Migrate A Namespace To STRICT mTLS](sections/section-010/module-03/labs/lab-01/README.md) (`ats-015-lab-010-03`) |
+| 010-04 | [Control Workload Certificates: Plug-In CA And Lifetime](sections/section-010/module-04/course.md) | 3 | [Plug In A CA And Shorten One Certificate Lifetime](sections/section-010/module-04/labs/lab-01/README.md) (`ats-015-lab-010-04`) |
 | 020-01 | [Authorize HTTP Traffic Between Workloads](sections/section-020/module-01/course.md) | 6 | [Lock A Namespace Down With ALLOW Policies](sections/section-020/module-01/labs/lab-01/README.md) (`ats-015-lab-020-01`), [Repair Broken AuthorizationPolicies](sections/section-020/module-01/labs/lab-02/README.md) (`ats-015-lab-020-01-02`) |
 | 020-02 | [DENY Policies And Evaluation Order](sections/section-020/module-02/course.md) | 6 | [Close A Path With DENY](sections/section-020/module-02/labs/lab-01/README.md) (`ats-015-lab-020-02`), [Make The Probe Read-Only](sections/section-020/module-02/labs/lab-02/README.md) (`ats-015-lab-020-02-02`) |
+| 020-03 | [Authorize TCP Traffic](sections/section-020/module-03/course.md) | 3 | [Allow Only One Caller To One TCP Port](sections/section-020/module-03/labs/lab-01/README.md) (`ats-015-lab-020-03`) |
+| 020-04 | [External Authorization With CUSTOM Policies](sections/section-020/module-04/course.md) | 3 | [Gate One Path With An External Authorizer](sections/section-020/module-04/labs/lab-01/README.md) (`ats-015-lab-020-04`) |
 | 030-01 | [Authenticate End Users With JWT](sections/section-030/module-01/course.md) | 4 | [Require A Valid End-User Token](sections/section-030/module-01/labs/lab-01/README.md) (`ats-015-lab-030-01`), [Read A JWT From A Query Parameter](sections/section-030/module-01/labs/lab-02/README.md) (`ats-015-lab-030-01-02`) |
 | 030-02 | [Authorize On JWT Claims](sections/section-030/module-02/course.md) | 4 | [Authorize On A JWT Claim](sections/section-030/module-02/labs/lab-01/README.md) (`ats-015-lab-030-02`), [Fix The Claim Rule](sections/section-030/module-02/labs/lab-02/README.md) (`ats-015-lab-030-02-02`) |
 | 040-01 | [Terminate TLS At The Ingress Gateway](sections/section-040/module-01/course.md) | 4 | [Serve HTTPS At The Ingress Gateway](sections/section-040/module-01/labs/lab-01/README.md) (`ats-015-lab-040-01`), [Fix A Broken HTTPS Gateway](sections/section-040/module-01/labs/lab-02/README.md) (`ats-015-lab-040-01-02`) |
@@ -83,6 +86,11 @@ Each section ends with one capstone:
 | 040 | [Capstone: Terminate And Pass Through TLS On One Gateway](sections/section-040/capstone/labs/lab-01/README.md) | `ats-015-capstone-040` |
 | 050 | [Capstone: Block Client IP Ranges At The Ingress Gateway](sections/section-050/capstone/labs/lab-01/README.md) | `ats-015-capstone-050` |
 | 060 | [Capstone: Enforce Request Rules Through A Waypoint](sections/section-060/capstone/labs/lab-01/README.md) | `ats-015-capstone-060` |
+
+
+## Quizzes
+
+Each section ends with a knowledge check (`sections/section-0N0/quiz.yaml`), and `sections/final-domain-quiz.yaml` covers the whole domain. All are single-choice banks with a pass score of 70 and status `draft`.
 
 ---
 

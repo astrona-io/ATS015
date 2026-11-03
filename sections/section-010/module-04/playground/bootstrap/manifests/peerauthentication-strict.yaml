@@ -1,0 +1,10 @@
+# STRICT mTLS in the namespace starfleet: every connection to a pod uses TLS with
+# the workload certificate, so a TLS client can read the chain a sidecar presents.
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: starfleet
+spec:
+  mtls:
+    mode: STRICT

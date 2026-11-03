@@ -1,0 +1,196 @@
+# Knowledge check for section 060. Listed in astrona.yaml as a `type: quiz` entry after the capstone lab.
+schema_version: 1
+kind: question_bank
+id: ats015-060
+course_id: ATS015
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: section
+  id: section-060
+  title: "Authorization In Ambient Mode"
+questions:
+  - id: ats015-060-q01
+    type: single_choice
+    difficulty: beginner
+    learning_objective: "Name the ambient components and their layers"
+    source_readings:
+      - sections/section-060/module-01/course-01-the-ambient-dataplane.md
+    prompt: "In ambient mode, which components enforce `AuthorizationPolicy`, and at which layers?"
+    options:
+      - id: a
+        text: "A sidecar in every pod, at L4 and L7."
+        explanation: "Ambient pods run with no sidecar."
+      - id: b
+        text: "ztunnel enforces connection rules (L4), and a waypoint enforces HTTP request rules (L7)."
+        explanation: "Correct. ztunnel runs once per node and never reads HTTP. A waypoint is an Envoy proxy for L7."
+      - id: c
+        text: "`istiod` evaluates the policy for each request."
+        explanation: "`istiod` distributes policy and does not decide requests."
+      - id: d
+        text: "The ingress gateway, for the whole mesh."
+        explanation: "The gateway only sees traffic through it."
+    correct_option: b
+    explanation: "ztunnel runs once per node and never reads HTTP. A waypoint is an Envoy proxy for L7."
+
+  - id: ats015-060-q02
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Enrol a namespace in ambient mode"
+    source_readings:
+      - sections/section-060/module-01/course-01-the-ambient-dataplane.md
+    prompt: "How do running pods in a namespace join the ambient mesh?"
+    options:
+      - id: a
+        text: "Label the namespace `istio-injection=enabled` and restart the pods."
+        explanation: "That is sidecar injection."
+      - id: b
+        text: "Create a `Gateway` for the namespace."
+        explanation: "A gateway is not an enrolment."
+      - id: c
+        text: "Install a waypoint in every namespace."
+        explanation: "A waypoint is for L7 and not for enrolment."
+      - id: d
+        text: "Label the namespace `istio.io/dataplane-mode=ambient`. No restart or extra container is needed."
+        explanation: "Correct. istio-cni redirects the pod's traffic to ztunnel. `istioctl ztunnel-config workload` shows `HBONE` for an enrolled pod."
+    correct_option: d
+    explanation: "istio-cni redirects the pod's traffic to ztunnel. `istioctl ztunnel-config workload` shows `HBONE` for an enrolled pod."
+
+  - id: ats015-060-q03
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "List what ztunnel can enforce"
+    source_readings:
+      - sections/section-060/module-01/course-02-what-ztunnel-can-enforce.md
+    prompt: "Which rule can ztunnel enforce on its own?"
+    options:
+      - id: a
+        text: "An `ALLOW` that names a source `principal` and a destination `port`, attached with a `selector`."
+        explanation: "Correct. ztunnel knows the caller's identity from the tunnel. It cannot read methods, paths, hosts, request principals or `when` conditions."
+      - id: b
+        text: "An `ALLOW` on `methods: [\"GET\"]`."
+        explanation: "This needs HTTP parsing."
+      - id: c
+        text: "A rule on `requestPrincipals`."
+        explanation: "This needs a JWT check at L7."
+      - id: d
+        text: "A rule on `paths: [\"/admin*\"]`."
+        explanation: "This needs HTTP parsing."
+    correct_option: a
+    explanation: "ztunnel knows the caller's identity from the tunnel. It cannot read methods, paths, hosts, request principals or `when` conditions."
+
+  - id: ats015-060-q04
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Predict an L7 rule attached with a selector in ambient mode"
+    source_readings:
+      - sections/section-060/module-01/course-03-a-rule-with-nowhere-to-run.md
+    prompt: "An `ALLOW` policy with `paths` is attached with a `selector` and no waypoint exists. What happens?"
+    options:
+      - id: a
+        text: "The rule works because ztunnel reads paths."
+        explanation: "ztunnel never reads HTTP."
+      - id: b
+        text: "The policy is rejected at apply time."
+        explanation: "It is accepted."
+      - id: c
+        text: "ztunnel drops the rule it cannot check, so the `ALLOW` matches nothing and every caller is refused."
+        explanation: "Correct. With a `selector` the policy goes to ztunnel. The L7 field is not enforceable there."
+      - id: d
+        text: "The rule is ignored and every request is allowed."
+        explanation: "The `ALLOW` still turns on default-deny, so unmatched requests are refused."
+    correct_option: c
+    explanation: "With a `selector` the policy goes to ztunnel. The L7 field is not enforceable there."
+
+  - id: ats015-060-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Distinguish refusals by component"
+    source_readings:
+      - sections/section-060/module-01/course-06-summary.md
+    prompt: "A request from an enrolled pod ends with `000`. Which component most likely refused it?"
+    options:
+      - id: a
+        text: "A waypoint, with a `403`."
+        explanation: "A waypoint refusal is an HTTP status."
+      - id: b
+        text: "The `RequestAuthentication` of the workload."
+        explanation: "That gives `401`."
+      - id: c
+        text: "The ingress gateway."
+        explanation: "The request did not pass through it."
+      - id: d
+        text: "ztunnel, which closes the connection. A waypoint answers with an HTTP `403`."
+        explanation: "Correct. L4 refusals have no HTTP response."
+    correct_option: d
+    explanation: "L4 refusals have no HTTP response."
+
+  - id: ats015-060-q06
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Attach an L7 policy to a waypoint"
+    source_readings:
+      - sections/section-060/module-01/course-04-deploy-a-waypoint.md
+    prompt: "What makes a waypoint enforce an L7 policy for a service?"
+    options:
+      - id: a
+        text: "Label the namespace `istio-injection=enabled` and restart."
+        explanation: "That is sidecar injection."
+      - id: b
+        text: "Create the waypoint with `istioctl waypoint apply`, label the Service or namespace `istio.io/use-waypoint`, and attach the policy with `targetRefs`."
+        explanation: "Correct. Creating the waypoint is not enough: the label sends traffic through it, and `targetRefs` attaches the policy."
+      - id: c
+        text: "Apply the policy with a `selector` only."
+        explanation: "That goes to ztunnel."
+      - id: d
+        text: "Create a `PeerAuthentication` in `STRICT` mode."
+        explanation: "That does not create L7 enforcement."
+    correct_option: b
+    explanation: "Creating the waypoint is not enough: the label sends traffic through it, and `targetRefs` attaches the policy."
+
+  - id: ats015-060-q07
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Find out which component holds a policy"
+    source_readings:
+      - sections/section-060/module-01/course-05-ask-who-holds-the-rule.md
+    prompt: "A policy exists but seems to do nothing. How do you find who holds it?"
+    options:
+      - id: a
+        text: "Run `istioctl analyze` and trust a clean result."
+        explanation: "A clean result does not show who holds a rule."
+      - id: b
+        text: "Read the sidecar proxy configuration of the pod."
+        explanation: "Ambient pods have no sidecar."
+      - id: c
+        text: "Compare `istioctl ztunnel-config policy` with `kubectl get authorizationpolicy`, and read the waypoint listeners and access log."
+        explanation: "Correct. A rule that neither ztunnel nor a waypoint holds does nothing."
+      - id: d
+        text: "Restart `istiod`."
+        explanation: "The policy was already accepted."
+    correct_option: c
+    explanation: "A rule that neither ztunnel nor a waypoint holds does nothing."
+
+  - id: ats015-060-q08
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Predict the identity seen behind a waypoint"
+    source_readings:
+      - sections/section-060/module-01/course-04-deploy-a-waypoint.md
+    prompt: "Traffic goes through a waypoint. A pod-level `ALLOW` on the destination allows only the original caller's identity. What happens?"
+    options:
+      - id: a
+        text: "Every caller is refused, because the destination's ztunnel sees the waypoint's identity."
+        explanation: "Correct. Behind a waypoint, the caller of the destination is the waypoint."
+      - id: b
+        text: "The original caller is allowed."
+        explanation: "The destination sees the waypoint's identity."
+      - id: c
+        text: "Everyone is allowed."
+        explanation: "The `ALLOW` matches nothing and refuses unmatched callers."
+      - id: d
+        text: "The waypoint copies the caller's certificate."
+        explanation: "The tunnel identity is the waypoint's own."
+    correct_option: a
+    explanation: "Behind a waypoint, the caller of the destination is the waypoint."

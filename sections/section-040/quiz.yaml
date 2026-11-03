@@ -1,0 +1,242 @@
+# Knowledge check for section 040. Listed in astrona.yaml as a `type: quiz` entry after the capstone lab.
+schema_version: 1
+kind: question_bank
+id: ats015-040
+course_id: ATS015
+exam_code: ICA
+status: draft
+provenance: Original practice material written for this course; not official exam questions.
+scope:
+  type: section
+  id: section-040
+  title: "Securing Edge Traffic With TLS"
+questions:
+  - id: ats015-040-q01
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Place the credentialName Secret in the right namespace"
+    source_readings:
+      - sections/section-040/module-01/course-01-give-the-gate-its-certificate.md
+    prompt: "The ingress gateway pod runs in `istio-ingress`. The `Gateway` object is in `starfleet` and sets `credentialName: gate-tls`. In which namespace must the Secret `gate-tls` be?"
+    options:
+      - id: a
+        text: "`starfleet`, next to the `Gateway`."
+        explanation: "The Secret is not searched there."
+      - id: b
+        text: "`istio-ingress`, the namespace of the gateway pod."
+        explanation: "Correct. Istio looks the Secret up in the namespace of the gateway workload, not where the `Gateway` object lives."
+      - id: c
+        text: "`istio-system`, where `istiod` runs."
+        explanation: "The lookup is in the gateway pod's namespace."
+      - id: d
+        text: "Any namespace, because `credentialName` is cluster-wide."
+        explanation: "`credentialName` is a bare name, resolved in one namespace."
+    correct_option: b
+    explanation: "Istio looks the Secret up in the namespace of the gateway workload, not where the `Gateway` object lives."
+
+  - id: ats015-040-q02
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "List the fields of a SIMPLE TLS server"
+    source_readings:
+      - sections/section-040/module-01/course-02-open-the-https-door.md
+    prompt: "Which settings does a `Gateway` server need to terminate HTTPS with a certificate you supply?"
+    options:
+      - id: a
+        text: "`protocol: TLS`, `tls.mode: PASSTHROUGH` and `credentialName`."
+        explanation: "`PASSTHROUGH` does not decrypt and takes no credential."
+      - id: b
+        text: "`protocol: HTTP` and `tls.httpsRedirect: true`."
+        explanation: "That redirects plain HTTP and serves no certificate."
+      - id: c
+        text: "`tls.mode: MUTUAL` and no `credentialName`."
+        explanation: "`MUTUAL` needs a credential with a CA."
+      - id: d
+        text: "`protocol: HTTPS`, `hosts`, `tls.mode: SIMPLE` and `credentialName`, with a `selector` that matches the gateway pod."
+        explanation: "Correct. These make the gateway show its certificate and decrypt the request."
+    correct_option: d
+    explanation: "These make the gateway show its certificate and decrypt the request."
+
+  - id: ats015-040-q03
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Read the curl exit code of a failed TLS connection"
+    source_readings:
+      - sections/section-040/module-01/course-04-when-the-handshake-fails.md
+    prompt: "`curl` to the HTTPS gateway exits with `35`. `istioctl proxy-config secret` on the gateway shows the Secret as `WARMING`. What is the cause?"
+    options:
+      - id: a
+        text: "The certificate never reached the gateway, for example because the Secret is missing or in the wrong namespace."
+        explanation: "Correct. Exit `35` means the gateway closed the handshake. A missing or warming Secret leaves the gateway without a certificate to present."
+      - id: b
+        text: "The client does not trust the CA. That is exit `60`."
+        explanation: "Exit `60` means the client rejected the certificate."
+      - id: c
+        text: "The gateway cannot be reached. That is exit `7`."
+        explanation: "Exit `7` means no connection."
+      - id: d
+        text: "The `VirtualService` has a wrong route, which gives `404`."
+        explanation: "A route error needs a completed handshake."
+    correct_option: a
+    explanation: "Exit `35` means the gateway closed the handshake. A missing or warming Secret leaves the gateway without a certificate to present."
+
+  - id: ats015-040-q04
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Build the Secret for MUTUAL TLS"
+    source_readings:
+      - sections/section-040/module-02/course-04-two-secret-layouts-and-what-a-badge-proves.md
+    prompt: "For `tls.mode: MUTUAL`, which keys must the gateway credential hold in the single-Secret layout?"
+    options:
+      - id: a
+        text: "`tls.crt` and `tls.key` only."
+        explanation: "The CA is needed to check client certificates."
+      - id: b
+        text: "`ca.crt` and `ca.key`."
+        explanation: "The CA key never leaves your machine."
+      - id: c
+        text: "`tls.crt`, `tls.key` and `ca.crt`, built with `kubectl create secret generic`."
+        explanation: "Correct. `kubectl create secret tls` cannot add the CA, so a generic Secret with `--from-file=name=path` is used."
+      - id: d
+        text: "`cert-chain.pem` and `root-cert.pem`."
+        explanation: "These names belong to the `cacerts` Secret of `istiod`."
+    correct_option: c
+    explanation: "`kubectl create secret tls` cannot add the CA, so a generic Secret with `--from-file=name=path` is used."
+
+  - id: ats015-040-q05
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Predict what MUTUAL does with a client without a certificate"
+    source_readings:
+      - sections/section-040/module-02/course-03-turn-away-strangers-and-prove-it.md
+    prompt: "A `MUTUAL` gateway receives a request from a client without a certificate. What does the client see?"
+    options:
+      - id: a
+        text: "`401`, with a body from the gateway."
+        explanation: "No HTTP exchange takes place."
+      - id: b
+        text: "`403 RBAC: access denied`."
+        explanation: "That would need a completed handshake and an authorization policy."
+      - id: c
+        text: "`404`, because no route matches."
+        explanation: "The request is never read."
+      - id: d
+        text: "No HTTP status (`000`, curl exit code `56` or `35`), because the handshake fails before any HTTP is sent."
+        explanation: "Correct. The check is in the TLS handshake. The access log has no line for a refused handshake."
+    correct_option: d
+    explanation: "The check is in the TLS handshake. The access log has no line for a refused handshake."
+
+  - id: ats015-040-q06
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Separate authentication at the edge from authorization"
+    source_readings:
+      - sections/section-040/module-02/course-02-make-the-gate-ask-for-a-badge.md
+    prompt: "A client presents a certificate signed by your CA to a `MUTUAL` gateway. What does that prove?"
+    options:
+      - id: a
+        text: "That the client may reach every service behind the gateway."
+        explanation: "The gateway grants no permissions on that basis."
+      - id: b
+        text: "That your CA signed for that client. It does not say what the client may do."
+        explanation: "Correct. Authentication says who. Authorization needs an `AuthorizationPolicy`, the application or the forwarded client certificate header."
+      - id: c
+        text: "That mesh mTLS is on for the whole mesh."
+        explanation: "Gateway `MUTUAL` and mesh mTLS are separate."
+      - id: d
+        text: "That the client name matches the host."
+        explanation: "The gateway checks the signature, not the name in the client certificate."
+    correct_option: b
+    explanation: "Authentication says who. Authorization needs an `AuthorizationPolicy`, the application or the forwarded client certificate header."
+
+  - id: ats015-040-q07
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Configure TLS passthrough"
+    source_readings:
+      - sections/section-040/module-03/course-02-open-a-gate-that-does-not-decrypt.md
+    prompt: "Which setup passes a TLS connection to a backend without decrypting it?"
+    options:
+      - id: a
+        text: "A server with `protocol: HTTPS`, `mode: SIMPLE` and `credentialName`."
+        explanation: "That decrypts at the gateway."
+      - id: b
+        text: "A `VirtualService` `http` block with `uri` matches."
+        explanation: "A passthrough gateway cannot read the path."
+      - id: c
+        text: "A `Gateway` server with `protocol: TLS` and `tls.mode: PASSTHROUGH`, and a `VirtualService` `tls` block that matches `sniHosts`."
+        explanation: "Correct. The gateway sees only the SNI name in the ClientHello, so it routes on that name."
+      - id: d
+        text: "`tls.mode: AUTO_PASSTHROUGH` on an ordinary ingress."
+        explanation: "`AUTO_PASSTHROUGH` is meant for gateways between clusters."
+    correct_option: c
+    explanation: "The gateway sees only the SNI name in the ClientHello, so it routes on that name."
+
+  - id: ats015-040-q08
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Prove which component ended TLS"
+    source_readings:
+      - sections/section-040/module-03/course-05-one-gate-two-modes.md
+    prompt: "A `200` comes back from a passthrough host. How do you prove that the backend, not the gateway, ended TLS?"
+    options:
+      - id: a
+        text: "Compare the certificate fingerprint the client receives with the backend's own certificate."
+        explanation: "Correct. In passthrough the client gets the backend's certificate. A `200` alone proves nothing about the mode."
+      - id: b
+        text: "Check the status code. Passthrough always returns `200`."
+        explanation: "A status code does not show who ended TLS."
+      - id: c
+        text: "Read the HTTP path in the gateway access log."
+        explanation: "A passthrough gateway logs no method, path or status."
+      - id: d
+        text: "Check the `VirtualService` `http` block."
+        explanation: "A passthrough host uses a `tls` block."
+    correct_option: a
+    explanation: "In passthrough the client gets the backend's certificate. A `200` alone proves nothing about the mode."
+
+  - id: ats015-040-q09
+    type: single_choice
+    difficulty: intermediate
+    learning_objective: "Describe TLS origination at the sidecar"
+    source_readings:
+      - sections/section-040/module-04/course-02-chart-the-planet-and-seal-the-signal.md
+    prompt: "An application calls `http://httpbin.org` and its sidecar should send HTTPS. Which two objects do that?"
+    options:
+      - id: a
+        text: "A `Gateway` with `PASSTHROUGH` and a `VirtualService`."
+        explanation: "That is an ingress setup."
+      - id: b
+        text: "A `ServiceEntry` with port `80` (`targetPort: 443`) and a `DestinationRule` with `tls.mode: SIMPLE` under `portLevelSettings`."
+        explanation: "Correct. The `ServiceEntry` decides where the sidecar connects, and the `DestinationRule` decides how."
+      - id: c
+        text: "A `PeerAuthentication` with `STRICT`."
+        explanation: "That governs traffic inside the mesh."
+      - id: d
+        text: "A `RequestAuthentication` with the outside host as issuer."
+        explanation: "That validates JWTs."
+    correct_option: b
+    explanation: "The `ServiceEntry` decides where the sidecar connects, and the `DestinationRule` decides how."
+
+  - id: ats015-040-q10
+    type: single_choice
+    difficulty: advanced
+    learning_objective: "Read the symptom of a wrong origination setting"
+    source_readings:
+      - sections/section-040/module-04/course-04-a-seal-on-the-wrong-channel.md
+    prompt: "The sidecar returns `503 URX,UF` with `WRONG_VERSION_NUMBER` and the upstream address ends in `:80`. What is missing?"
+    options:
+      - id: a
+        text: "The `DestinationRule` `tls` block, which gives a `400`."
+        explanation: "A missing `tls` block gives `400` from the server."
+      - id: b
+        text: "`subjectAltNames`, which gives `CERTIFICATE_VERIFY_FAILED`."
+        explanation: "That error is about the server certificate name."
+      - id: c
+        text: "A `VirtualService` timeout, which gives `504 UT`."
+        explanation: "A timeout gives `504`."
+      - id: d
+        text: "`targetPort: 443` on the port `80` entry of the `ServiceEntry`, so the sidecar sent TLS to port `80`."
+        explanation: "Correct. `WRONG_VERSION_NUMBER` means a TLS client talked to a plain port."
+    correct_option: d
+    explanation: "`WRONG_VERSION_NUMBER` means a TLS client talked to a plain port."

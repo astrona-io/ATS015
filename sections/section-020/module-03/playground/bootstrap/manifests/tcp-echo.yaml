@@ -1,0 +1,48 @@
+# tcp-echo: a plain TCP server (not HTTP) from the Istio samples. It listens on
+# ports 9000, 9001 and 9002 and answers with "hello" followed by the text it
+# receives. The Service declares only 9000 and 9001; 9002 is left out on purpose,
+# so it can only be reached by pod IP, through the sidecar proxy's pass-through
+# filter chain.
+apiVersion: v1
+kind: Service
+metadata:
+  name: tcp-echo
+  namespace: starfleet
+  labels:
+    app: tcp-echo
+    service: tcp-echo
+spec:
+  ports:
+  - name: tcp
+    port: 9000
+  - name: tcp-other
+    port: 9001
+  selector:
+    app: tcp-echo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tcp-echo
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tcp-echo
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: tcp-echo
+        version: v1
+    spec:
+      terminationGracePeriodSeconds: 0
+      containers:
+      - name: tcp-echo
+        image: registry.istio.io/release/tcp-echo-server:1.3
+        imagePullPolicy: IfNotPresent
+        args: ["9000,9001,9002", "hello"]
+        ports:
+        - containerPort: 9000
+        - containerPort: 9001

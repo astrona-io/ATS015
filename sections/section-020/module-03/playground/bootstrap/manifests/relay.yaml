@@ -1,0 +1,29 @@
+# relay: a second TCP client with its own service account, so it has a different
+# identity (cluster.local/ns/starfleet/sa/relay) from the shuttle.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: relay
+  namespace: starfleet
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: relay
+  namespace: starfleet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: relay
+  template:
+    metadata:
+      labels:
+        app: relay
+    spec:
+      serviceAccountName: relay
+      terminationGracePeriodSeconds: 0
+      containers:
+      - name: relay
+        image: curlimages/curl:8.11.1
+        command: ["sleep", "infinity"]
