@@ -515,6 +515,7 @@ modules:
       - type: lab
         title: "Capstone: Deny By Default And Allow Two Calls"
         path: sections/section-020/capstone/labs/lab-01
+        difficulty: advanced
       - type: quiz
         title: "Knowledge Check: Authorization Policy Fundamentals"
         path: sections/section-020/quiz.yaml
@@ -664,6 +665,7 @@ modules:
       - type: lab
         title: "Capstone: Require A Token And Split Access By Claim"
         path: sections/section-030/capstone/labs/lab-01
+        difficulty: advanced
       - type: quiz
         title: "Knowledge Check: End-User Authentication With JWT"
         path: sections/section-030/quiz.yaml
@@ -920,6 +922,7 @@ modules:
       - type: lab
         title: "Capstone: Terminate And Pass Through TLS On One Gateway"
         path: sections/section-040/capstone/labs/lab-01
+        difficulty: advanced
       - type: quiz
         title: "Knowledge Check: Securing Edge Traffic With TLS"
         path: sections/section-040/quiz.yaml
@@ -1008,6 +1011,7 @@ modules:
       - type: lab
         title: "Capstone: Block Client IP Ranges At The Ingress Gateway"
         path: sections/section-050/capstone/labs/lab-01
+        difficulty: advanced
       - type: quiz
         title: "Knowledge Check: Authorization At The Edge"
         path: sections/section-050/quiz.yaml
