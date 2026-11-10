@@ -20,7 +20,3 @@ One module. Workload identity, policy structure and evaluation order work the sa
 - Telling an L4 denial (a connection error, `000` from `curl`) from an L7 denial (`403`).
 - `istioctl ztunnel-config workload` and `... policy` as the ambient equivalents of `istioctl proxy-config`.
 - Deploying a waypoint with `istioctl waypoint apply`, and why enrolment is a separate step from deployment.
-
----
-
-<!-- astrona:playground -->

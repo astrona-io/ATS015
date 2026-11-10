@@ -231,39 +231,42 @@ modules:
         path: sections/section-010/module-03/course-05-summary.md
 
       - type: reading
-        title: "External Authorization With CUSTOM Policies"
-        path: sections/section-020/module-04/course.md
+        title: "Control Workload Certificates: Plug-In CA And Lifetime"
+        path: sections/section-010/module-04/course.md
       - type: reading
-        title: "Where The Decision Is Made"
-        path: sections/section-020/module-04/course-01-where-the-decision-is-made.md
+        title: "The Certificate Authority In Istiod"
+        path: sections/section-010/module-04/course-01-the-certificate-authority-in-istiod.md
       - type: reading
-        title: "Register A Provider And Attach It"
-        path: sections/section-020/module-04/course-02-register-a-provider-and-attach-it.md
+        title: "Plug In Your Own CA"
+        path: sections/section-010/module-04/course-02-plug-in-your-own-ca.md
       - type: reading
-        title: "CUSTOM With ALLOW And DENY"
-        path: sections/section-020/module-04/course-03-custom-with-allow-and-deny.md
+        title: "Lifetime And Rotation"
+        path: sections/section-010/module-04/course-03-lifetime-and-rotation.md
       - type: reading
         title: Question
-        path: sections/section-020/module-04/labs/lab-01/question.md
+        path: sections/section-010/module-04/labs/lab-01/question.md
       - type: lab
-        title: "Gate One Path With An External Authorizer Lab"
-        path: sections/section-020/module-04/labs/lab-01
+        title: "Plug In A CA And Shorten One Certificate Lifetime Lab"
+        path: sections/section-010/module-04/labs/lab-01
         difficulty: advanced
-        estimated_duration: 25m
-        topic: authorization
+        estimated_duration: 40m
+        topic: identity
         task_kind: build
-        tags: [authorizationpolicy, custom-policy, ext-authz, evaluation-order, rbac-403, access-log]
+        tags: [custom-ca, certificates, cert-rotation, spiffe, mtls-strict, openssl]
         learning_goals:
-          - Register an external authorizer as an extension provider in the mesh configuration
-          - Attach a CUSTOM policy to one path and prove the authorizer decides that path only
+          - Create a root and an intermediate CA with openssl and give them to istiod in the cacerts Secret
+          - Restart istiod and the workloads and verify each workload certificate against the new chain with openssl
+          - Shorten the certificate lifetime of one workload with SECRET_TTL in its proxy.istio.io/config annotation
         resources:
-          - name: "External authorization"
-            url: https://istio.io/latest/docs/tasks/security/authorization/authz-custom/
-          - name: "AuthorizationPolicy reference"
-            url: https://istio.io/latest/docs/reference/config/security/authorization-policy/
+          - name: "Plug in CA certificates"
+            url: https://istio.io/latest/docs/tasks/security/cert-management/plugin-ca-cert/
+          - name: "pilot-agent reference"
+            url: https://istio.io/latest/docs/reference/commands/pilot-agent/
+          - name: "pilot-discovery reference"
+            url: https://istio.io/latest/docs/reference/commands/pilot-discovery/
       - type: reading
         title: "Summary"
-        path: sections/section-020/module-04/course-04-summary.md
+        path: sections/section-010/module-04/course-04-summary.md
 
       - type: reading
         title: Question

@@ -21,7 +21,3 @@ Four modules. Module 1 builds permissions up from nothing: the allow-nothing bas
 - The fields a rule can use on TCP traffic (`ports`, `principals`, `namespaces`, `ipBlocks`), and that a rule with an HTTP-only field matches nothing on TCP.
 - Registering an external authorizer under `meshConfig.extensionProviders` and attaching it with a `CUSTOM` policy, and the `failOpen` and `statusOnError` defaults.
 - Telling an authorization `403` apart from a transport-level connection reset.
-
----
-
-<!-- astrona:playground -->

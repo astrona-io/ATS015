@@ -18,7 +18,3 @@ One module. It applies `AuthorizationPolicy` to the ingress gateway rather than 
 - Opening one path to one network with a `DENY` rule and `notRemoteIpBlocks`, without closing the rest of the gateway.
 - Reading the gateway's access log to see the decision and the client address side by side.
 - Where address rules help, and where a client certificate or a token is the control you really need.
-
----
-
-<!-- astrona:playground -->
