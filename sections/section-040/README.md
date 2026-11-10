@@ -21,7 +21,3 @@ Four modules. The first three cover one `Gateway` TLS mode each. Module 1 is `SI
 - Proving which end terminated TLS by reading the certificate the handshake actually returned.
 - A `ServiceEntry` port `80` with `targetPort: 443` and a `DestinationRule` with `tls.mode: SIMPLE`, so the sidecar encrypts an app's plain `http://` call to an outside service with TLS.
 - `subjectAltNames` to check an outside server's certificate name, and the three failures `400`, `WRONG_VERSION_NUMBER` and `CERTIFICATE_VERIFY_FAILED`.
-
----
-
-<!-- astrona:playground -->

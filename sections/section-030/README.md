@@ -19,7 +19,3 @@ Two modules, and the first exists mainly to correct an expectation. Module 1 sho
 - `when` conditions: values inside one entry ORed, multiple entries ANDed, and a list claim matching if any element matches.
 - That a missing claim never matches, so a `when` condition fails closed under `ALLOW` and open under `DENY`.
 - Building one policy with one rule per role, including a public path, and pairing claim rules with `requestPrincipals`.
-
----
-
-<!-- astrona:playground -->
